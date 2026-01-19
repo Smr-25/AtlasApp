@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATLAS.Domain", "ATLAS.Domain\ATLAS.Domain.csproj", "{017B9D7D-912D-47D2-A2A0-5E788AC657AC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATLAS.Application", "ATLAS.Application\ATLAS.Application.csproj", "{7E14E19B-D519-4A5D-8A6E-471638E45496}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATLAS.Infrastructure", "ATLAS.Infrastructure\ATLAS.Infrastructure.csproj", "{18443EE5-E5DE-463E-9DE6-D92D6A888D2B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATLAS.API", "ATLAS.API\ATLAS.API.csproj", "{7DFD7356-74B4-4D85-BC9D-B4E4C8F52086}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{017B9D7D-912D-47D2-A2A0-5E788AC657AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{017B9D7D-912D-47D2-A2A0-5E788AC657AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{017B9D7D-912D-47D2-A2A0-5E788AC657AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{017B9D7D-912D-47D2-A2A0-5E788AC657AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E14E19B-D519-4A5D-8A6E-471638E45496}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E14E19B-D519-4A5D-8A6E-471638E45496}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E14E19B-D519-4A5D-8A6E-471638E45496}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E14E19B-D519-4A5D-8A6E-471638E45496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18443EE5-E5DE-463E-9DE6-D92D6A888D2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18443EE5-E5DE-463E-9DE6-D92D6A888D2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18443EE5-E5DE-463E-9DE6-D92D6A888D2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18443EE5-E5DE-463E-9DE6-D92D6A888D2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DFD7356-74B4-4D85-BC9D-B4E4C8F52086}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DFD7356-74B4-4D85-BC9D-B4E4C8F52086}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DFD7356-74B4-4D85-BC9D-B4E4C8F52086}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DFD7356-74B4-4D85-BC9D-B4E4C8F52086}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
