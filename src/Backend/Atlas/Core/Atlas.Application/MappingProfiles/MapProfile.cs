@@ -10,8 +10,6 @@ public class MapProfile : Profile
     {
         CreateMap<UserRegisterDto, AppUser>()
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty))
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber ?? string.Empty))
-            .ForAllMembers(opt => opt.Ignore());
-            
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber ?? string.Empty));
     }
 }

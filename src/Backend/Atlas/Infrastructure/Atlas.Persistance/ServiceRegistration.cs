@@ -1,10 +1,12 @@
+using System.Text;
 using Atlas.Application.Interfaces;
 using Atlas.Domain.Entities;
 using Atlas.Persistance.Data;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Atlas.Persistance;
 
@@ -18,9 +20,40 @@ public static class ServiceRegistration
             {
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
             });
-            services.AddIdentityCore<AppUser>()
-                .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+            services.AddIdentityCore<AppUser>(opt =>
+            {
+                opt.Password.RequireNonAlphanumeric = true;
+                opt.Password.RequireUppercase = true;
+                opt.Password.RequireLowercase = true;
+                opt.Password.RequireDigit = true;
+                opt.Password.RequireNonAlphanumeric = true;
+                opt.Password.RequiredLength = 8;
+                opt.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                opt.User.RequireUniqueEmail = true;
+            }).AddEntityFrameworkStores<ApplicationDbContext>();
+
+            services.AddAuthentication(opt =>
+                    {
+                        opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                        opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    }
+                )
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ClockSkew = TimeSpan.Zero,
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = configuration.GetSection("JwtSettings:Issuer").Value,
+                        ValidAudience = configuration.GetSection("JwtSettings:Audience").Value,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:SecretKey").Value!))
+                    };
+                });
         }
     }
 }

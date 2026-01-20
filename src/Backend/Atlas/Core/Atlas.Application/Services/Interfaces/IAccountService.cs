@@ -6,5 +6,5 @@ namespace Atlas.Application.Services.Interfaces;
 public interface IAccountService
 {
     Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto);
-    Task<ResponseModel<bool>> LoginAsync(UserLoginDto userLoginDto);
+    Task<ResponseModel<LoginResponseDto>> LoginAsync(UserLoginDto userLoginDto);
 }
