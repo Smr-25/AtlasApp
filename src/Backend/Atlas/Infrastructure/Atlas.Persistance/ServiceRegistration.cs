@@ -1,6 +1,9 @@
 using System.Text;
 using Atlas.Application.Interfaces;
+using Atlas.Application.Models;
+using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
+using Atlas.Infrastructure.Services;
 using Atlas.Persistance.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -29,8 +32,10 @@ public static class ServiceRegistration
                 opt.Password.RequireDigit = true;
                 opt.Password.RequireNonAlphanumeric = true;
                 opt.Password.RequiredLength = 8;
-                opt.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                opt.User.AllowedUserNameCharacters =
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
                 opt.User.RequireUniqueEmail = true;
+                opt.SignIn.RequireConfirmedEmail = true;
             }).AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddAuthentication(opt =>
@@ -54,6 +59,10 @@ public static class ServiceRegistration
                             Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:SecretKey").Value!))
                     };
                 });
+            services.Configure<EmailSettings>(configuration.GetSection("ThirdPartyServices:EmailSettings"));
+            services.Configure<SmsSettings>(configuration.GetSection("ThirdPartyServices:SmsSettings"));
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ISmsService, SmsService>();
         }
     }
 }

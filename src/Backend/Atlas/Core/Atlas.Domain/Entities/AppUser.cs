@@ -18,6 +18,8 @@ public class AppUser : IdentityUser
     public DateTime? VerificationExpiresAt { get; set; }
     public string? RefreshToken { get; private set; }
     public DateTime? RefreshTokenExpiresAt { get; private set; }
+    public string? ResetPasswordCode { get; set; }
+    public DateTime? ResetPasswordExpiresAt { get; set; }
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 }

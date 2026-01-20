@@ -21,4 +21,18 @@ public class AccountsController(IAccountService service) : ControllerBase
         var result = await service.LoginAsync(dto);
         return !result.IsSuccess ? BadRequest(result) : Ok(result);
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] UserForgotPasswordDto dto)
+    {
+        var result = await service.ForgotPasswordAsync(dto);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordDto dto)
+    {
+        var result = await service.ResetPasswordAsync(dto);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
 }

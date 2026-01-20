@@ -18,7 +18,7 @@ public static class ServiceRegistration
             services.AddAutoMapper(opt => opt.AddProfile<MapProfile>());
             services.AddValidatorsFromAssembly(typeof(ServiceRegistration).Assembly);
             services.AddScoped<IAccountService, AccountService>();
-            services.AddScoped<JwtService>();
+            services.AddScoped<IJwtService,JwtService>();
             
         }
     }

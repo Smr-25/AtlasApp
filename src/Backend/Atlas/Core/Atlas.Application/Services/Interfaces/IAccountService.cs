@@ -7,4 +7,6 @@ public interface IAccountService
 {
     Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto);
     Task<ResponseModel<LoginResponseDto>> LoginAsync(UserLoginDto userLoginDto);
+    Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto);
+    Task<ResponseModel<bool>> ResetPasswordAsync(UserResetPasswordDto userResetPasswordDto);
 }

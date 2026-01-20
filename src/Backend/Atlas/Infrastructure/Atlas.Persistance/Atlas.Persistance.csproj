@@ -11,10 +11,12 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.2" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
+      <PackageReference Include="Twilio" Version="7.14.1" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\Core\Atlas.Application\Atlas.Application.csproj" />
+      <ProjectReference Include="..\Atlas.Infrastructure\Atlas.Infrastructure.csproj" />
     </ItemGroup>
 
 

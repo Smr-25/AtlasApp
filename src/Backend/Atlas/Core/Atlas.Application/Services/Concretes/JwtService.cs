@@ -1,13 +1,14 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Atlas.Application.Services.Concretes;
 
-public class JwtService(IConfiguration configuration)
+public class JwtService(IConfiguration configuration) : IJwtService
 {
     public string GenerateToken(AppUser user)
     {

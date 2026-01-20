@@ -7,6 +7,7 @@ using Atlas.Domain.Entities;
 using AutoMapper;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Services.Concretes;
 
@@ -16,7 +17,12 @@ public class AccountService(
     UserManager<AppUser> userManager,
     IValidator<UserRegisterDto> registerValidator,
     IValidator<UserLoginDto> loginValidator,
-    JwtService jwtService) : IAccountService
+    IValidator<UserForgotPasswordDto> forgotPasswordValidator,
+    IValidator<UserResetPasswordDto> resetPasswordValidator,
+    IJwtService jwtService,
+    IEmailService emailService,
+    ISmsService smsService
+    ) : IAccountService
 {
     public async Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto)
     {
@@ -40,10 +46,10 @@ public class AccountService(
         var user = mapper.Map<AppUser>(userRegisterDto);
         var result = await userManager.CreateAsync(user, userRegisterDto.Password);
 
-        // var code = new Random().Next(100000, 999999).ToString();
-        // user.VerificationCode = code;
-        // user.VerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        // await userManager.UpdateAsync(user);
+        var code = new Random().Next(100000, 999999).ToString();
+        user.VerificationCode = code;
+        user.VerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        await userManager.UpdateAsync(user);
 
         return !result.Succeeded
             ? ResponseModel<bool>.Failure(result.Errors.Select(e => e.Description))
@@ -69,5 +75,75 @@ public class AccountService(
             ExpiresAt = DateTime.UtcNow.AddHours(3)
         };
         return ResponseModel<LoginResponseDto>.Success(loginResponse);
+    }
+
+    public async Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto)
+    {
+        var validationResult = await forgotPasswordValidator.ValidateAsync(userForgotPasswordDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+        
+        AppUser? user = null;
+        if (!string.IsNullOrEmpty(userForgotPasswordDto.Email))
+            user = await userManager.FindByEmailAsync(userForgotPasswordDto.Email);
+        
+        else if (!string.IsNullOrEmpty(userForgotPasswordDto.PhoneNumber))
+            user = applicationDbContext.Users
+                .FirstOrDefault(u => u.PhoneNumber == userForgotPasswordDto.PhoneNumber);
+        
+        if (user == null)
+            return ResponseModel<bool>.Success(true);
+        
+        var code = new Random().Next(100000, 999999).ToString();
+        user.ResetPasswordCode = code;
+        user.ResetPasswordExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        await userManager.UpdateAsync(user);
+
+        if (!string.IsNullOrEmpty(userForgotPasswordDto.Email))
+            await emailService.SendPasswordResetEmailAsync(user.Email!, 
+                $"Your password reset code is: {code}");
+        else if (!string.IsNullOrEmpty(userForgotPasswordDto.PhoneNumber))
+            await smsService.SendSmsAsync(user.PhoneNumber!, 
+                $"Your password reset code is: {code}");
+        
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+        return ResponseModel<bool>.Success(true);
+    }
+    
+    public async Task<ResponseModel<bool>> ResetPasswordAsync(UserResetPasswordDto userResetPasswordDto)
+    {
+        var validationResult = await resetPasswordValidator.ValidateAsync(userResetPasswordDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+        
+        AppUser? user = null;
+        
+        
+        if (!string.IsNullOrWhiteSpace(userResetPasswordDto.Email))
+            user = await userManager.FindByEmailAsync(userResetPasswordDto.Email);
+
+        if (user == null && !string.IsNullOrWhiteSpace(userResetPasswordDto.PhoneNumber))
+            user = await userManager.Users
+                .FirstOrDefaultAsync(u => u.PhoneNumber == userResetPasswordDto.PhoneNumber);
+        
+        if (user == null)
+            return ResponseModel<bool>.Failure("User not found.");
+        
+        if (user.ResetPasswordCode != userResetPasswordDto.Code ||
+            user.ResetPasswordExpiresAt < DateTime.UtcNow)
+            
+            return ResponseModel<bool>.Failure("Invalid or expired reset code.");
+        
+
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await userManager.ResetPasswordAsync(user, resetToken, userResetPasswordDto.NewPassword);
+        if (!result.Succeeded)
+            return ResponseModel<bool>.Failure(result.Errors.Select(e => e.Description));
+        
+        user.ResetPasswordCode = null;
+        user.ResetPasswordExpiresAt = null;
+        await userManager.UpdateAsync(user);
+        
+        return ResponseModel<bool>.Success(true);
     }
 }
