@@ -7,11 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AppSettingsMultiPlatformPackage" Version="1.2.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2"/>
+        <PackageReference Include="Scalar.AspNetCore" Version="2.12.11" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Controllers\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Atlas.Infrastructure\Atlas.Infrastructure.csproj" />
+      <ProjectReference Include="..\Atlas.Persistance\Atlas.Persistance.csproj" />
     </ItemGroup>
 
 </Project>

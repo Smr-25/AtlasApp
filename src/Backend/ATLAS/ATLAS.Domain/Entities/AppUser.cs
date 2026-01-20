@@ -14,6 +14,8 @@ public class AppUser : IdentityUser
     public DateTime? EmailVerificationExpiresAt { get; private set; }
     public string? PhoneVerificationCode { get; private set; }
     public DateTime? PhoneVerificationExpiresAt { get; private set; }
+    public string? VerificationCode { get; set; }
+    public DateTime? VerificationExpiresAt { get; set; }
     public string? RefreshToken { get; private set; }
     public DateTime? RefreshTokenExpiresAt { get; private set; }
     public bool IsDeleted { get; private set; }

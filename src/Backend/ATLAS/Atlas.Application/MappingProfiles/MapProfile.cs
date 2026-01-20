@@ -12,8 +12,6 @@ public class MapProfile : Profile
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty))
             .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber ?? string.Empty))
             .ForAllMembers(opt => opt.Ignore());
-        CreateMap<UserLoginDto, AppUser>()
-            .ForAllMembers(opt => opt.Ignore());
             
     }
 }

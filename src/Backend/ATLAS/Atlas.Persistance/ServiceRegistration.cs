@@ -1,5 +1,7 @@
 using Atlas.Application.Interfaces;
+using Atlas.Domain.Entities;
 using Atlas.Persistance.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,8 @@ public static class ServiceRegistration
             {
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
             });
+            services.AddIdentityCore<AppUser>()
+                .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
         }
     }

@@ -19,7 +19,7 @@ public class UserRegisterDtoValidator : AbstractValidator<UserRegisterDto>
             .WithMessage("Full name is required.")
             .MinimumLength(3)
             .WithMessage("Full name must be at least 3 characters long.")
-            .MaximumLength(50)
+            .MaximumLength(20)
             .WithMessage("Full name must not exceed 20 characters.");
         RuleFor(x => x.Password)
             .NotEmpty()

@@ -8,7 +8,7 @@ namespace Atlas.Persistance.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<AppUser>(options), IApplicationDbContext
 {
-    public DbSet<AppUser> Users { get; set; } 
+    public DbSet<AppUser> Users { get; set; } = null!;
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -20,4 +20,5 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }
+    
 }
