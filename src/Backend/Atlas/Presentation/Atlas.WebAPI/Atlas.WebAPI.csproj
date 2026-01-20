@@ -13,12 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Controllers\" />
+      <ProjectReference Include="..\..\Infrastructure\Atlas.Infrastructure\Atlas.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\Infrastructure\Atlas.Persistance\Atlas.Persistance.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Atlas.Infrastructure\Atlas.Infrastructure.csproj" />
-      <ProjectReference Include="..\Atlas.Persistance\Atlas.Persistance.csproj" />
-    </ItemGroup>
-
+   
 </Project>

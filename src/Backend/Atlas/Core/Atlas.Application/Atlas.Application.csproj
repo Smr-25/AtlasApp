@@ -17,4 +17,7 @@
       <ProjectReference Include="..\Atlas.Domain\Atlas.Domain.csproj" />
     </ItemGroup>
 
+  
+   
+
 </Project>

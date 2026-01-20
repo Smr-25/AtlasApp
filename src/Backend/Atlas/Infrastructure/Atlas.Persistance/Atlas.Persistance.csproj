@@ -13,7 +13,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Atlas.Application\Atlas.Application.csproj" />
+      <ProjectReference Include="..\..\Core\Atlas.Application\Atlas.Application.csproj" />
     </ItemGroup>
+
 
 </Project>
