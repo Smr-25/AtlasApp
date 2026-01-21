@@ -25,8 +25,5 @@ public class SmsService(IOptions<SmsSettings> options) : ISmsService
         await SendSmsAsync(to,"Your verification code is: " + code);
     }
 
-    public async Task SendPasswordResetSmsAsync(string to, string resetCode)
-    {
-        await SendSmsAsync(to, "Your password reset code is: " + resetCode);
-    }
+  
 }

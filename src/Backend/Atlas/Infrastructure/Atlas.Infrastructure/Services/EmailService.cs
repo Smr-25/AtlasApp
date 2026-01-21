@@ -28,7 +28,7 @@ public class EmailService(IOptions<EmailSettings> options) : IEmailService
 
     public async Task SendVerificationEmailAsync(string to, string code)
     {
-        await SendEmailAsync(to, "Email Verification", code);
+        await SendEmailAsync(to, "Verification code is required", code);    
     }
 
     public async Task SendPasswordResetEmailAsync(string to, string resetLink)

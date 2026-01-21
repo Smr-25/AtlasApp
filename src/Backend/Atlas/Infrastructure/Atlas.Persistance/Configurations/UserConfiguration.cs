@@ -19,10 +19,15 @@ public class UserConfiguration : IEntityTypeConfiguration<AppUser>
             .IsUnique();
         
         builder.Property(u => u.Email)
+            .IsRequired()
             .HasMaxLength(50);
+        builder.HasIndex(u => u.Email)
+            .IsUnique();
         
         builder.Property(u => u.PhoneNumber)
             .HasMaxLength(15);
+        builder.HasIndex(u => u.PhoneNumber)
+            .IsUnique();
         
         builder.Property(u => u.Status)
             .IsRequired();

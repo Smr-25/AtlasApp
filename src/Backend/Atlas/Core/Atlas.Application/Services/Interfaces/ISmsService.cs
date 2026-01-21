@@ -4,5 +4,4 @@ public interface ISmsService
 {
     Task SendSmsAsync(string to, string code);
     Task SendVerificationSmsAsync(string to, string code);
-    Task SendPasswordResetSmsAsync(string to, string resetCode);
 }

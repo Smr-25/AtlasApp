@@ -12,13 +12,13 @@ public class UserForgotPasswordDtoValidator : AbstractValidator<UserForgotPasswo
             .When(x => !string.IsNullOrEmpty(x.Email))
             .WithMessage("Invalid email format.");
 
-        RuleFor(x => x.PhoneNumber)
-            .Matches(@"^\+?[1-9]\d{1,14}$")
-            .When(x => !string.IsNullOrEmpty(x.PhoneNumber))
-            .WithMessage("Invalid phone number format.");
+        RuleFor(x => x.UserName)
+            .MinimumLength(3)
+            .When(x => !string.IsNullOrEmpty(x.UserName))
+            .WithMessage("Username must be at least 3 characters long.");
 
         RuleFor(x => x)
-            .Must(x => !string.IsNullOrEmpty(x.Email) || !string.IsNullOrEmpty(x.PhoneNumber))
-            .WithMessage("Either Email or PhoneNumber must be provided.");
+            .Must(x => !string.IsNullOrEmpty(x.Email) || !string.IsNullOrEmpty(x.UserName))
+            .WithMessage("Either Email or UserName must be provided.");
     }
 }

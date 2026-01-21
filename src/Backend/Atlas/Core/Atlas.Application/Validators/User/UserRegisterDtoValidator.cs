@@ -21,6 +21,14 @@ public class UserRegisterDtoValidator : AbstractValidator<UserRegisterDto>
             .WithMessage("Full name must be at least 3 characters long.")
             .MaximumLength(20)
             .WithMessage("Full name must not exceed 20 characters.");
+        RuleFor(x => x.Email)
+            .NotEmpty()
+            .WithMessage("Email is required.")
+            .EmailAddress() 
+            .WithMessage("A valid email is required.");
+        RuleFor(x => x.PhoneNumber)
+            .Matches(@"^\+?[1-9]\d{1,14}$")
+            .WithMessage("A valid phone number is required.");
         RuleFor(x => x.Password)
             .NotEmpty()
             .WithMessage("Password is required.")
@@ -29,13 +37,6 @@ public class UserRegisterDtoValidator : AbstractValidator<UserRegisterDto>
         RuleFor(x => x.ConfirmPassword)
             .Equal(x => x.Password)
             .WithMessage("Passwords do not match.");
-        RuleFor(x => x)
-            .Custom((obj, context) =>
-            {
-                if (string.IsNullOrWhiteSpace(obj.Email) && string.IsNullOrWhiteSpace(obj.PhoneNumber))
-                {
-                    context.AddFailure("Email or phone number is required.");
-                }
-            });
+        
     }
 }
