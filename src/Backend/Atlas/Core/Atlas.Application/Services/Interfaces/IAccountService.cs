@@ -9,6 +9,10 @@ public interface IAccountService
     Task<ResponseModel<UserLoginResponseDto>> LoginAsync(UserLoginDto userLoginDto);
     Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto);
     Task<ResponseModel<bool>> ResetPasswordAsync(UserResetPasswordDto userResetPasswordDto);
-    Task<ResponseModel<bool>> VerifyAccountAsync(UserVerifyEmailDto userVerifyEmailDto);
-    Task<ResponseModel<bool>> ResendVerificationCodeAsync(UserVerifyEmailDto userVerifyEmailDto);
+    Task<ResponseModel<bool>> VerifyEmailAsync(UserVerifyEmailDto userVerifyEmailDto);
+    Task<ResponseModel<bool>> VerifyPhoneAsync(UserVerifyPhoneDto userVerifyPhoneDto);
+    Task<ResponseModel<bool>> AddPhoneNumberAsync(UserAddPhoneNumberDto userAddPhoneNumberDto);
+    Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(string email);
+    Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(string phoneNumber);
+    
 }

@@ -28,11 +28,11 @@ public class EmailService(IOptions<EmailSettings> options) : IEmailService
 
     public async Task SendVerificationEmailAsync(string to, string code)
     {
-        await SendEmailAsync(to, "Verification code is required", code);    
+        await SendEmailAsync(to, "Verification code", code);    
     }
 
-    public async Task SendPasswordResetEmailAsync(string to, string resetLink)
+    public async Task SendPasswordResetEmailAsync(string to, string code)
     {
-        await SendEmailAsync(to, "Password Reset", resetLink);
+        await SendEmailAsync(to, "Password Reset Code", code);
     }
 }
