@@ -35,4 +35,40 @@ public class AccountsController(IAccountService service) : ControllerBase
         var result = await service.ResetPasswordAsync(dto);
         return !result.IsSuccess ? BadRequest(result) : Ok(result);
     }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromBody] UserVerifyEmailDto dto)
+    {
+        var result = await service.VerifyEmailAsync(dto);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
+
+    [HttpPost("verify-phone")]
+    public async Task<IActionResult> VerifyPhone([FromBody] UserVerifyPhoneDto dto)
+    {
+        var result = await service.VerifyPhoneAsync(dto);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
+
+    [HttpPost("add-phone-number")]
+    public async Task<IActionResult> AddPhoneNumber([FromBody] UserAddPhoneNumberDto dto)
+    {
+        var result = await service.AddPhoneNumberAsync(dto);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
+
+    [HttpPost("resend-email-verification-code")]
+    public async Task<IActionResult> ResendEmailVerificationCode([FromBody] string email)
+    {
+        var result = await service.ResendEmailVerificationCodeAsync(email);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
+
+    [HttpPost("resend-phone-verification-code")]
+    public async Task<IActionResult> ResendPhoneVerificationCode([FromBody] string phoneNumber)
+    {
+        var result = await service.ResendPhoneVerificationCodeAsync(phoneNumber);
+        return !result.IsSuccess ? BadRequest(result) : Ok(result);
+    }
+    
 }

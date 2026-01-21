@@ -90,6 +90,11 @@ public class AccountService(
         return ResponseModel<UserLoginResponseDto>.Success(loginResponse);
     }
 
+    public Task<ResponseModel<UserExternalLoginResultDto>> ExternalLoginAsync(UserExternalLoginDto userExternalLoginDto)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto)
     {
         var validationResult = await forgotPasswordValidator.ValidateAsync(userForgotPasswordDto);
@@ -102,7 +107,8 @@ public class AccountService(
         if (user == null)
             return ResponseModel<bool>.Success(true);
 
-        await SendEmailVerificationCodeAsync(userForgotPasswordDto.Email!);
+        await emailService.SendPasswordResetEmailAsync(userForgotPasswordDto.Email!,
+            user.ResetPasswordCode!);
         return ResponseModel<bool>.Success(true);
     }
 
