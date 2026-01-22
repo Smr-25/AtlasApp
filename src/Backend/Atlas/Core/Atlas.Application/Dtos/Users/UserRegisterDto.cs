@@ -1,3 +1,5 @@
+using Atlas.Domain.Enums;
+
 namespace Atlas.Application.Dtos.Users;
 
 public record UserRegisterDto(
@@ -6,5 +8,6 @@ public record UserRegisterDto(
     string Email,
     string? PhoneNumber,
     string Password,
-    string ConfirmPassword
+    string ConfirmPassword,
+    UserVerificationChannel? PhoneVerificationChannel
 );

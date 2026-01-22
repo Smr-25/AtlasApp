@@ -3,6 +3,7 @@ using Atlas.Application.Interfaces;
 using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
+using Atlas.Domain.Enums;
 using AutoMapper;
 using FluentValidation;
 using Google.Apis.Auth;
@@ -22,9 +23,12 @@ public class AccountService(
     IValidator<UserVerifyEmailDto> verifyEmailValidator,
     IValidator<UserVerifyPhoneDto> verifyPhoneValidator,
     IValidator<UserAddPhoneNumberDto> addPhoneNumberValidator,
+    IValidator<UserReverifyEmailDto> reverifyEmailValidator,
+    IValidator<UserReverifyPhoneDto> reverifyPhoneValidator,
     IJwtService jwtService,
     IEmailService emailService,
-    ISmsService smsService
+    ISmsService smsService,
+    ITelegramService telegramService
 ) : IAccountService
 {
     public async Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto)
@@ -57,9 +61,8 @@ public class AccountService(
 
         await SendEmailVerificationCodeAsync(userRegisterDto.Email);
 
-        if (!string.IsNullOrEmpty(userRegisterDto.PhoneNumber))
-            await SendPhoneVerificationCodeAsync(userRegisterDto.PhoneNumber);
-
+        if(!string.IsNullOrEmpty(userRegisterDto.PhoneNumber) && userRegisterDto.PhoneVerificationChannel.HasValue)
+            await SendPhoneVerificationCodeAsync(userRegisterDto.PhoneNumber!,userRegisterDto.PhoneVerificationChannel.Value);
 
         return !result.Succeeded
             ? ResponseModel<bool>.Failure(result.Errors.Select(e => e.Description))
@@ -77,6 +80,9 @@ public class AccountService(
         if (user == null)
             return ResponseModel<UserLoginResponseDto>.Failure("Invalid username or password.");
 
+        if(!user.EmailConfirmed)
+            return ResponseModel<UserLoginResponseDto>.Failure("Email is not verified.");
+            
         var passwordValid = await userManager.CheckPasswordAsync(user, userLoginDto.Password);
         if (!passwordValid)
             return ResponseModel<UserLoginResponseDto>.Failure("Invalid username or password.");
@@ -108,9 +114,7 @@ public class AccountService(
         if (user == null)
             return ResponseModel<bool>.Success(true);
 
-        await emailService.SendPasswordResetEmailAsync(userForgotPasswordDto.Email!,
-            user.ResetPasswordCode!);
-        return ResponseModel<bool>.Success(true);
+        return await SendPasswordResetEmailAsync(user.Email!);
     }
 
     public async Task<ResponseModel<bool>> ResetPasswordAsync(UserResetPasswordDto userResetPasswordDto)
@@ -153,14 +157,14 @@ public class AccountService(
         if (user == null)
             return ResponseModel<bool>.Failure("User not found.");
 
-        if (user.VerificationCode != userVerifyEmailDto.Code ||
-            user.VerificationExpiresAt < DateTime.UtcNow)
+        if (user.EmailVerificationCode != userVerifyEmailDto.Code ||
+            user.EmailVerificationExpiresAt < DateTime.UtcNow)
 
             return ResponseModel<bool>.Failure("Invalid or expired verification code.");
 
         user.EmailConfirmed = true;
-        user.VerificationCode = null;
-        user.VerificationExpiresAt = null;
+        user.EmailVerificationCode = null;
+        user.EmailVerificationExpiresAt = null;
         await userManager.UpdateAsync(user);
         return ResponseModel<bool>.Success(true);
     }
@@ -176,45 +180,53 @@ public class AccountService(
         if (user == null)
             return ResponseModel<bool>.Failure("User not found.");
 
-        if (user.VerificationCode != userVerifyPhoneDto.Code ||
-            user.VerificationExpiresAt < DateTime.UtcNow)
+        if (user.PhoneVerificationCode != userVerifyPhoneDto.Code ||
+            user.PhoneVerificationExpiresAt < DateTime.UtcNow)
 
             return ResponseModel<bool>.Failure("Invalid or expired verification code.");
 
         user.PhoneNumberConfirmed = true;
-        user.VerificationCode = null;
-        user.VerificationExpiresAt = null;
+        user.PhoneVerificationCode = null;
+        user.PhoneVerificationExpiresAt = null;
         await userManager.UpdateAsync(user);
         return ResponseModel<bool>.Success(true);
     }
 
-    public async Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(string email)
+    public async Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(UserReverifyEmailDto userReverifyEmailDto)
     {
-        var user = await userManager.FindByEmailAsync(email);
+        var validationResult = await reverifyEmailValidator.ValidateAsync(userReverifyEmailDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+        
+        var user = await userManager.FindByEmailAsync(userReverifyEmailDto.Email);
         if (user == null)
             return ResponseModel<bool>.Failure("User not found.");
         if (user.EmailConfirmed)
             return ResponseModel<bool>.Failure("Email is already verified.");
         var code = await GenerateVerificationCodeAsync();
-        user.VerificationCode = code;
-        user.VerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        user.EmailVerificationCode = code;
+        user.EmailVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
         await userManager.UpdateAsync(user);
         await emailService.SendVerificationEmailAsync(user.Email!,
             code);
         return ResponseModel<bool>.Success(true);
     }
 
-    public async Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(string phoneNumber)
+    public async Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(UserReverifyPhoneDto userReverifyPhoneDto)
     {
-        var user = await FindUserByPhoneNumberAsync(phoneNumber);
+        var validationResult = await reverifyPhoneValidator.ValidateAsync(userReverifyPhoneDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+        
+        var user = await FindUserByPhoneNumberAsync(userReverifyPhoneDto.PhoneNumber);
         if (user == null)
             return ResponseModel<bool>.Failure("User not found.");
         if (user.PhoneNumberConfirmed)
             return ResponseModel<bool>.Failure("Phone number is already verified.");
 
         var code = await GenerateVerificationCodeAsync();
-        user.VerificationCode = code;
-        user.VerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        user.PhoneVerificationCode = code;
+        user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
         await userManager.UpdateAsync(user);
 
         await smsService.SendVerificationSmsAsync(user.PhoneNumber!,
@@ -228,7 +240,7 @@ public class AccountService(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var user = await FindUserByPhoneNumberAsync(userAddPhoneNumberDto.PhoneNumber);
+        var user = await userManager.FindByEmailAsync(userAddPhoneNumberDto.Email);
         if (user == null)
             return ResponseModel<bool>.Failure("User not found.");
 
@@ -237,11 +249,31 @@ public class AccountService(
             return ResponseModel<bool>.Failure("Phone number already in use.");
 
         user.PhoneNumber = userAddPhoneNumberDto.PhoneNumber;
-        await SendPhoneVerificationCodeAsync(userAddPhoneNumberDto.PhoneNumber);
-
-
+        user.PreferredVerificationChannel = userAddPhoneNumberDto.UserVerificationChannel;
+        await userManager.UpdateAsync(user);
+        
+        await SendPhoneVerificationCodeAsync(userAddPhoneNumberDto.PhoneNumber,userAddPhoneNumberDto.UserVerificationChannel);
+        
         return ResponseModel<bool>.Success(true);
     }
+    
+public async Task<ResponseModel<UserTelegramResponseDto>> GenerateTelegramLinkAsync(string email)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+            return ResponseModel<UserTelegramResponseDto>.Failure("User not found.");
+    
+        var linkCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
+        user.TelegramLinkCode = linkCode;
+        user.TelegramLinkCodeExpiry = DateTime.UtcNow.AddMinutes(10);
+        await userManager.UpdateAsync(user);
+    
+        var botLink = await telegramService.GetBotLinkAsync(linkCode);
+    
+        return ResponseModel<UserTelegramResponseDto>.Success(
+            new UserTelegramResponseDto(botLink, linkCode));
+    }
+    
 
     private async Task<ResponseModel<bool>> SendEmailVerificationCodeAsync(string email)
     {
@@ -250,27 +282,53 @@ public class AccountService(
             return ResponseModel<bool>.Failure("User not found.");
 
         var code = await GenerateVerificationCodeAsync();
-        user.VerificationCode = code;
-        user.VerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        user.EmailVerificationCode = code;
+        user.EmailVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
         await userManager.UpdateAsync(user);
         await emailService.SendVerificationEmailAsync(user.Email!,
             code);
         return ResponseModel<bool>.Success(true);
     }
 
-    private async Task<ResponseModel<bool>> SendPhoneVerificationCodeAsync(string phoneNumber)
+    private async Task<ResponseModel<bool>> SendPhoneVerificationCodeAsync(string phoneNumber, UserVerificationChannel channel)
     {
         var user = await FindUserByPhoneNumberAsync(phoneNumber);
         if (user == null)
             return ResponseModel<bool>.Failure("User not found.");
 
         var code = await GenerateVerificationCodeAsync();
-        user.VerificationCode = code;
-        user.VerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        user.PhoneVerificationCode = code;
+        user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        user.PreferredVerificationChannel = channel;
         await userManager.UpdateAsync(user);
 
-        await smsService.SendVerificationSmsAsync(user.PhoneNumber!,
-            $"Your verification code is: {code}");
+        switch (channel)
+        {
+            case UserVerificationChannel.Sms:
+                await smsService.SendVerificationSmsAsync(user.PhoneNumber!,
+                    $"Your verification code is: {code}");
+                break;
+            case UserVerificationChannel.Telegram:
+                await telegramService.SendVerificationCodeAsync(user.PhoneNumber!,
+                    code);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        return ResponseModel<bool>.Success(true);
+    }
+
+    private async Task<ResponseModel<bool>> SendPasswordResetEmailAsync(string email)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+            return ResponseModel<bool>.Failure("User not found.");
+        var code = await GenerateVerificationCodeAsync();
+        user.ResetPasswordCode = code;
+        user.ResetPasswordExpiresAt = DateTime.UtcNow.AddMinutes(10);
+        await userManager.UpdateAsync(user);
+        await emailService.SendPasswordResetEmailAsync(user.Email!,
+            code);
         return ResponseModel<bool>.Success(true);
     }
 

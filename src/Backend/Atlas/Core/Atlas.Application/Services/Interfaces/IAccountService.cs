@@ -13,7 +13,7 @@ public interface IAccountService
     Task<ResponseModel<bool>> VerifyEmailAsync(UserVerifyEmailDto userVerifyEmailDto);
     Task<ResponseModel<bool>> VerifyPhoneAsync(UserVerifyPhoneDto userVerifyPhoneDto);
     Task<ResponseModel<bool>> AddPhoneNumberAsync(UserAddPhoneNumberDto userAddPhoneNumberDto);
-    Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(string email);
-    Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(string phoneNumber);
+    Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(UserReverifyEmailDto userReverifyEmailDto);
+    Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(UserReverifyPhoneDto userReverifyPhoneDto);
     
 }

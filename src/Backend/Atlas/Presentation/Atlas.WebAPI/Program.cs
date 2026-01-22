@@ -1,5 +1,6 @@
 using AppSettingsMultiPlatformPackage;
 using Atlas.Application;
+using Atlas.Infrastructure;
 using Atlas.Persistance;
 using Scalar.AspNetCore;
 
@@ -12,6 +13,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
 builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 var app = builder.Build();
 

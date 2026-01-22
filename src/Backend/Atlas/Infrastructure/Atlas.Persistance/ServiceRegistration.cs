@@ -60,10 +60,7 @@ public static class ServiceRegistration
                             Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:SecretKey").Value!))
                     };
                 });
-            services.Configure<EmailSettings>(configuration.GetSection("ThirdPartyServices:EmailSettings"));
-            services.Configure<SmsSettings>(configuration.GetSection("ThirdPartyServices:SmsSettings"));
-            services.AddScoped<IEmailService, EmailService>();
-            services.AddScoped<ISmsService, SmsService>();
+            
         }
     }
 }

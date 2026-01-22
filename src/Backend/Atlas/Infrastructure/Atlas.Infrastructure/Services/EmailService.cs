@@ -19,18 +19,18 @@ public class EmailService(IOptions<EmailSettings> options) : IEmailService
         email.To.Add(MailboxAddress.Parse(to));
         email.Subject = subject;
         email.Body = new TextPart(TextFormat.Html) { Text = body };
-        
+
         using var smtp = new SmtpClient();
         await smtp.ConnectAsync(_settings.SmtpServer, _settings.Port, SecureSocketOptions.StartTls);
         await smtp.AuthenticateAsync(_settings.Username, _settings.Password);
         await smtp.SendAsync(email);
         await smtp.DisconnectAsync(true);
-        
+
     }
 
     public async Task SendVerificationEmailAsync(string to, string code)
     {
-        await SendEmailAsync(to, "Verification code", code);    
+        await SendEmailAsync(to, "Verification code", code);
     }
 
     public async Task SendPasswordResetEmailAsync(string to, string code)

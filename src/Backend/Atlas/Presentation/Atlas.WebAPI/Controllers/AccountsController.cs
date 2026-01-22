@@ -58,16 +58,16 @@ public class AccountsController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("resend-email-verification-code")]
-    public async Task<IActionResult> ResendEmailVerificationCode([FromBody] string email)
+    public async Task<IActionResult> ResendEmailVerificationCode([FromBody] UserReverifyEmailDto userReverifyEmailDto)
     {
-        var result = await service.ResendEmailVerificationCodeAsync(email);
+        var result = await service.ResendEmailVerificationCodeAsync(userReverifyEmailDto);
         return !result.IsSuccess ? BadRequest(result) : Ok(result);
     }
 
     [HttpPost("resend-phone-verification-code")]
-    public async Task<IActionResult> ResendPhoneVerificationCode([FromBody] string phoneNumber)
+    public async Task<IActionResult> ResendPhoneVerificationCode([FromBody] UserReverifyPhoneDto userReverifyPhoneDto)
     {
-        var result = await service.ResendPhoneVerificationCodeAsync(phoneNumber);
+        var result = await service.ResendPhoneVerificationCodeAsync(userReverifyPhoneDto);
         return !result.IsSuccess ? BadRequest(result) : Ok(result);
     }
 }
