@@ -23,6 +23,7 @@ public static class ServiceRegistration
             {
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
             });
+
             services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
             services.AddIdentityCore<AppUser>(opt =>
             {

@@ -14,7 +14,7 @@ public class AccountsController(IAccountService service) : ControllerBase
         var result = await service.RegisterAsync(dto);
         return !result.IsSuccess ? BadRequest(result) : Ok(result);
     }
-    
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
     {
@@ -70,5 +70,4 @@ public class AccountsController(IAccountService service) : ControllerBase
         var result = await service.ResendPhoneVerificationCodeAsync(phoneNumber);
         return !result.IsSuccess ? BadRequest(result) : Ok(result);
     }
-    
 }

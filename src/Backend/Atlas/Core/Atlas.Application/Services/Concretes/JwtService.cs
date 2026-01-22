@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using Microsoft.Extensions.Configuration;

@@ -5,6 +5,7 @@ using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using AutoMapper;
 using FluentValidation;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
