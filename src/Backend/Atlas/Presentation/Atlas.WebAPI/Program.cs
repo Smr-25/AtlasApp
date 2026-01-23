@@ -2,6 +2,7 @@ using AppSettingsMultiPlatformPackage;
 using Atlas.Application;
 using Atlas.Infrastructure;
 using Atlas.Persistance;
+using Atlas.WebAPI.Middlewares;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

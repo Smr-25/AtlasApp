@@ -1,6 +1,5 @@
 using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 
