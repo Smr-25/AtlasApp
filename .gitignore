@@ -21,7 +21,7 @@ dictionaries/
 shelf/
 
 # EF Core migrations
-Migrations/
+
 
 # NuGet packages
 *.nupkg

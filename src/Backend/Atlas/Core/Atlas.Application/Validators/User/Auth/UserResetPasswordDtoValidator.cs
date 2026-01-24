@@ -7,6 +7,17 @@ public class UserResetPasswordDtoValidator : AbstractValidator<UserResetPassword
 {
     public UserResetPasswordDtoValidator()
     {
+        RuleFor(x => x)
+            .Must(x => !string.IsNullOrEmpty(x.Email) || !string.IsNullOrEmpty(x.UserName))
+            .WithMessage("Either Email or UserName is required.");
+        
+        RuleFor(x => x.Email)
+            .EmailAddress().When(x => !string.IsNullOrEmpty(x.Email))
+            .WithMessage("Invalid email format.");
+        
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("Verification code is required.");
+        
         RuleFor(x => x.NewPassword)
             .NotEmpty().WithMessage("Password is required.")
             .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")

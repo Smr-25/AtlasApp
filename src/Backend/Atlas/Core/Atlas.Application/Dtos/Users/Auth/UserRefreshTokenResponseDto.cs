@@ -1,10 +1,6 @@
 namespace Atlas.Application.Dtos.Users.Auth;
 
-public record UserLoginResponseDto
-(
-    string AccessToken,
+public record UserRefreshTokenResponseDto(
     string RefreshToken,
-    string UserName,
-    DateTime ExpiresAt,
     DateTime RefreshTokenExpiresAt
 );

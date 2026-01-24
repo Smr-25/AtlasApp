@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Atlas.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class AccountsController(IAccountService service) : ControllerBase
+[Route("api/Auth")]
+public class AccountController(IAccountService service) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
@@ -22,6 +22,13 @@ public class AccountsController(IAccountService service) : ControllerBase
     {
         var result = await service.LoginAsync(dto);
         return Ok(result);
+    }
+    
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] string refreshToken)
+    {
+        await service.LogoutAsync(refreshToken);
+        return Ok();
     }
 
     [HttpPost("forgot-password")]
@@ -78,5 +85,19 @@ public class AccountsController(IAccountService service) : ControllerBase
     {
         var result = await service.GenerateTelegramLinkAsync(dto.Email);
         return Ok(result);
+    }
+
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] UserRefreshTokenRequestDto dto)
+    {
+        var result = await service.RefreshTokenAsync(dto);
+        return Ok(result);
+    }
+
+    [HttpPost("revoke-refresh-token")]
+    public async Task<IActionResult> RevokeRefreshToken([FromBody] UserRefreshTokenRequestDto dto)
+    {
+        await service.RevokeRefreshTokenAsync(dto.RefreshToken);
+        return Ok();
     }
 }

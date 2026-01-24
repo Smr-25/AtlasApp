@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Atlas.Application.Dtos.Users;
 using Atlas.Application.Dtos.Users.Auth;
 using Atlas.Application.Dtos.Users.ExternalAuth;
@@ -32,6 +33,7 @@ public class AccountService(
     ITelegramService telegramService
 ) : IAccountService
 {
+
     public async Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto)
     {
         var validationResult = await registerValidator.ValidateAsync(userRegisterDto);
@@ -93,22 +95,66 @@ public class AccountService(
         if (!passwordValid)
             throw new InvalidCredentialsException("Invalid UserName/Email or Password.");
 
+        var accessToken = jwtService.GenerateAccessToken(user);
+        var refreshToken = jwtService.GenerateRefreshTokenResponse(user);
+        user.SetRefreshToken(refreshToken.RefreshToken, refreshToken.RefreshTokenExpiresAt);
         user.UpdateLastLogin();
         await userManager.UpdateAsync(user);
 
-        var token = jwtService.GenerateToken(user);
         var loginResponse = new UserLoginResponseDto
-        {
-            Token = token,
-            UserName = user.UserName!,
-            ExpiresAt = DateTime.UtcNow.AddHours(3)
-        };
+        (
+            accessToken,
+            refreshToken.RefreshToken,
+            user.UserName!,
+            DateTime.UtcNow,
+            refreshToken.RefreshTokenExpiresAt
+        );
         return ResponseModel<UserLoginResponseDto>.Success(loginResponse);
     }
 
     public Task<ResponseModel<UserExternalLoginResultDto>> ExternalLoginAsync(UserExternalLoginDto userExternalLoginDto)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<ResponseModel<UserRefreshTokenResponseDto>> RefreshTokenAsync(
+        UserRefreshTokenRequestDto userRefreshTokenRequestDto)
+    {
+        if (string.IsNullOrEmpty(userRefreshTokenRequestDto.RefreshToken))
+            throw new InvalidCredentialsException("Refresh token is required.");
+
+        var user = await userManager.Users.FirstOrDefaultAsync(u =>
+            u.RefreshToken == userRefreshTokenRequestDto.RefreshToken);
+
+        if (user == null || user.RefreshToken != userRefreshTokenRequestDto.RefreshToken ||
+            user.RefreshTokenExpiresAt < DateTime.UtcNow)
+            throw new InvalidCredentialsException("Invalid refresh token.");
+
+        var newAccessToken = jwtService.GenerateAccessToken(user);
+        var newRefreshToken = jwtService.GenerateRefreshTokenResponse(user);
+
+        user.SetRefreshToken(newRefreshToken.RefreshToken, newRefreshToken.RefreshTokenExpiresAt);
+        await userManager.UpdateAsync(user);
+
+        var refreshTokenResponse = new UserRefreshTokenResponseDto
+        (
+            newRefreshToken.RefreshToken,
+            newRefreshToken.RefreshTokenExpiresAt
+        );
+        return ResponseModel<UserRefreshTokenResponseDto>.Success(refreshTokenResponse);
+    }
+
+    public async Task RevokeRefreshTokenAsync(string refreshToken)
+    {
+        if (string.IsNullOrEmpty(refreshToken))
+            throw new BadRequestException("Refresh token is required.");
+
+        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        if (user == null)
+            throw new InvalidCredentialsException("Invalid refresh token.");
+
+        user.RevokeRefreshToken();
+        await userManager.UpdateAsync(user);
     }
 
     public async Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto)
@@ -136,8 +182,12 @@ public class AccountService(
         var user = await FindUserByEmailOrUserNameAsync(userResetPasswordDto.Email, userResetPasswordDto.UserName);
 
         if (user == null)
-            throw new NotFoundException("User",
-                userResetPasswordDto.Email ?? userResetPasswordDto.UserName ?? "unknown");
+        {
+            var identifier = !string.IsNullOrEmpty(userResetPasswordDto.Email)
+                ? userResetPasswordDto.Email
+                : userResetPasswordDto.UserName ?? "unknown";
+            throw new NotFoundException("User", identifier);
+        }
 
         if (user.ResetPasswordCode != userResetPasswordDto.Code ||
             user.ResetPasswordExpiresAt < DateTime.UtcNow)
@@ -263,7 +313,7 @@ public class AccountService(
 
         return ResponseModel<bool>.Success(true);
     }
-
+    
     public async Task<ResponseModel<bool>> AddPhoneNumberAsync(UserAddPhoneNumberDto userAddPhoneNumberDto)
     {
         var validationResult = await addPhoneNumberValidator.ValidateAsync(userAddPhoneNumberDto);
@@ -303,6 +353,19 @@ public class AccountService(
 
         return ResponseModel<UserTelegramResponseDto>.Success(
             new UserTelegramResponseDto(botLink, linkCode));
+    }
+    
+    public async Task LogoutAsync(string refreshToken)
+    {
+        if (string.IsNullOrEmpty(refreshToken))
+            throw new BadRequestException("Refresh token is required.");
+
+        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        if (user == null)
+            throw new InvalidCredentialsException("Invalid refresh token.");
+
+        user.RevokeRefreshToken();
+        await userManager.UpdateAsync(user);
     }
 
     #region Private Methods
@@ -377,7 +440,13 @@ public class AccountService(
     }
 
     private static string GenerateVerificationCode()
-        => Random.Shared.Next(100000, 999999).ToString();
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[4];
+        rng.GetBytes(bytes);
+        var code = (BitConverter.ToUInt32(bytes, 0) % 900000 + 100000).ToString();
+        return code;
+    }
 
     #endregion
 }

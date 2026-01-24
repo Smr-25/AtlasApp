@@ -6,6 +6,7 @@ using Atlas.Domain.Entities;
 using Atlas.Infrastructure.Services;
 using Atlas.Persistance.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +39,12 @@ public static class ServiceRegistration
                 opt.User.RequireUniqueEmail = true;
                 opt.SignIn.RequireConfirmedEmail = true;
             }).AddEntityFrameworkStores<ApplicationDbContext>();
-
+            
+            services.Configure<PasswordHasherOptions>(options =>
+            {
+                options.IterationCount = 100000; 
+            });
+            
             services.AddAuthentication(opt =>
                     {
                         opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
