@@ -1,4 +1,5 @@
 using Atlas.Application.Dtos.Users;
+using Atlas.Application.Dtos.Users.Profile;
 using Atlas.Domain.Entities;
 using AutoMapper;
 
@@ -8,11 +9,9 @@ public class MapProfile : Profile
 {
     public MapProfile()
     {
-        // Note: UserRegisterDto → AppUser mapping removed
-        // Manual mapping via AppUser.Create() factory method is used in AccountService.RegisterAsync
-        // because AppUser has private setters and requires specific initialization
+        CreateMap<AppUser, UserProfileReturnDto>();
         
-        // Add future mappings here when needed
-        // Example: CreateMap<AppUser, UserProfileDto>();
+        CreateMap<UserProfileUpdateDto, AppUser>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
     }
 }

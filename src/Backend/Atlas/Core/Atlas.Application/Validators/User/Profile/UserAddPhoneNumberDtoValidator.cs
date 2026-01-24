@@ -7,11 +7,12 @@ public class UserAddPhoneNumberDtoValidator : AbstractValidator<UserAddPhoneNumb
 {
     public UserAddPhoneNumberDtoValidator()
     {
-        RuleFor(x => x.Email).NotEmpty()
-            .EmailAddress().WithMessage("Invalid email address.");
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty()
+            .NotEmpty().WithMessage("Phone number is required.")
             .Matches(@"^\+?[1-9]\d{1,14}$")
-            .WithMessage("Invalid phone number format.");
+            .WithMessage("Invalid phone number format. Use international format (e.g., +994501234567).");
+        
+        RuleFor(x => x.UserVerificationChannel)
+            .IsInEnum().WithMessage("Invalid verification channel.");
     }
 }

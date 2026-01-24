@@ -10,6 +10,7 @@ using Atlas.Application.Services.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
 using Atlas.Domain.Enums;
+using AutoMapper;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ namespace Atlas.Application.Services.Concretes;
 
 public class AccountService(
     UserManager<AppUser> userManager,
+    IMapper mapper,
     IValidator<UserRegisterDto> registerValidator,
     IValidator<UserLoginDto> loginValidator,
     IValidator<UserForgotPasswordDto> forgotPasswordValidator,
@@ -29,6 +31,8 @@ public class AccountService(
     IValidator<UserAddPhoneNumberDto> addPhoneNumberValidator,
     IValidator<UserReverifyEmailDto> reverifyEmailValidator,
     IValidator<UserReverifyPhoneDto> reverifyPhoneValidator,
+    IValidator<UserChangePasswordDto> changePasswordValidator,
+    IValidator<UserProfileUpdateDto> profileUpdateValidator,
     IJwtService jwtService,
     IEmailService emailService,
     ISmsService smsService,
@@ -37,6 +41,9 @@ public class AccountService(
 ) : IAccountService
 {
     private readonly LockoutSettings _lockoutSettings = lockoutOptions.Value;
+
+    #region Authentication Methods
+
     public async Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto)
     {
         var validationResult = await registerValidator.ValidateAsync(userRegisterDto);
@@ -91,6 +98,9 @@ public class AccountService(
         if (user == null)
             throw new InvalidCredentialsException("Invalid UserName/Email or Password.");
 
+        if (user.IsDeleted)
+            throw new UnauthorizedException("This account has been deleted.");
+
         if (user.IsLockedOut)
         {
             var remainingTime = user.LockoutEndTime!.Value - DateTime.UtcNow;
@@ -139,10 +149,28 @@ public class AccountService(
         return ResponseModel<UserLoginResponseDto>.Success(loginResponse);
     }
 
+    public async Task LogoutAsync(string refreshToken)
+    {
+        if (string.IsNullOrEmpty(refreshToken))
+            throw new BadRequestException("Refresh token is required.");
+
+        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        if (user == null)
+            throw new InvalidCredentialsException("Invalid refresh token.");
+
+        user.RevokeRefreshToken();
+        await userManager.UpdateAsync(user);
+    }
+
     public Task<ResponseModel<UserExternalLoginResultDto>> ExternalLoginAsync(UserExternalLoginDto userExternalLoginDto)
     {
-        throw new NotImplementedException();
+        // TODO: Implement external login (Google, Apple, Facebook)
+        throw new NotImplementedException("External login is not yet implemented.");
     }
+
+    #endregion
+
+    #region Token Management Methods
 
     public async Task<ResponseModel<UserRefreshTokenResponseDto>> RefreshTokenAsync(
         UserRefreshTokenRequestDto userRefreshTokenRequestDto)
@@ -184,6 +212,10 @@ public class AccountService(
         user.RevokeRefreshToken();
         await userManager.UpdateAsync(user);
     }
+
+    #endregion
+
+    #region Password Management Methods
 
     public async Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto)
     {
@@ -232,6 +264,32 @@ public class AccountService(
 
         return ResponseModel<bool>.Success(true);
     }
+
+    public async Task<ResponseModel<bool>> ChangePasswordAsync(string userId, UserChangePasswordDto userChangePasswordDto)
+    {
+        var validationResult = await changePasswordValidator.ValidateAsync(userChangePasswordDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new NotFoundException("User", userId);
+
+        var passwordValid = await userManager.CheckPasswordAsync(user, userChangePasswordDto.CurrentPassword);
+        if (!passwordValid)
+            throw new InvalidCredentialsException("Current password is incorrect.");
+
+        var result = await userManager.ChangePasswordAsync(user, userChangePasswordDto.CurrentPassword,
+            userChangePasswordDto.NewPassword);
+        if (!result.Succeeded)
+            throw new IdentityException(result.Errors.Select(e => e.Description));
+
+        return ResponseModel<bool>.Success(true);
+    }
+
+    #endregion
+
+    #region Verification Methods
 
     public async Task<ResponseModel<bool>> VerifyEmailAsync(UserVerifyEmailDto userVerifyEmailDto)
     {
@@ -342,30 +400,6 @@ public class AccountService(
         return ResponseModel<bool>.Success(true);
     }
 
-    public async Task<ResponseModel<bool>> AddPhoneNumberAsync(UserAddPhoneNumberDto userAddPhoneNumberDto)
-    {
-        var validationResult = await addPhoneNumberValidator.ValidateAsync(userAddPhoneNumberDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await userManager.FindByEmailAsync(userAddPhoneNumberDto.Email);
-        if (user == null)
-            throw new NotFoundException("User", userAddPhoneNumberDto.Email);
-
-        var existingPhone = await FindUserByPhoneNumberAsync(userAddPhoneNumberDto.PhoneNumber);
-        if (existingPhone != null)
-            throw new AlreadyExistException("PhoneNumber", userAddPhoneNumberDto.PhoneNumber);
-
-        user.PhoneNumber = userAddPhoneNumberDto.PhoneNumber;
-        user.PreferredVerificationChannel = userAddPhoneNumberDto.UserVerificationChannel;
-        await userManager.UpdateAsync(user);
-
-        await SendPhoneVerificationCodeAsync(userAddPhoneNumberDto.PhoneNumber,
-            userAddPhoneNumberDto.UserVerificationChannel);
-
-        return ResponseModel<bool>.Success(true);
-    }
-
     public async Task<ResponseModel<UserTelegramResponseDto>> GenerateTelegramLinkAsync(string email)
     {
         var user = await userManager.FindByEmailAsync(email);
@@ -383,20 +417,88 @@ public class AccountService(
             new UserTelegramResponseDto(botLink, linkCode));
     }
 
-    public async Task LogoutAsync(string refreshToken)
+    #endregion
+
+    #region Profile Management Methods
+
+    public async Task<ResponseModel<UserProfileReturnDto>> GetProfileAsync(string userId)
     {
-        if (string.IsNullOrEmpty(refreshToken))
-            throw new BadRequestException("Refresh token is required.");
-
-        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        var user = await userManager.FindByIdAsync(userId);
         if (user == null)
-            throw new InvalidCredentialsException("Invalid refresh token.");
+            throw new NotFoundException("User", userId);
 
-        user.RevokeRefreshToken();
-        await userManager.UpdateAsync(user);
+        var userProfile = mapper.Map<UserProfileReturnDto>(user);
+        return ResponseModel<UserProfileReturnDto>.Success(userProfile);
     }
 
-    #region Private Methods
+    public async Task<ResponseModel<UserProfileUpdateDto>> UpdateProfileAsync(string userId,
+        UserProfileUpdateDto userProfileUpdateDto)
+    {
+        var validationResult = await profileUpdateValidator.ValidateAsync(userProfileUpdateDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new NotFoundException("User", userId);
+
+        if (!string.IsNullOrEmpty(userProfileUpdateDto.UserName) && user.UserName != userProfileUpdateDto.UserName)
+        {
+            var existingUserName = await userManager.FindByNameAsync(userProfileUpdateDto.UserName);
+            if (existingUserName != null)
+                throw new AlreadyExistException("UserName", userProfileUpdateDto.UserName);
+        }
+
+        user.UpdateProfile(userProfileUpdateDto.FullName, userProfileUpdateDto.UserName);
+
+        var result = await userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+            throw new IdentityException(result.Errors.Select(e => e.Description));
+
+        return ResponseModel<UserProfileUpdateDto>.Success(userProfileUpdateDto);
+    }
+
+    public async Task<ResponseModel<bool>> AddPhoneNumberAsync(string userId, UserAddPhoneNumberDto userAddPhoneNumberDto)
+    {
+        var validationResult = await addPhoneNumberValidator.ValidateAsync(userAddPhoneNumberDto);
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new NotFoundException("User", userId);
+
+        if (!string.IsNullOrEmpty(user.PhoneNumber))
+            throw new BadRequestException("Phone number already exists. Use update phone number instead.");
+
+        var existingPhone = await FindUserByPhoneNumberAsync(userAddPhoneNumberDto.PhoneNumber);
+        if (existingPhone != null)
+            throw new AlreadyExistException("PhoneNumber", userAddPhoneNumberDto.PhoneNumber);
+
+        user.PhoneNumber = userAddPhoneNumberDto.PhoneNumber;
+        user.PreferredVerificationChannel = userAddPhoneNumberDto.UserVerificationChannel;
+        await userManager.UpdateAsync(user);
+
+        await SendPhoneVerificationCodeAsync(userAddPhoneNumberDto.PhoneNumber,
+            userAddPhoneNumberDto.UserVerificationChannel);
+
+        return ResponseModel<bool>.Success(true);
+    }
+
+    public async Task<ResponseModel<bool>> DeleteAccountAsync(string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new NotFoundException("User", userId);
+
+        user.MarkAsDeleted();
+        await userManager.UpdateAsync(user);
+        return ResponseModel<bool>.Success(true);
+    }
+
+    #endregion
+
+    #region Private Helper Methods
 
     private async Task SendEmailVerificationCodeAsync(string email)
     {
@@ -478,3 +580,6 @@ public class AccountService(
 
     #endregion
 }
+
+
+

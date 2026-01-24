@@ -10,24 +10,25 @@ public class UserConfiguration : IEntityTypeConfiguration<AppUser>
     {
         builder.Property(u => u.FullName)
             .IsRequired()
-            .HasMaxLength(20);
+            .HasMaxLength(100);
         
         builder.Property(u => u.UserName)
             .IsRequired()
-            .HasMaxLength(20);
+            .HasMaxLength(50);
         builder.HasIndex(u => u.UserName)
             .IsUnique();
         
         builder.Property(u => u.Email)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(100);
         builder.HasIndex(u => u.Email)
             .IsUnique();
         
         builder.Property(u => u.PhoneNumber)
-            .HasMaxLength(15);
+            .HasMaxLength(20);
         builder.HasIndex(u => u.PhoneNumber)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[PhoneNumber] IS NOT NULL");
         
         builder.Property(u => u.Status)
             .IsRequired();
@@ -37,5 +38,25 @@ public class UserConfiguration : IEntityTypeConfiguration<AppUser>
 
         builder.Property(u => u.IsDeleted)
             .HasDefaultValue(false);
+        
+        builder.Property(u => u.EmailVerificationCode)
+            .HasMaxLength(10);
+        
+        builder.Property(u => u.PhoneVerificationCode)
+            .HasMaxLength(10);
+        
+        builder.Property(u => u.ResetPasswordCode)
+            .HasMaxLength(10);
+        
+        builder.Property(u => u.TelegramChatId)
+            .HasMaxLength(50);
+        
+        builder.Property(u => u.TelegramLinkCode)
+            .HasMaxLength(20);
+        
+        builder.Property(u => u.RefreshToken)
+            .HasMaxLength(500);
+        
+        builder.HasQueryFilter(u => !u.IsDeleted);
     }
 }

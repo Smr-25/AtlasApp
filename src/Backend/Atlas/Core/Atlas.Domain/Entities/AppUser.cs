@@ -52,6 +52,14 @@ public class AppUser : IdentityUser
         LastLoginAt = DateTime.UtcNow;
     }
 
+    public void UpdateProfile(string? fullName, string? userName)
+    {
+        if (!string.IsNullOrEmpty(fullName))
+            FullName = fullName;
+        if (!string.IsNullOrEmpty(userName))
+            UserName = userName;
+    }
+
     public void SetRefreshToken(string token, DateTime expiresAt)
     {
         RefreshToken = token;

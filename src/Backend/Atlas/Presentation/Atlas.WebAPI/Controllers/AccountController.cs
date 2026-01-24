@@ -1,16 +1,23 @@
+using System.Security.Claims;
 using Atlas.Application.Dtos.Users;
 using Atlas.Application.Dtos.Users.Auth;
 using Atlas.Application.Dtos.Users.Profile;
 using Atlas.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Atlas.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/Auth")]
+[Route("api/[controller]")]
+[EnableRateLimiting("fixed")]
 public class AccountController(IAccountService service) : ControllerBase
 {
+    #region Auth Endpoints (Public)
+    
     [HttpPost("register")]
+    [EnableRateLimiting("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
     {
         var result = await service.RegisterAsync(dto);
@@ -18,6 +25,7 @@ public class AccountController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
     {
         var result = await service.LoginAsync(dto);
@@ -25,13 +33,14 @@ public class AccountController(IAccountService service) : ControllerBase
     }
     
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] string refreshToken)
+    public async Task<IActionResult> Logout([FromBody] UserRefreshTokenRequestDto dto)
     {
-        await service.LogoutAsync(refreshToken);
+        await service.LogoutAsync(dto.RefreshToken);
         return Ok();
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("password-reset")]
     public async Task<IActionResult> ForgotPassword([FromBody] UserForgotPasswordDto dto)
     {
         var result = await service.ForgotPasswordAsync(dto);
@@ -39,6 +48,7 @@ public class AccountController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting("password-reset")]
     public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordDto dto)
     {
         var result = await service.ResetPasswordAsync(dto);
@@ -46,6 +56,7 @@ public class AccountController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("verify-email")]
+    [EnableRateLimiting("verification")]
     public async Task<IActionResult> VerifyEmail([FromBody] UserVerifyEmailDto dto)
     {
         var result = await service.VerifyEmailAsync(dto);
@@ -53,20 +64,15 @@ public class AccountController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("verify-phone")]
+    [EnableRateLimiting("verification")]
     public async Task<IActionResult> VerifyPhone([FromBody] UserVerifyPhoneDto dto)
     {
         var result = await service.VerifyPhoneAsync(dto);
         return Ok(result);
     }
 
-    [HttpPost("add-phone-number")]
-    public async Task<IActionResult> AddPhoneNumber([FromBody] UserAddPhoneNumberDto dto)
-    {
-        var result = await service.AddPhoneNumberAsync(dto);
-        return Ok(result);
-    }
-
     [HttpPost("resend-email-verification-code")]
+    [EnableRateLimiting("resend")]
     public async Task<IActionResult> ResendEmailVerificationCode([FromBody] UserReverifyEmailDto dto)
     {
         var result = await service.ResendEmailVerificationCodeAsync(dto);
@@ -74,6 +80,7 @@ public class AccountController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("resend-phone-verification-code")]
+    [EnableRateLimiting("resend")]
     public async Task<IActionResult> ResendPhoneVerificationCode([FromBody] UserReverifyPhoneDto dto)
     {
         var result = await service.ResendPhoneVerificationCodeAsync(dto);
@@ -81,6 +88,7 @@ public class AccountController(IAccountService service) : ControllerBase
     }
 
     [HttpPost("generate-telegram-link")]
+    [EnableRateLimiting("resend")]
     public async Task<IActionResult> GenerateTelegramLink([FromBody] UserLinkTelegramDto dto)
     {
         var result = await service.GenerateTelegramLinkAsync(dto.Email);
@@ -100,4 +108,70 @@ public class AccountController(IAccountService service) : ControllerBase
         await service.RevokeRefreshTokenAsync(dto.RefreshToken);
         return Ok();
     }
+    
+    #endregion
+    
+    #region Profile Endpoints (Authorized)
+    
+    [Authorize]
+    [HttpGet("profile")]
+    [EnableRateLimiting("api")]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.GetProfileAsync(userId);
+        return Ok(result);
+    }
+    
+    [Authorize]
+    [HttpPut("profile")]
+    [EnableRateLimiting("api")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UserProfileUpdateDto dto)
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.UpdateProfileAsync(userId, dto);
+        return Ok(result);
+    }
+    
+    [Authorize]
+    [HttpPut("change-password")]
+    [EnableRateLimiting("password-reset")]
+    public async Task<IActionResult> ChangePassword([FromBody] UserChangePasswordDto dto)
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.ChangePasswordAsync(userId, dto);
+        return Ok(result);
+    }
+    
+    [Authorize]
+    [HttpPost("add-phone-number")]
+    [EnableRateLimiting("api")]
+    public async Task<IActionResult> AddPhoneNumber([FromBody] UserAddPhoneNumberDto dto)
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.AddPhoneNumberAsync(userId, dto);
+        return Ok(result);
+    }
+    
+    [Authorize]
+    [HttpDelete("delete-account")]
+    [EnableRateLimiting("api")]
+    public async Task<IActionResult> DeleteAccount()
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.DeleteAccountAsync(userId);
+        return Ok(result);
+    }
+    
+    #endregion
+    
+    #region Private Methods
+    
+    private string GetCurrentUserId()
+    {
+        return User.FindFirstValue(ClaimTypes.NameIdentifier) 
+               ?? throw new UnauthorizedAccessException("User not authenticated");
+    }
+    
+    #endregion
 }
