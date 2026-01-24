@@ -19,9 +19,5 @@
         <ProjectReference Include="..\Atlas.Domain\Atlas.Domain.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Dtos\Users\ExternalLogin\" />
-    </ItemGroup>
-
 
 </Project>

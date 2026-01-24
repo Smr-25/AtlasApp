@@ -10,7 +10,6 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
@@ -18,7 +17,6 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 
-// Rate Limiting Configuration from Settings
 var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>() 
                         ?? new RateLimitSettings();
 
@@ -26,7 +24,6 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    // Fixed - General rate limit
     options.AddFixedWindowLimiter("fixed", opt =>
     {
         opt.PermitLimit = rateLimitSettings.Fixed.PermitLimit;
@@ -35,7 +32,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // Login - Strict limit for brute force protection
     options.AddFixedWindowLimiter("login", opt =>
     {
         opt.PermitLimit = rateLimitSettings.Login.PermitLimit;
@@ -43,7 +39,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // Register - Spam protection
     options.AddFixedWindowLimiter("register", opt =>
     {
         opt.PermitLimit = rateLimitSettings.Register.PermitLimit;
@@ -51,7 +46,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // Password Reset - Email spam protection
     options.AddFixedWindowLimiter("password-reset", opt =>
     {
         opt.PermitLimit = rateLimitSettings.PasswordReset.PermitLimit;
@@ -59,7 +53,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // Verification - Code brute force protection
     options.AddFixedWindowLimiter("verification", opt =>
     {
         opt.PermitLimit = rateLimitSettings.Verification.PermitLimit;
@@ -67,7 +60,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // Resend - SMS/Email spam protection
     options.AddFixedWindowLimiter("resend", opt =>
     {
         opt.PermitLimit = rateLimitSettings.Resend.PermitLimit;
@@ -75,7 +67,6 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // API - Sliding window for general API calls
     options.AddSlidingWindowLimiter("api", opt =>
     {
         opt.PermitLimit = rateLimitSettings.Api.PermitLimit;

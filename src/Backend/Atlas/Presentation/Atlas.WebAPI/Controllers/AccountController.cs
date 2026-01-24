@@ -95,13 +95,6 @@ public class AccountController(IAccountService service) : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("generate-telegram-link")]
-    [EnableRateLimiting("resend")]
-    public async Task<IActionResult> GenerateTelegramLink([FromBody] UserLinkTelegramDto dto)
-    {
-        var result = await service.GenerateTelegramLinkAsync(dto.Email);
-        return Ok(result);
-    }
 
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] UserRefreshTokenRequestDto dto)
@@ -168,6 +161,16 @@ public class AccountController(IAccountService service) : ControllerBase
     {
         var userId = GetCurrentUserId();
         var result = await service.DeleteAccountAsync(userId);
+        return Ok(result);
+    }
+    
+    [Authorize]
+    [HttpPost("set-telegram-chat-id")]
+    [EnableRateLimiting("api")]
+    public async Task<IActionResult> SetTelegramChatId([FromBody] UserSetTelegramChatIdDto dto)
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.SetTelegramChatIdAsync(userId, dto);
         return Ok(result);
     }
     

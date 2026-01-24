@@ -430,22 +430,6 @@ public class AccountService(
         return ResponseModel<bool>.Success(true);
     }
 
-    public async Task<ResponseModel<UserTelegramResponseDto>> GenerateTelegramLinkAsync(string email)
-    {
-        var user = await userManager.FindByEmailAsync(email);
-        if (user == null)
-            throw new NotFoundException("User", email);
-
-        var linkCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
-        user.TelegramLinkCode = linkCode;
-        user.TelegramLinkCodeExpiry = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-
-        var botLink = await telegramService.GetBotLinkAsync(linkCode);
-
-        return ResponseModel<UserTelegramResponseDto>.Success(
-            new UserTelegramResponseDto(botLink, linkCode));
-    }
 
     #endregion
 
@@ -524,6 +508,18 @@ public class AccountService(
 
         user.MarkAsDeleted();
         await userManager.UpdateAsync(user);
+        return ResponseModel<bool>.Success(true);
+    }
+
+    public async Task<ResponseModel<bool>> SetTelegramChatIdAsync(string userId, UserSetTelegramChatIdDto dto)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new NotFoundException("User", userId);
+
+        user.TelegramChatId = dto.TelegramChatId;
+        await userManager.UpdateAsync(user);
+
         return ResponseModel<bool>.Success(true);
     }
 
