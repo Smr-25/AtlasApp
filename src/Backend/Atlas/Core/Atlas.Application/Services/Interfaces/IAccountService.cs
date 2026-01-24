@@ -1,4 +1,7 @@
 using Atlas.Application.Dtos.Users;
+using Atlas.Application.Dtos.Users.Auth;
+using Atlas.Application.Dtos.Users.ExternalAuth;
+using Atlas.Application.Dtos.Users.Profile;
 using Atlas.Application.Models;
 
 namespace Atlas.Application.Services.Interfaces;
@@ -15,5 +18,5 @@ public interface IAccountService
     Task<ResponseModel<bool>> AddPhoneNumberAsync(UserAddPhoneNumberDto userAddPhoneNumberDto);
     Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(UserReverifyEmailDto userReverifyEmailDto);
     Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(UserReverifyPhoneDto userReverifyPhoneDto);
-    
+    Task<ResponseModel<UserTelegramResponseDto>> GenerateTelegramLinkAsync(string email);
 }

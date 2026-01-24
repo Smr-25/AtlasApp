@@ -8,8 +8,11 @@ public class MapProfile : Profile
 {
     public MapProfile()
     {
-        CreateMap<UserRegisterDto, AppUser>()
-            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty))
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber ?? string.Empty));
+        // Note: UserRegisterDto → AppUser mapping removed
+        // Manual mapping via AppUser.Create() factory method is used in AccountService.RegisterAsync
+        // because AppUser has private setters and requires specific initialization
+        
+        // Add future mappings here when needed
+        // Example: CreateMap<AppUser, UserProfileDto>();
     }
 }

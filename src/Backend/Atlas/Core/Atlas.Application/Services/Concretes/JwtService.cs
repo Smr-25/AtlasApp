@@ -13,14 +13,16 @@ public class JwtService(IConfiguration configuration) : IJwtService
 {
     public string GenerateToken(AppUser user)
     {
-        List<Claim> claims =
-        [
+        var claims = new List<Claim>
+        {
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email!),
-            new(ClaimTypes.MobilePhone, user.PhoneNumber!),
             new(ClaimTypes.Name, user.UserName!),
-            new("FullName", $"{user.FullName}")
-        ];
+            new("FullName", user.FullName)
+        };
+        
+        if (!string.IsNullOrEmpty(user.PhoneNumber))
+            claims.Add(new Claim(ClaimTypes.MobilePhone, user.PhoneNumber));
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
             configuration.GetSection("JwtSettings:SecretKey").Value!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

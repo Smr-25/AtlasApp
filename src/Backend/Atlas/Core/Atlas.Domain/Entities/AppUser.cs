@@ -24,4 +24,44 @@ public class AppUser : IdentityUser
     public DateTime? ResetPasswordExpiresAt { get; set; }
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
+
+    public static AppUser Create(string userName, string email, string fullName, string? phoneNumber = null, 
+        UserVerificationChannel? preferredChannel = null)
+    {
+        return new AppUser
+        {
+            UserName = userName,
+            Email = email,
+            FullName = fullName,
+            PhoneNumber = phoneNumber,
+            PreferredVerificationChannel = preferredChannel,
+            Status = UserStatus.PendingVerification,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+    public void Activate()
+    {
+        Status = UserStatus.Active;
+        ActivatedAt = DateTime.UtcNow;
+    }
+    public void UpdateLastLogin()
+    {
+        LastLoginAt = DateTime.UtcNow;
+    }
+
+    public void SetRefreshToken(string token, DateTime expiresAt)
+    {
+        RefreshToken = token;
+        RefreshTokenExpiresAt = expiresAt;
+    }
+    public void RevokeRefreshToken()
+    {
+        RefreshToken = null;
+        RefreshTokenExpiresAt = null;
+    }
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+    }
 }
