@@ -523,6 +523,35 @@ public class AccountService(
         return ResponseModel<bool>.Success(true);
     }
 
+    public async Task<ResponseModel<string>> GenerateTelegramLinkCodeAsync(string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new NotFoundException("User", userId);
+
+        var linkCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
+        user.TelegramLinkCode = linkCode;
+        user.TelegramLinkCodeExpiry = DateTime.UtcNow.AddMinutes(10);
+        await userManager.UpdateAsync(user);
+
+        return ResponseModel<string>.Success(linkCode);
+    }
+    
+    public async Task LinkTelegramByChatIdAsync(string linkCode, string chatId)
+    {
+        var user = await userManager.Users.FirstOrDefaultAsync(u => 
+            u.TelegramLinkCode == linkCode && 
+            u.TelegramLinkCodeExpiry > DateTime.UtcNow);
+
+        if (user == null)
+            return; 
+
+        user.TelegramChatId = chatId;
+        user.TelegramLinkCode = null;
+        user.TelegramLinkCodeExpiry = null;
+        await userManager.UpdateAsync(user);
+    }
+
     #endregion
 
     #region Private Helper Methods

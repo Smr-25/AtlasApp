@@ -174,6 +174,16 @@ public class AccountController(IAccountService service) : ControllerBase
         return Ok(result);
     }
     
+    [Authorize]
+    [HttpPost("generate-telegram-link-code")]
+    [EnableRateLimiting("api")]
+    public async Task<IActionResult> GenerateTelegramLinkCode()
+    {
+        var userId = GetCurrentUserId();
+        var result = await service.GenerateTelegramLinkCodeAsync(userId);
+        return Ok(result);
+    }
+    
     #endregion
     
     #region Private Methods

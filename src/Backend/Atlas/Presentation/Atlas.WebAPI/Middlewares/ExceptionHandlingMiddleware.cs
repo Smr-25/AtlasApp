@@ -1,8 +1,8 @@
 using System.Net;
-using System.Text.Json;
 using Atlas.Application.Exceptions.Common;
 using Atlas.Application.Exceptions.Users;
 using Atlas.Application.Models;
+using Newtonsoft.Json;
 using ValidationException = Atlas.Application.Exceptions.Common.ValidationException;
 
 namespace Atlas.WebAPI.Middlewares;
@@ -92,9 +92,13 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         };
 
         context.Response.StatusCode = (int)statusCode;
+        var jsonSettings = new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            MaxDepth = 32
+        };
         
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var serialized = JsonSerializer.Serialize(response, options);
-        await context.Response.WriteAsync(serialized);
+        var jsonResponse = JsonConvert.SerializeObject(response, jsonSettings);
+        await context.Response.WriteAsync(jsonResponse);
     }
 }

@@ -24,5 +24,7 @@ public interface IAccountService
     Task<ResponseModel<bool>> ChangePasswordAsync(string userId,UserChangePasswordDto userChangePasswordDto);
     Task<ResponseModel<bool>> AddPhoneNumberAsync(string userId, UserAddPhoneNumberDto userAddPhoneNumberDto);
     Task<ResponseModel<bool>> SetTelegramChatIdAsync(string userId, UserSetTelegramChatIdDto dto);
+    Task<ResponseModel<string>> GenerateTelegramLinkCodeAsync(string userId);
+    Task LinkTelegramByChatIdAsync(string linkCode, string chatId);
     Task<ResponseModel<bool>> DeleteAccountAsync(string userId);
 }

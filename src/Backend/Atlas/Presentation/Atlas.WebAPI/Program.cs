@@ -7,17 +7,20 @@ using Atlas.Persistance;
 using Atlas.WebAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 
-var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>() 
+var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>()
                         ?? new RateLimitSettings();
 
 builder.Services.AddRateLimiter(options =>

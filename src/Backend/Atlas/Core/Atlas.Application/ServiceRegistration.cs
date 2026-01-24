@@ -21,32 +21,8 @@ public static class ServiceRegistration
             services.AddAutoMapper(opt => opt.AddProfile<MapProfile>());
             services.AddValidatorsFromAssembly(typeof(ServiceRegistration).Assembly);
             services.AddScoped<IAccountService, AccountService>();
-            services.AddScoped<IJwtService,JwtService>();
+            services.AddScoped<IJwtService, JwtService>();
             services.Configure<LockoutSettings>(configuration.GetSection("LockoutSettings"));
-            services.AddRateLimiter(options =>
-            {
-                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
-                        factory: partition => new FixedWindowRateLimiterOptions
-                        {
-                            AutoReplenishment = true,
-                            PermitLimit = 10,
-                            QueueLimit = 0,
-                            Window = TimeSpan.FromMinutes(1)
-                        }));
-            });
-            
-           services.AddRateLimiter(options =>
-            {
-                options.AddFixedWindowLimiter("fixed", opt =>
-                {
-                    opt.PermitLimit = 4;
-                    opt.Window = TimeSpan.FromSeconds(12);
-                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    opt.QueueLimit = 2;
-                });
-            });
         }
     }
 }

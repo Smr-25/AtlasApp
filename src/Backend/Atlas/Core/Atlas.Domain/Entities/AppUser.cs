@@ -14,6 +14,8 @@ public class AppUser : IdentityUser
     public DateTime? EmailVerificationExpiresAt { get; set; }
     public UserVerificationChannel? PreferredVerificationChannel { get; set; }
     public string? TelegramChatId { get; set; }
+    public string? TelegramLinkCode { get; set; }
+    public DateTime? TelegramLinkCodeExpiry { get; set; }
     public string? PhoneVerificationCode { get; set; }
     public DateTime? PhoneVerificationExpiresAt { get; set; }
     public string? RefreshToken { get; private set; }
