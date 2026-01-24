@@ -65,6 +65,10 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 HttpStatusCode.Unauthorized,
                 ResponseModel<object>.Failure(emailNotVerifiedEx.Message)
             ),
+            AccountLockedException accountLockedEx => (
+                HttpStatusCode.Locked,
+                ResponseModel<object>.Failure(accountLockedEx.Message)
+            ),
             
             ForbiddenException forbiddenEx => (
                 HttpStatusCode.Forbidden,

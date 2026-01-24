@@ -1,5 +1,5 @@
-using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Settings;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 
@@ -16,7 +16,7 @@ public class TelegramService : ITelegramService
         _botClient = new TelegramBotClient(_settings.BotToken);
     }
 
-    
+
     public async Task<bool> SendVerificationCodeAsync(string chatId, string code)
     {
         var message = $"Your verification code is: {code}";

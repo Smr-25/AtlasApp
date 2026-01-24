@@ -1,5 +1,5 @@
-using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Settings;
 using Atlas.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,4 +1,4 @@
-namespace Atlas.Application.Models;
+namespace Atlas.Application.Settings;
 
 public class SmsSettings
 {

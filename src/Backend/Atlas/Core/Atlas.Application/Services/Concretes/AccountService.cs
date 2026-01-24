@@ -7,11 +7,13 @@ using Atlas.Application.Exceptions.Common;
 using Atlas.Application.Exceptions.Users;
 using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
 using Atlas.Domain.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using ValidationException = Atlas.Application.Exceptions.Common.ValidationException;
 
 namespace Atlas.Application.Services.Concretes;
@@ -30,10 +32,11 @@ public class AccountService(
     IJwtService jwtService,
     IEmailService emailService,
     ISmsService smsService,
-    ITelegramService telegramService
+    ITelegramService telegramService,
+    IOptions<LockoutSettings> lockoutOptions
 ) : IAccountService
 {
-
+    private readonly LockoutSettings _lockoutSettings = lockoutOptions.Value;
     public async Task<ResponseModel<bool>> RegisterAsync(UserRegisterDto userRegisterDto)
     {
         var validationResult = await registerValidator.ValidateAsync(userRegisterDto);
@@ -88,12 +91,36 @@ public class AccountService(
         if (user == null)
             throw new InvalidCredentialsException("Invalid UserName/Email or Password.");
 
+        if (user.IsLockedOut)
+        {
+            var remainingTime = user.LockoutEndTime!.Value - DateTime.UtcNow;
+            throw new AccountLockedException(
+                $"Account is locked. Try again in {(int)remainingTime.TotalMinutes} minutes.");
+        }
+
         if (!user.EmailConfirmed)
             throw new EmailNotVerifiedException("Email is not verified. Please verify your email before logging in.");
 
         var passwordValid = await userManager.CheckPasswordAsync(user, userLoginDto.Password);
         if (!passwordValid)
-            throw new InvalidCredentialsException("Invalid UserName/Email or Password.");
+        {
+            user.IncrementFailedLoginAttempts(
+                _lockoutSettings.MaxFailedAccessAttempts,
+                TimeSpan.FromMinutes(_lockoutSettings.LockoutDurationInMinutes));
+            await userManager.UpdateAsync(user);
+
+            if (user.IsLockedOut)
+                throw new AccountLockedException(
+                    $"Too many failed attempts. Account locked for {_lockoutSettings.LockoutDurationInMinutes} minutes.");
+
+            var remainingAttempts = _lockoutSettings.MaxFailedAccessAttempts - user.FailedLoginAttempts;
+            throw new InvalidCredentialsException(
+                $"Invalid UserName/Email or Password. {remainingAttempts} attempts remaining before account lockout.");
+        }
+
+        user.ResetFailedLoginAttempts();
+        await userManager.UpdateAsync(user);
+
 
         var accessToken = jwtService.GenerateAccessToken(user);
         var refreshToken = jwtService.GenerateRefreshTokenResponse(user);
@@ -138,6 +165,7 @@ public class AccountService(
 
         var refreshTokenResponse = new UserRefreshTokenResponseDto
         (
+            newAccessToken,
             newRefreshToken.RefreshToken,
             newRefreshToken.RefreshTokenExpiresAt
         );
@@ -313,7 +341,7 @@ public class AccountService(
 
         return ResponseModel<bool>.Success(true);
     }
-    
+
     public async Task<ResponseModel<bool>> AddPhoneNumberAsync(UserAddPhoneNumberDto userAddPhoneNumberDto)
     {
         var validationResult = await addPhoneNumberValidator.ValidateAsync(userAddPhoneNumberDto);
@@ -354,7 +382,7 @@ public class AccountService(
         return ResponseModel<UserTelegramResponseDto>.Success(
             new UserTelegramResponseDto(botLink, linkCode));
     }
-    
+
     public async Task LogoutAsync(string refreshToken)
     {
         if (string.IsNullOrEmpty(refreshToken))

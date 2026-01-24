@@ -1,5 +1,5 @@
-using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Settings;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
@@ -25,7 +25,6 @@ public class EmailService(IOptions<EmailSettings> options) : IEmailService
         await smtp.AuthenticateAsync(_settings.Username, _settings.Password);
         await smtp.SendAsync(email);
         await smtp.DisconnectAsync(true);
-
     }
 
     public async Task SendVerificationEmailAsync(string to, string code)

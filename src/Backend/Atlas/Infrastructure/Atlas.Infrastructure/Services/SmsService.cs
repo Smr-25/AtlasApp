@@ -1,5 +1,5 @@
-using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Settings;
 using Microsoft.Extensions.Options;
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
@@ -21,8 +21,6 @@ public class SmsService(IOptions<SmsSettings> options) : ISmsService
 
     public async Task SendVerificationSmsAsync(string to, string code)
     {
-        await SendSmsAsync(to,"Your verification code is: " + code);
+        await SendSmsAsync(to, "Your verification code is: " + code);
     }
-
-  
 }

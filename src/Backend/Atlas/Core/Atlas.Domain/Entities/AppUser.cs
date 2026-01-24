@@ -24,6 +24,9 @@ public class AppUser : IdentityUser
     public DateTime? ResetPasswordExpiresAt { get; set; }
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
+    public int FailedLoginAttempts { get; set; }
+    public DateTime? LockoutEndTime { get; set; }
+    public bool IsLockedOut  => LockoutEndTime.HasValue && LockoutEndTime > DateTime.UtcNow;
 
     public static AppUser Create(string userName, string email, string fullName, string? phoneNumber = null, 
         UserVerificationChannel? preferredChannel = null)
@@ -63,5 +66,20 @@ public class AppUser : IdentityUser
     {
         IsDeleted = true;
         DeletedAt = DateTime.UtcNow;
+    }
+    
+    public void IncrementFailedLoginAttempts(int maxAttempts, TimeSpan lockoutDuration)
+    {
+        FailedLoginAttempts++;
+        if (FailedLoginAttempts >= maxAttempts)
+        {
+            LockoutEndTime = DateTime.UtcNow.Add(lockoutDuration);
+        }
+    }
+
+    public void ResetFailedLoginAttempts()
+    {
+        FailedLoginAttempts = 0;
+        LockoutEndTime = null;
     }
 }
