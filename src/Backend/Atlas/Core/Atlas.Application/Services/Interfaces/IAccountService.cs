@@ -1,6 +1,5 @@
 using Atlas.Application.Dtos.Users;
 using Atlas.Application.Dtos.Users.Auth;
-using Atlas.Application.Dtos.Users.ExternalAuth;
 using Atlas.Application.Dtos.Users.Profile;
 using Atlas.Application.Models;
 
@@ -12,7 +11,7 @@ public interface IAccountService
     Task<ResponseModel<UserLoginResponseDto>> LoginAsync(UserLoginDto userLoginDto);
     Task<ResponseModel<UserRefreshTokenResponseDto>> RefreshTokenAsync(UserRefreshTokenRequestDto userRefreshTokenRequestDto);
     Task RevokeRefreshTokenAsync(string refreshToken);
-    Task<ResponseModel<UserExternalLoginResultDto>> ExternalLoginAsync(UserExternalLoginDto userExternalLoginDto);
+    Task<ResponseModel<UserExternalLoginReturnDto>> ExternalLoginAsync(UserExternalLoginDto userExternalLoginDto);
     Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto);
     Task<ResponseModel<bool>> ResetPasswordAsync(UserResetPasswordDto userResetPasswordDto);
     Task<ResponseModel<bool>> VerifyEmailAsync(UserVerifyEmailDto userVerifyEmailDto);

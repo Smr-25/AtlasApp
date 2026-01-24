@@ -1,9 +1,7 @@
 using System.Text;
 using Atlas.Application.Interfaces;
-using Atlas.Application.Models;
-using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
-using Atlas.Infrastructure.Services;
 using Atlas.Persistance.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -26,47 +24,57 @@ public static class ServiceRegistration
             });
 
             services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+            
+            var passwordPolicy = configuration.GetSection("PasswordPolicySettings").Get<PasswordPolicySettings>() 
+                                 ?? new PasswordPolicySettings();
+            
             services.AddIdentityCore<AppUser>(opt =>
             {
-                opt.Password.RequireNonAlphanumeric = true;
-                opt.Password.RequireUppercase = true;
-                opt.Password.RequireLowercase = true;
-                opt.Password.RequireDigit = true;
-                opt.Password.RequireNonAlphanumeric = true;
-                opt.Password.RequiredLength = 8;
+                opt.Password.RequiredLength = passwordPolicy.RequiredLength;
+                opt.Password.RequireDigit = passwordPolicy.RequireDigit;
+                opt.Password.RequireLowercase = passwordPolicy.RequireLowercase;
+                opt.Password.RequireUppercase = passwordPolicy.RequireUppercase;
+                opt.Password.RequireNonAlphanumeric = passwordPolicy.RequireNonAlphanumeric;
+                opt.Password.RequiredUniqueChars = passwordPolicy.RequiredUniqueChars;
+                
                 opt.User.AllowedUserNameCharacters =
                     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
                 opt.User.RequireUniqueEmail = true;
                 opt.SignIn.RequireConfirmedEmail = true;
-            }).AddEntityFrameworkStores<ApplicationDbContext>();
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
             
             services.Configure<PasswordHasherOptions>(options =>
             {
                 options.IterationCount = 100000; 
             });
             
-            services.AddAuthentication(opt =>
-                    {
-                        opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                        opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                    }
-                )
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ClockSkew = TimeSpan.Zero,
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = configuration.GetSection("JwtSettings:Issuer").Value,
-                        ValidAudience = configuration.GetSection("JwtSettings:Audience").Value,
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:SecretKey").Value!))
-                    };
-                });
+            var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() 
+                              ?? new JwtSettings();
             
+            services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+            
+            services.AddAuthentication(opt =>
+            {
+                opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ClockSkew = TimeSpan.Zero,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+                };
+            });
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using AppSettingsMultiPlatformPackage;
 using Atlas.Application;
+using Atlas.Application.Settings;
 using Atlas.Infrastructure;
 using Atlas.Persistance;
 using Atlas.WebAPI.Middlewares;
@@ -10,67 +11,76 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistanceServices(builder.Configuration);
 
+// Rate Limiting Configuration from Settings
+var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>() 
+                        ?? new RateLimitSettings();
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    // Fixed - General rate limit
     options.AddFixedWindowLimiter("fixed", opt =>
     {
-        opt.PermitLimit = 100;
-        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = rateLimitSettings.Fixed.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.Fixed.WindowInSeconds);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
     });
 
+    // Login - Strict limit for brute force protection
     options.AddFixedWindowLimiter("login", opt =>
     {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = rateLimitSettings.Login.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.Login.WindowInSeconds);
         opt.QueueLimit = 0;
     });
 
+    // Register - Spam protection
     options.AddFixedWindowLimiter("register", opt =>
     {
-        opt.PermitLimit = 10;
-        opt.Window = TimeSpan.FromHours(1);
+        opt.PermitLimit = rateLimitSettings.Register.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.Register.WindowInSeconds);
         opt.QueueLimit = 0;
     });
 
+    // Password Reset - Email spam protection
     options.AddFixedWindowLimiter("password-reset", opt =>
     {
-        opt.PermitLimit = 3;
-        opt.Window = TimeSpan.FromHours(1);
+        opt.PermitLimit = rateLimitSettings.PasswordReset.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.PasswordReset.WindowInSeconds);
         opt.QueueLimit = 0;
     });
 
+    // Verification - Code brute force protection
     options.AddFixedWindowLimiter("verification", opt =>
     {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = rateLimitSettings.Verification.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.Verification.WindowInSeconds);
         opt.QueueLimit = 0;
     });
 
+    // Resend - SMS/Email spam protection
     options.AddFixedWindowLimiter("resend", opt =>
     {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromHours(1);
+        opt.PermitLimit = rateLimitSettings.Resend.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.Resend.WindowInSeconds);
         opt.QueueLimit = 0;
     });
 
+    // API - Sliding window for general API calls
     options.AddSlidingWindowLimiter("api", opt =>
     {
-        opt.PermitLimit = 60;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.SegmentsPerWindow = 6;
+        opt.PermitLimit = rateLimitSettings.Api.PermitLimit;
+        opt.Window = TimeSpan.FromSeconds(rateLimitSettings.Api.WindowInSeconds);
+        opt.SegmentsPerWindow = rateLimitSettings.Api.SegmentsPerWindow;
         opt.QueueLimit = 0;
     });
 

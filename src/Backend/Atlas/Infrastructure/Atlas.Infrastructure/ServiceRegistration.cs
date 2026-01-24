@@ -15,9 +15,12 @@ public static class ServiceRegistration
             services.Configure<EmailSettings>(configuration.GetSection("ThirdPartyServices:EmailSettings"));
             services.Configure<SmsSettings>(configuration.GetSection("ThirdPartyServices:SmsSettings"));
             services.Configure<TelegramSettings>(configuration.GetSection("ThirdPartyServices:TelegramSettings"));
+            services.Configure<ExternalAuthSettings>(configuration.GetSection("ExternalAuthSettings"));
+            
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ISmsService, SmsService>();
             services.AddScoped<ITelegramService, TelegramService>();
+            services.AddScoped<IExternalAuthService, ExternalAuthService>();
         }
     }
 }

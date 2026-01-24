@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using Atlas.Application.Dtos.Users;
 using Atlas.Application.Dtos.Users.Auth;
-using Atlas.Application.Dtos.Users.ExternalAuth;
 using Atlas.Application.Dtos.Users.Profile;
 using Atlas.Application.Exceptions.Common;
 using Atlas.Application.Exceptions.Users;
@@ -37,6 +36,7 @@ public class AccountService(
     IEmailService emailService,
     ISmsService smsService,
     ITelegramService telegramService,
+    IExternalAuthService externalAuthService,
     IOptions<LockoutSettings> lockoutOptions
 ) : IAccountService
 {
@@ -162,10 +162,39 @@ public class AccountService(
         await userManager.UpdateAsync(user);
     }
 
-    public Task<ResponseModel<UserExternalLoginResultDto>> ExternalLoginAsync(UserExternalLoginDto userExternalLoginDto)
+    public async Task<ResponseModel<UserExternalLoginReturnDto>> ExternalLoginAsync(
+        UserExternalLoginDto userExternalLoginDto)
     {
-        // TODO: Implement external login (Google, Apple, Facebook)
-        throw new NotImplementedException("External login is not yet implemented.");
+        var externalUser = userExternalLoginDto.Provider.ToLower() switch
+        {
+            "apple" => await externalAuthService.ValidateAppleTokenAsync(userExternalLoginDto.IdToken),
+            "google" => await externalAuthService.ValidateGoogleTokenAsync(userExternalLoginDto.IdToken),
+            _ => throw new BadRequestException("Unsupported external authentication provider. Supported: Google, Apple")
+        };
+
+        if (externalUser == null)
+            throw new InvalidCredentialsException("Invalid external authentication token.");
+
+        var (user, isNewUser) = await FindOrCreateExternalUserAsync(externalUser);
+
+        var accessToken = jwtService.GenerateAccessToken(user);
+        var refreshTokenResponse = jwtService.GenerateRefreshTokenResponse(user);
+
+        user.SetRefreshToken(refreshTokenResponse.RefreshToken, refreshTokenResponse.RefreshTokenExpiresAt);
+        user.UpdateLastLogin();
+        await userManager.UpdateAsync(user);
+
+        var externalReturnDto = new UserExternalLoginReturnDto
+        (
+            AccessToken: accessToken,
+            RefreshToken: refreshTokenResponse.RefreshToken,
+            IsNewUser: isNewUser,
+            UserId: user.Id,
+            Email: user.Email!,
+            FullName: user.FullName,
+            RefreshTokenExpiryTime: refreshTokenResponse.RefreshTokenExpiresAt
+        );
+        return ResponseModel<UserExternalLoginReturnDto>.Success(externalReturnDto);
     }
 
     #endregion
@@ -265,7 +294,8 @@ public class AccountService(
         return ResponseModel<bool>.Success(true);
     }
 
-    public async Task<ResponseModel<bool>> ChangePasswordAsync(string userId, UserChangePasswordDto userChangePasswordDto)
+    public async Task<ResponseModel<bool>> ChangePasswordAsync(string userId,
+        UserChangePasswordDto userChangePasswordDto)
     {
         var validationResult = await changePasswordValidator.ValidateAsync(userChangePasswordDto);
         if (!validationResult.IsValid)
@@ -458,7 +488,8 @@ public class AccountService(
         return ResponseModel<UserProfileUpdateDto>.Success(userProfileUpdateDto);
     }
 
-    public async Task<ResponseModel<bool>> AddPhoneNumberAsync(string userId, UserAddPhoneNumberDto userAddPhoneNumberDto)
+    public async Task<ResponseModel<bool>> AddPhoneNumberAsync(string userId,
+        UserAddPhoneNumberDto userAddPhoneNumberDto)
     {
         var validationResult = await addPhoneNumberValidator.ValidateAsync(userAddPhoneNumberDto);
         if (!validationResult.IsValid)
@@ -578,8 +609,59 @@ public class AccountService(
         return code;
     }
 
+    private async Task<(AppUser User, bool IsNewUser)> FindOrCreateExternalUserAsync(ExternalUserInfo externalUser)
+    {
+        var user = await userManager.FindByLoginAsync(externalUser.Provider, externalUser.ProviderId);
+
+        if (user is not null)
+            return (user, false);
+
+        user = await userManager.FindByEmailAsync(externalUser.Email);
+
+        if (user is not null)
+        {
+            await userManager.AddLoginAsync(user, new UserLoginInfo(
+                externalUser.Provider,
+                externalUser.ProviderId,
+                externalUser.Provider
+            ));
+            return (user, false);
+        }
+
+        var userName = GenerateUserNameFromEmail(externalUser.Email);
+        var fullName = externalUser.FullName ?? externalUser.Email.Split('@')[0];
+        
+        user = AppUser.Create(
+            userName: userName,
+            email: externalUser.Email,
+            fullName: fullName
+        );
+        
+        if (externalUser.EmailVerified)
+        {
+            user.EmailConfirmed = true;
+            user.Activate();
+        }
+        
+        var result = await userManager.CreateAsync(user);
+        if (!result.Succeeded)
+            throw new IdentityException(result.Errors.Select(e => e.Description));
+        
+        await userManager.AddLoginAsync(user, new UserLoginInfo(
+            externalUser.Provider,
+            externalUser.ProviderId,
+            externalUser.Provider
+        ));
+
+        return (user, true);
+    }
+
+    private static string GenerateUserNameFromEmail(string email)
+    {
+        var baseUserName = email.Split('@')[0];
+        var random = Random.Shared;
+        return $"{baseUserName}{random.Next(1000, 9999)}";
+    }
+    
     #endregion
 }
-
-
-

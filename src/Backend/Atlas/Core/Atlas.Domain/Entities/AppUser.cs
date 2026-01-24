@@ -5,7 +5,7 @@ namespace Atlas.Domain.Entities;
 
 public class AppUser : IdentityUser
 {
-    public string FullName { get; private set; } = null!;
+    public string FullName { get; set; } = null!;
     public UserStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public DateTime? ActivatedAt { get; private set; }

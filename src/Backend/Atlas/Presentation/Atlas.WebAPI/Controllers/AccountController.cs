@@ -31,6 +31,14 @@ public class AccountController(IAccountService service) : ControllerBase
         var result = await service.LoginAsync(dto);
         return Ok(result);
     }
+
+    [HttpPost("external-login")]
+    [EnableRateLimiting("login")]
+    public async Task<IActionResult> ExternalLogin([FromBody] UserExternalLoginDto dto)
+    {
+        var result = await service.ExternalLoginAsync(dto);
+        return Ok(result);
+    }
     
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] UserRefreshTokenRequestDto dto)
