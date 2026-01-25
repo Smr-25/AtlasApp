@@ -19,7 +19,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Infrastructure\Atlas.Infrastructure\Atlas.Infrastructure.csproj" />
-      <ProjectReference Include="..\..\Infrastructure\Atlas.Persistance\Atlas.Persistance.csproj" />
+      <ProjectReference Include="..\..\Infrastructure\Atlas.Persistence\Atlas.Persistence.csproj" />
     </ItemGroup>
 
    

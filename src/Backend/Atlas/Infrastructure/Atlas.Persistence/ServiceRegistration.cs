@@ -2,7 +2,7 @@ using System.Text;
 using Atlas.Application.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
-using Atlas.Persistance.Data;
+using Atlas.Persistence.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Atlas.Persistance;
+namespace Atlas.Persistence;
 
 public static class ServiceRegistration
 {

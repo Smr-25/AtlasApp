@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Atlas.Persistance.Data.Migrations
+namespace Atlas.Persistence.Data.Migrations
 {
     /// <inheritdoc />
     public partial class mig_1 : Migration

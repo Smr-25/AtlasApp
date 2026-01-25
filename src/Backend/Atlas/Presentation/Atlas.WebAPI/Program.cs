@@ -3,7 +3,7 @@ using AppSettingsMultiPlatformPackage;
 using Atlas.Application;
 using Atlas.Application.Settings;
 using Atlas.Infrastructure;
-using Atlas.Persistance;
+using Atlas.Persistence;
 using Atlas.WebAPI.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;

@@ -2,7 +2,7 @@ using Atlas.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Atlas.Persistance.Configurations;
+namespace Atlas.Persistence.Configurations;
 
 public class PersonaStateConfiguration : IEntityTypeConfiguration<PersonaState>
 {

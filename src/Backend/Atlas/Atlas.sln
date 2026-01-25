@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.WebAPI", "Presentatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.Infrastructure", "Infrastructure\Atlas.Infrastructure\Atlas.Infrastructure.csproj", "{6C3E37ED-DD11-4ABA-8E4E-26AE8BA93CD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.Persistance", "Infrastructure\Atlas.Persistance\Atlas.Persistance.csproj", "{FB8A13D2-6E63-4E02-9EBB-C0BD53014590}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Atlas.Persistence", "Infrastructure\Atlas.Persistence\Atlas.Persistence.csproj", "{FB8A13D2-6E63-4E02-9EBB-C0BD53014590}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
