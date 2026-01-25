@@ -2,5 +2,6 @@ namespace Atlas.Domain.Entities.Common;
 
 public abstract class BaseEntity
 {
-    public int Id { get; set; }
+    public Guid Id { get; private set; }
+    public Guid UserId { get; private set; }
 }
