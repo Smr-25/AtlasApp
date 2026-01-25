@@ -14,7 +14,7 @@ public class PersonaStateConfiguration : IEntityTypeConfiguration<PersonaState>
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(ps => ps.MentalLoadLevel)
+        builder.Property(ps => ps.MentalLoad)
             .IsRequired()
             .HasMaxLength(100);
 
