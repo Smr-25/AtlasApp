@@ -5,7 +5,7 @@ namespace Atlas.Domain.Entities;
 
 public class PersonaStateHistory : BaseEntity
 {
-    public LifePhase Phase { get; private set; }
+    public LifePhase Phase { get; private set; } 
     public MentalLoadLevel MentalLoad { get; private set; }
     public int EnergyLevel { get; private set; }
     public int FocusLevel { get; private set; }

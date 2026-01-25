@@ -9,7 +9,7 @@ public class Persona : BaseEntity
    public bool IsActive { get; private set; } = true;
    public DateTime? LastActiveAt { get; private set; }
    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-   public PersonaState? CurrentState { get; private set; }
+   public PersonaState? CurrentState { get; private set; } 
    public ICollection<PersonaStateHistory> StateHistory { get; private set; } = new List<PersonaStateHistory> { };
    public ICollection<Decision> Decisions { get; private set; } = new List<Decision>();
    public ICollection<Goal> Goals { get; private set; } = new List<Goal>();

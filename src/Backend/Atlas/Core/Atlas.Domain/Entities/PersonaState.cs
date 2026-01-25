@@ -5,8 +5,8 @@ namespace Atlas.Domain.Entities;
 
 public class PersonaState : Persona
 {
-    public LifePhase CurrentPhase { get; private set; } 
-    public MentalLoadLevel MentalLoad { get; private set; }
+    public LifePhase CurrentPhase { get; private set; } = LifePhase.Execution;
+    public MentalLoadLevel MentalLoad { get; private set; } = MentalLoadLevel.Medium;
     public int EnergyLevel { get; private set; } = 5;
     public int FocusLevel { get; private set; } = 5;
     public DateTime LastUpdatedAt { get; private set; } = DateTime.UtcNow;
