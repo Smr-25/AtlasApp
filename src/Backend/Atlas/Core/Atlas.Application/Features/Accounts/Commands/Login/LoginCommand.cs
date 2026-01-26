@@ -1,6 +1,11 @@
+using Atlas.Application.Common.Models;
+using Atlas.Application.Features.Accounts.Dtos;
+using MediatR;
+
 namespace Atlas.Application.Features.Accounts.Commands.Login;
 
-public class LoginCommand
-{
-    
-}
+public record LoginCommand(
+    string? Email,
+    string? UserName,
+    string Password
+) : IRequest<ResponseModel<AuthResponseDto>>;
