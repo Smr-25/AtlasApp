@@ -1,3 +1,4 @@
+using System.Security;
 using Atlas.Application.Common.Models;
 using MediatR;
 
@@ -7,3 +8,4 @@ public record VerifyPhoneCommand(
     string PhoneNumber,
     string VerificationCode
 ) : IRequest<ResponseModel<bool>>;
+

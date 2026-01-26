@@ -130,99 +130,7 @@ public class AccountService(
 
     #endregion
 
-    #region Password Management Methods
-
-
-
-    public async Task<ResponseModel<bool>> ChangePasswordAsync(string userId,
-        UserChangePasswordDto userChangePasswordDto)
-    {
-        var validationResult = await changePasswordValidator.ValidateAsync(userChangePasswordDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await userManager.FindByIdAsync(userId);
-        if (user == null)
-            throw new NotFoundException("User", userId);
-
-        var passwordValid = await userManager.CheckPasswordAsync(user, userChangePasswordDto.CurrentPassword);
-        if (!passwordValid)
-            throw new InvalidCredentialsException("Current password is incorrect.");
-
-        var result = await userManager.ChangePasswordAsync(user, userChangePasswordDto.CurrentPassword,
-            userChangePasswordDto.NewPassword);
-        if (!result.Succeeded)
-            throw new IdentityException(result.Errors.Select(e => e.Description));
-
-        return ResponseModel<bool>.Success(true);
-    }
-
-    #endregion
-
-    #region Verification Methods
-
-
-
-    public async Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(UserReverifyEmailDto userReverifyEmailDto)
-    {
-        var validationResult = await reverifyEmailValidator.ValidateAsync(userReverifyEmailDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await userManager.FindByEmailAsync(userReverifyEmailDto.Email);
-        if (user == null)
-            throw new NotFoundException("User", userReverifyEmailDto.Email);
-
-        if (user.EmailConfirmed)
-            throw new AlreadyVerifiedException("Email");
-
-        var code = GenerateVerificationCode();
-        user.EmailVerificationCode = code;
-        user.EmailVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-        await emailService.SendVerificationEmailAsync(user.Email!, code);
-
-        return ResponseModel<bool>.Success(true);
-    }
-
-    public async Task<ResponseModel<bool>> ResendPhoneVerificationCodeAsync(UserReverifyPhoneDto userReverifyPhoneDto)
-    {
-        var validationResult = await reverifyPhoneValidator.ValidateAsync(userReverifyPhoneDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await FindUserByPhoneNumberAsync(userReverifyPhoneDto.PhoneNumber);
-        if (user == null)
-            throw new NotFoundException("User", userReverifyPhoneDto.PhoneNumber);
-
-        if (user.PhoneNumberConfirmed)
-            throw new AlreadyVerifiedException("Phone Number");
-
-        var code = GenerateVerificationCode();
-        user.PhoneVerificationCode = code;
-        user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-
-        switch (userReverifyPhoneDto.UserVerificationChannel)
-        {
-            case UserVerificationChannel.Sms:
-                await smsService.SendVerificationSmsAsync(user.PhoneNumber!, code);
-                break;
-            case UserVerificationChannel.Telegram:
-                if (string.IsNullOrEmpty(user.TelegramChatId))
-                    throw new BadRequestException("Telegram account is not linked. Please link your Telegram first.");
-                await telegramService.SendVerificationCodeAsync(user.TelegramChatId, code);
-                break;
-            default:
-                throw new InvalidVerificationChannelException();
-        }
-
-        return ResponseModel<bool>.Success(true);
-    }
-
-
-    #endregion
-
+    
     #region Profile Management Methods
 
     public async Task<ResponseModel<UserProfileReturnDto>> GetProfileAsync(string userId)
@@ -262,33 +170,7 @@ public class AccountService(
         return ResponseModel<UserProfileUpdateDto>.Success(userProfileUpdateDto);
     }
 
-    public async Task<ResponseModel<bool>> AddPhoneNumberAsync(string userId,
-        UserAddPhoneNumberDto userAddPhoneNumberDto)
-    {
-        var validationResult = await addPhoneNumberValidator.ValidateAsync(userAddPhoneNumberDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await userManager.FindByIdAsync(userId);
-        if (user == null)
-            throw new NotFoundException("User", userId);
-
-        if (!string.IsNullOrEmpty(user.PhoneNumber))
-            throw new BadRequestException("Phone number already exists. Use update phone number instead.");
-
-        var existingPhone = await FindUserByPhoneNumberAsync(userAddPhoneNumberDto.PhoneNumber);
-        if (existingPhone != null)
-            throw new AlreadyExistException("PhoneNumber", userAddPhoneNumberDto.PhoneNumber);
-
-        user.PhoneNumber = userAddPhoneNumberDto.PhoneNumber;
-        user.PreferredVerificationChannel = userAddPhoneNumberDto.UserVerificationChannel;
-        await userManager.UpdateAsync(user);
-
-        await SendPhoneVerificationCodeAsync(userAddPhoneNumberDto.PhoneNumber,
-            userAddPhoneNumberDto.UserVerificationChannel);
-
-        return ResponseModel<bool>.Success(true);
-    }
+    
 
     public async Task<ResponseModel<bool>> DeleteAccountAsync(string userId)
     {
@@ -346,45 +228,8 @@ public class AccountService(
 
     #region Private Helper Methods
 
-    private async Task SendEmailVerificationCodeAsync(string email)
-    {
-        var user = await userManager.FindByEmailAsync(email);
-        if (user == null)
-            throw new NotFoundException("User", email);
+    
 
-        var code = GenerateVerificationCode();
-        user.EmailVerificationCode = code;
-        user.EmailVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-        await emailService.SendVerificationEmailAsync(user.Email!, code);
-    }
-
-    private async Task SendPhoneVerificationCodeAsync(string phoneNumber, UserVerificationChannel channel)
-    {
-        var user = await FindUserByPhoneNumberAsync(phoneNumber);
-        if (user == null)
-            throw new NotFoundException("User", phoneNumber);
-
-        var code = GenerateVerificationCode();
-        user.PhoneVerificationCode = code;
-        user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        user.PreferredVerificationChannel = channel;
-        await userManager.UpdateAsync(user);
-
-        switch (channel)
-        {
-            case UserVerificationChannel.Sms:
-                await smsService.SendVerificationSmsAsync(user.PhoneNumber!, code);
-                break;
-            case UserVerificationChannel.Telegram:
-                if (string.IsNullOrEmpty(user.TelegramChatId))
-                    throw new BadRequestException("Telegram account is not linked. Please link your Telegram first.");
-                await telegramService.SendVerificationCodeAsync(user.TelegramChatId, code);
-                break;
-            default:
-                throw new InvalidVerificationChannelException();
-        }
-    }
 
 
 

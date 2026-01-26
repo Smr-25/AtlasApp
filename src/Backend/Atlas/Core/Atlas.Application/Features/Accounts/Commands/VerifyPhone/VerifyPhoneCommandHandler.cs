@@ -13,7 +13,7 @@ public class VerifyPhoneCommandHandler(UserManager<AppUser> userManager)
 {
     public async Task<ResponseModel<bool>> Handle(VerifyPhoneCommand request, CancellationToken cancellationToken)
     {
-        var user = await FindUserByPhoneNumberAsync(request.PhoneNumber);
+        var user = await userManager.Users.FirstOrDefaultAsync(u=>u.PhoneNumber == request.PhoneNumber);
 
         if (user == null)
             throw new NotFoundException("User", request.PhoneNumber);
@@ -31,10 +31,5 @@ public class VerifyPhoneCommandHandler(UserManager<AppUser> userManager)
 
         await userManager.UpdateAsync(user);
         return ResponseModel<bool>.Success(true);
-    }
-
-    private async Task<AppUser?> FindUserByPhoneNumberAsync(string phoneNumber)
-    {
-        return await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
     }
 }
