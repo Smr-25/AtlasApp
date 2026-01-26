@@ -1,6 +1,5 @@
-using System.Threading.RateLimiting;
-using Atlas.Application.MappingProfiles;
-using Atlas.Application.Services.Concretes;
+using System.Reflection;
+using Atlas.Application.MapProfiles;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Application.Settings;
 using FluentValidation;
@@ -19,9 +18,10 @@ public static class ServiceRegistration
         public void AddApplicationServices(IConfiguration configuration)
         {
             services.AddAutoMapper(opt => opt.AddProfile<MapProfile>());
-            services.AddValidatorsFromAssembly(typeof(ServiceRegistration).Assembly);
-            services.AddScoped<IAccountService, AccountService>();
-            services.AddScoped<IJwtService, JwtService>();
+            services.AddMediatR(opt => {
+                opt.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            });
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.Configure<LockoutSettings>(configuration.GetSection("LockoutSettings"));
         }
     }

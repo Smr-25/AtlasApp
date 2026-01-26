@@ -1,3 +1,4 @@
+using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Personas.Dtos;
 using Atlas.Application.Models;
 using MediatR;

@@ -1,4 +1,4 @@
-using Atlas.Application.Interfaces;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
