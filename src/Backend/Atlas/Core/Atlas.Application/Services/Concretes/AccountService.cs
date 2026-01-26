@@ -46,18 +46,7 @@ public class AccountService(
 
 
 
-    public async Task LogoutAsync(string refreshToken)
-    {
-        if (string.IsNullOrEmpty(refreshToken))
-            throw new BadRequestException("Refresh token is required.");
-
-        var user = await userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
-        if (user == null)
-            throw new InvalidCredentialsException("Invalid refresh token.");
-
-        user.RevokeRefreshToken();
-        await userManager.UpdateAsync(user);
-    }
+   
 
     public async Task<ResponseModel<UserExternalLoginReturnDto>> ExternalLoginAsync(
         UserExternalLoginDto userExternalLoginDto)
@@ -143,53 +132,7 @@ public class AccountService(
 
     #region Password Management Methods
 
-    public async Task<ResponseModel<bool>> ForgotPasswordAsync(UserForgotPasswordDto userForgotPasswordDto)
-    {
-        var validationResult = await forgotPasswordValidator.ValidateAsync(userForgotPasswordDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
 
-        var user = await FindUserByEmailOrUserNameAsync(userForgotPasswordDto.Email,
-            userForgotPasswordDto.UserName);
-
-        if (user == null)
-            return ResponseModel<bool>.Success(true);
-
-        await SendPasswordResetEmailAsync(user.Email!);
-        return ResponseModel<bool>.Success(true);
-    }
-
-    public async Task<ResponseModel<bool>> ResetPasswordAsync(UserResetPasswordDto userResetPasswordDto)
-    {
-        var validationResult = await resetPasswordValidator.ValidateAsync(userResetPasswordDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await FindUserByEmailOrUserNameAsync(userResetPasswordDto.Email, userResetPasswordDto.UserName);
-
-        if (user == null)
-        {
-            var identifier = !string.IsNullOrEmpty(userResetPasswordDto.Email)
-                ? userResetPasswordDto.Email
-                : userResetPasswordDto.UserName ?? "unknown";
-            throw new NotFoundException("User", identifier);
-        }
-
-        if (user.ResetPasswordCode != userResetPasswordDto.Code ||
-            user.ResetPasswordExpiresAt < DateTime.UtcNow)
-            throw new InvalidOrExpiredCodeException("Password Reset");
-
-        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
-        var result = await userManager.ResetPasswordAsync(user, resetToken, userResetPasswordDto.NewPassword);
-        if (!result.Succeeded)
-            throw new IdentityException(result.Errors.Select(e => e.Description));
-
-        user.ResetPasswordCode = null;
-        user.ResetPasswordExpiresAt = null;
-        await userManager.UpdateAsync(user);
-
-        return ResponseModel<bool>.Success(true);
-    }
 
     public async Task<ResponseModel<bool>> ChangePasswordAsync(string userId,
         UserChangePasswordDto userChangePasswordDto)
@@ -218,57 +161,7 @@ public class AccountService(
 
     #region Verification Methods
 
-    public async Task<ResponseModel<bool>> VerifyEmailAsync(UserVerifyEmailDto userVerifyEmailDto)
-    {
-        var validationResult = await verifyEmailValidator.ValidateAsync(userVerifyEmailDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
 
-        var user = await userManager.FindByEmailAsync(userVerifyEmailDto.Email);
-
-        if (user == null)
-            throw new NotFoundException("User", userVerifyEmailDto.Email);
-
-        if (user.EmailVerificationCode != userVerifyEmailDto.Code ||
-            user.EmailVerificationExpiresAt < DateTime.UtcNow)
-            throw new InvalidOrExpiredCodeException("Email Verification");
-
-        user.EmailConfirmed = true;
-        user.EmailVerificationCode = null;
-        user.EmailVerificationExpiresAt = null;
-
-        if (string.IsNullOrEmpty(user.PhoneNumber) || user.PhoneNumberConfirmed)
-            user.Activate();
-
-        await userManager.UpdateAsync(user);
-        return ResponseModel<bool>.Success(true);
-    }
-
-    public async Task<ResponseModel<bool>> VerifyPhoneAsync(UserVerifyPhoneDto userVerifyPhoneDto)
-    {
-        var validationResult = await verifyPhoneValidator.ValidateAsync(userVerifyPhoneDto);
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
-        var user = await FindUserByPhoneNumberAsync(userVerifyPhoneDto.PhoneNumber);
-
-        if (user == null)
-            throw new NotFoundException("User", userVerifyPhoneDto.PhoneNumber);
-
-        if (user.PhoneVerificationCode != userVerifyPhoneDto.Code ||
-            user.PhoneVerificationExpiresAt < DateTime.UtcNow)
-            throw new InvalidOrExpiredCodeException("Phone Verification");
-
-        user.PhoneNumberConfirmed = true;
-        user.PhoneVerificationCode = null;
-        user.PhoneVerificationExpiresAt = null;
-
-        if (user.EmailConfirmed)
-            user.Activate();
-
-        await userManager.UpdateAsync(user);
-        return ResponseModel<bool>.Success(true);
-    }
 
     public async Task<ResponseModel<bool>> ResendEmailVerificationCodeAsync(UserReverifyEmailDto userReverifyEmailDto)
     {
@@ -493,43 +386,10 @@ public class AccountService(
         }
     }
 
-    private async Task SendPasswordResetEmailAsync(string email)
-    {
-        var user = await userManager.FindByEmailAsync(email);
-        if (user == null)
-            throw new NotFoundException("User", email);
 
-        var code = GenerateVerificationCode();
-        user.ResetPasswordCode = code;
-        user.ResetPasswordExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-        await emailService.SendPasswordResetEmailAsync(user.Email!, code);
-    }
 
-    private async Task<AppUser?> FindUserByEmailOrUserNameAsync(string? email, string? userName)
-    {
-        if (!string.IsNullOrEmpty(email))
-            return await userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
+    
 
-        if (!string.IsNullOrEmpty(userName))
-            return await userManager.Users.FirstOrDefaultAsync(u => u.UserName == userName);
-
-        return null;
-    }
-
-    private async Task<AppUser?> FindUserByPhoneNumberAsync(string phoneNumber)
-    {
-        return await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
-    }
-
-    private static string GenerateVerificationCode()
-    {
-        using var rng = RandomNumberGenerator.Create();
-        var bytes = new byte[4];
-        rng.GetBytes(bytes);
-        var code = (BitConverter.ToUInt32(bytes, 0) % 900000 + 100000).ToString();
-        return code;
-    }
 
     private async Task<(AppUser User, bool IsNewUser)> FindOrCreateExternalUserAsync(ExternalUserInfo externalUser)
     {
