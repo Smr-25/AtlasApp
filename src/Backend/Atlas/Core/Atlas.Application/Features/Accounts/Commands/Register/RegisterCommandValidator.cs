@@ -1,11 +1,10 @@
-using Atlas.Application.Dtos.Users.Auth;
 using FluentValidation;
 
-namespace Atlas.Application.Validators.User.Auth;
+namespace Atlas.Application.Features.Accounts.Commands.Register;
 
-public class UserRegisterDtoValidator : AbstractValidator<UserRegisterDto>
+public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
-    public UserRegisterDtoValidator()
+    public RegisterCommandValidator()
     {
         RuleFor(x => x.UserName)
             .NotEmpty()

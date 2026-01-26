@@ -1,8 +1,10 @@
+using Atlas.Application.Common.Models;
 using Atlas.Domain.Enums;
+using MediatR;
 
-namespace Atlas.Application.Dtos.Users.Auth;
+namespace Atlas.Application.Features.Accounts.Commands.Register;
 
-public record UserRegisterDto(
+public record RegisterCommand(
     string FullName,
     string UserName,
     string Email,
@@ -10,4 +12,4 @@ public record UserRegisterDto(
     string Password,
     string ConfirmPassword,
     UserVerificationChannel? PhoneVerificationChannel
-);
+) : IRequest<ResponseModel<bool>>;

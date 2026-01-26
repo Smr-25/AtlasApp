@@ -1,4 +1,4 @@
-namespace Atlas.Application.Models;
+namespace Atlas.Application.Common.Models;
 
 public class ResponseModel<T>
 {

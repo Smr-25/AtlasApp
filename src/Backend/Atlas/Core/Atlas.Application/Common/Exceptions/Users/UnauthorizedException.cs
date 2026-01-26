@@ -1,4 +1,4 @@
-namespace Atlas.Application.Exceptions.Users;
+namespace Atlas.Application.Common.Exceptions.Users;
 
 public class UnauthorizedException : Exception
 {

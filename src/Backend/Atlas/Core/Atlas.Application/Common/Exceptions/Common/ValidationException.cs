@@ -1,6 +1,6 @@
 using FluentValidation.Results;
 
-namespace Atlas.Application.Exceptions.Common;
+namespace Atlas.Application.Common.Exceptions.Common;
 
 public class ValidationException : Exception
 {
