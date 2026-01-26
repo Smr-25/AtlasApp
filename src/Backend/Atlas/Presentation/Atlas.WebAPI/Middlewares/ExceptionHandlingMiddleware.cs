@@ -1,9 +1,9 @@
 using System.Net;
-using Atlas.Application.Exceptions.Common;
-using Atlas.Application.Exceptions.Users;
-using Atlas.Application.Models;
+using Atlas.Application.Common.Exceptions.Common;
+using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Models;
 using Newtonsoft.Json;
-using ValidationException = Atlas.Application.Exceptions.Common.ValidationException;
+using ValidationException = Atlas.Application.Common.Exceptions.Common.ValidationException;
 
 namespace Atlas.WebAPI.Middlewares;
 
@@ -25,7 +25,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
-        
+
         var (statusCode, response) = exception switch
         {
             ValidationException validationEx => (
@@ -52,7 +52,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 HttpStatusCode.BadRequest,
                 ResponseModel<object>.Failure(identityEx.Errors)
             ),
-            
+
             UnauthorizedException unauthorizedEx => (
                 HttpStatusCode.Unauthorized,
                 ResponseModel<object>.Failure(unauthorizedEx.Message)
@@ -69,22 +69,22 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 HttpStatusCode.Locked,
                 ResponseModel<object>.Failure(accountLockedEx.Message)
             ),
-            
+
             ForbiddenException forbiddenEx => (
                 HttpStatusCode.Forbidden,
                 ResponseModel<object>.Failure(forbiddenEx.Message)
             ),
-            
+
             NotFoundException notFoundEx => (
                 HttpStatusCode.NotFound,
                 ResponseModel<object>.Failure(notFoundEx.Message)
             ),
-            
+
             AlreadyExistException alreadyExistEx => (
                 HttpStatusCode.Conflict,
                 ResponseModel<object>.Failure(alreadyExistEx.Message)
             ),
-            
+
             _ => (
                 HttpStatusCode.InternalServerError,
                 ResponseModel<object>.Failure("An internal server error occurred.")
@@ -97,7 +97,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             MaxDepth = 32
         };
-        
+
         var jsonResponse = JsonConvert.SerializeObject(response, jsonSettings);
         await context.Response.WriteAsync(jsonResponse);
     }

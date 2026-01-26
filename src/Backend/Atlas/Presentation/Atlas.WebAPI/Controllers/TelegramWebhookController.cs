@@ -1,15 +1,17 @@
 using System.Text.Json;
+using Atlas.Application.Features.Accounts.Commands.GenerateTelegramLinkCode;
 using Atlas.Application.Services.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TelegramWebhookController(IAccountService accountService) : ControllerBase
+public class TelegramWebhookController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> Post()
+    public async Task<IActionResult> Post(GenerateTelegramLinkCodeCommand command)
     {
         using var reader = new StreamReader(Request.Body);
         var body = await reader.ReadToEndAsync();
@@ -44,7 +46,7 @@ public class TelegramWebhookController(IAccountService accountService) : Control
 
             if (!string.IsNullOrEmpty(linkCode))
             {
-                await accountService.LinkTelegramByChatIdAsync(linkCode, chatId);
+                await mediator.Send(command);
             }
         }
 
