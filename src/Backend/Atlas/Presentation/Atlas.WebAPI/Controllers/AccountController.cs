@@ -163,7 +163,6 @@ public class AccountController(IMediator mediator) : ControllerBase
     [EnableRateLimiting("api")]
     public async Task<IActionResult> AddPhoneNumber([FromBody] AddPhoneNumberCommand command)
     {
-        var userId = GetCurrentUserId();
         var result = await mediator.Send(command);
         return Ok(result);
     }
@@ -173,7 +172,6 @@ public class AccountController(IMediator mediator) : ControllerBase
     [EnableRateLimiting("api")]
     public async Task<IActionResult> DeleteAccount(DeleteAccountCommand command)
     {
-        var userId = GetCurrentUserId();
         var result = await mediator.Send(command);
         return Ok(result);
     }
@@ -198,13 +196,4 @@ public class AccountController(IMediator mediator) : ControllerBase
     
     #endregion
     
-    #region Private Methods
-    
-    private string GetCurrentUserId()
-    {
-        return User.FindFirstValue(ClaimTypes.NameIdentifier) 
-               ?? throw new UnauthorizedAccessException("User not authenticated");
-    }
-    
-    #endregion
 }

@@ -1,5 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Entities;
@@ -9,15 +10,19 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Atlas.Application.Features.Accounts.Commands.UpdateProfile;
 
-public class UpdateProfileCommandHandler(UserManager<AppUser> userManager, IMapper mapper)
+public class UpdateProfileCommandHandler(UserManager<AppUser> userManager, IMapper mapper, ICurrentUserService currentUserService)
     : IRequestHandler<UpdateProfileCommand, ResponseModel<AccountDto>>
 {
     public async Task<ResponseModel<AccountDto>> Handle(UpdateProfileCommand request,
         CancellationToken cancellationToken)
     {
-        var user = await userManager.FindByIdAsync(request.UserId.ToString());
+        if (!currentUserService.IsAuthenticated)
+            throw new UnauthorizedException("User is not authenticated");
+
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!);
         if (user == null)
-            throw new NotFoundException("User", request.UserId);
+            throw new NotFoundException(nameof(AppUser));
+
 
         if (!string.IsNullOrEmpty(request.UserName) && user.UserName != request.UserName)
         {

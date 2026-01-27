@@ -16,7 +16,7 @@ public class ResetPasswordCommandHandler(UserManager<AppUser> userManager)
         if (user == null)
             throw new NotFoundException("User", request.Email);
         
-        if (user.ResetPasswordCode != request.Code ||
+        if (user.ResetPasswordCode != request.VerificationCode ||
             user.ResetPasswordExpiresAt < DateTime.UtcNow)
             throw new InvalidOrExpiredCodeException("Password Reset");
         

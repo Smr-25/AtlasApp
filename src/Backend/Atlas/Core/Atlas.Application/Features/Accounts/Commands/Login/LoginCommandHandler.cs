@@ -1,4 +1,5 @@
 using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Application.Services.Interfaces;

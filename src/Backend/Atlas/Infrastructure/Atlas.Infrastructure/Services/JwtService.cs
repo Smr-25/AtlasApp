@@ -1,14 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Atlas.Application.Dtos.Users.Auth;
-using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Atlas.Application.Services.Concretes;
+namespace Atlas.Infrastructure.Services;
 
 public class JwtService(IOptions<JwtSettings> jwtOptions) : IJwtService
 {
@@ -40,17 +39,17 @@ public class JwtService(IOptions<JwtSettings> jwtOptions) : IJwtService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public UserRefreshTokenResponseDto GenerateRefreshTokenResponse(AppUser user)
-    {
-        var refreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
-        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
-
-        var accessToken = GenerateAccessToken(user);
-
-        return new UserRefreshTokenResponseDto(
-            AccessToken: accessToken,
-            RefreshToken: refreshToken,
-            RefreshTokenExpiresAt: refreshTokenExpiresAt
-        );
-    }
+    // public UserRefreshTokenResponseDto GenerateRefreshTokenResponse(AppUser user)
+    // {
+    //     var refreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+    //     var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
+    //
+    //     var accessToken = GenerateAccessToken(user);
+    //
+    //     return new UserRefreshTokenResponseDto(
+    //         AccessToken: accessToken,
+    //         RefreshToken: refreshToken,
+    //         RefreshTokenExpiresAt: refreshTokenExpiresAt
+    //     );
+    // }
 }

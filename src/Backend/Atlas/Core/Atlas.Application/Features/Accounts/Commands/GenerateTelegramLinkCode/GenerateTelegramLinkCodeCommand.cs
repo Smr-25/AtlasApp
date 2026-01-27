@@ -4,6 +4,5 @@ using MediatR;
 namespace Atlas.Application.Features.Accounts.Commands.GenerateTelegramLinkCode;
 
 public record GenerateTelegramLinkCodeCommand(
-    string LinkCode,
-    string ChatId
-) : IRequest<Unit>;
+    Guid UserId
+) : IRequest<ResponseModel<string>>;  

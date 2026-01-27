@@ -1,5 +1,4 @@
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Services.Concretes;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Infrastructure.Services;

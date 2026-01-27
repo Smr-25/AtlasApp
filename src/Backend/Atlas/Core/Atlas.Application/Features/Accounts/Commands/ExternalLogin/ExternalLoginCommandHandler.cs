@@ -1,7 +1,8 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
-using Atlas.Application.Dtos.Users.Auth;
+using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
@@ -10,9 +11,13 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Atlas.Application.Features.Accounts.Commands.ExternalLogin;
 
-public class ExternalLoginCommandHandler(UserManager<AppUser> userManager,IJwtService jwtService,IExternalAuthService externalAuthService) : IRequestHandler<ExternalLoginCommand, ResponseModel<UserExternalLoginReturnDto>>
+public class ExternalLoginCommandHandler(
+    UserManager<AppUser> userManager,
+    IJwtService jwtService,
+    IExternalAuthService externalAuthService)
+    : IRequestHandler<ExternalLoginCommand, ResponseModel<ExternalLoginResponseDto>>
 {
-    public async Task<ResponseModel<UserExternalLoginReturnDto>> Handle(ExternalLoginCommand request,
+    public async Task<ResponseModel<ExternalLoginResponseDto>> Handle(ExternalLoginCommand request,
         CancellationToken cancellationToken)
     {
         var externalUser = request.Provider.ToLower() switch
@@ -34,17 +39,17 @@ public class ExternalLoginCommandHandler(UserManager<AppUser> userManager,IJwtSe
         user.UpdateLastLogin();
         await userManager.UpdateAsync(user);
 
-        var externalReturnDto = new UserExternalLoginReturnDto
+        var externalLoginResponseDto = new ExternalLoginResponseDto
         (
             AccessToken: accessToken,
             RefreshToken: refreshTokenResponse.RefreshToken,
+            RefreshTokenExpiration: refreshTokenResponse.RefreshTokenExpiresAt,
             IsNewUser: isNewUser,
             UserId: user.Id,
             Email: user.Email!,
-            FullName: user.FullName,
-            RefreshTokenExpiryTime: refreshTokenResponse.RefreshTokenExpiresAt
+            FullName: user.FullName
         );
-        return ResponseModel<UserExternalLoginReturnDto>.Success(externalReturnDto);
+        return ResponseModel<ExternalLoginResponseDto>.Success(externalLoginResponseDto);
     }
 
     private async Task<(AppUser User, bool IsNewUser)> FindOrCreateExternalUserAsync(ExternalUserInfo externalUser)
@@ -68,23 +73,23 @@ public class ExternalLoginCommandHandler(UserManager<AppUser> userManager,IJwtSe
 
         var userName = GenerateUserNameFromEmail(externalUser.Email);
         var fullName = externalUser.FullName ?? externalUser.Email.Split('@')[0];
-        
+
         user = AppUser.Create(
             userName: userName,
             email: externalUser.Email,
             fullName: fullName
         );
-        
+
         if (externalUser.EmailVerified)
         {
             user.EmailConfirmed = true;
             user.Activate();
         }
-        
+
         var result = await userManager.CreateAsync(user);
         if (!result.Succeeded)
-            throw new IdentityException(result.Errors.Select(e => e.Description));
-        
+            throw new IdentityException(result.Errors.Select(e => e.Description).ToArray());
+
         await userManager.AddLoginAsync(user, new UserLoginInfo(
             externalUser.Provider,
             externalUser.ProviderId,

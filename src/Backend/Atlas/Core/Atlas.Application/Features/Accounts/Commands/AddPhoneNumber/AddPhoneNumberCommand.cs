@@ -5,7 +5,7 @@ using MediatR;
 namespace Atlas.Application.Features.Accounts.Commands.AddPhoneNumber;
 
 public record AddPhoneNumberCommand(
-    string UserId,
+    Guid UserId,
     string PhoneNumber,
     UserVerificationChannel VerificationChannel
 ) : IRequest<ResponseModel<bool>>;

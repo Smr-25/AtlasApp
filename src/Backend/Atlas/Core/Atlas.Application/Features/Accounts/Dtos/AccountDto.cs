@@ -11,5 +11,6 @@ public record AccountDto(
     bool EmailConfirmed,
     bool PhoneNumberConfirmed,
     DateTime CreatedAt,
+    UserStatus Status,
     DateTime? LastLoginAt
 );

@@ -1,4 +1,3 @@
-using System.Security;
 using Atlas.Application.Common.Models;
 using MediatR;
 

@@ -10,7 +10,7 @@ public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordComm
             .NotEmpty().WithMessage("Email is required.")
             .EmailAddress().WithMessage("A valid email is required.");
         
-        RuleFor(x => x.Code)
+        RuleFor(x => x.VerificationCode)
             .NotEmpty().WithMessage("Verification code is required.");
         
         RuleFor(x => x.NewPassword)

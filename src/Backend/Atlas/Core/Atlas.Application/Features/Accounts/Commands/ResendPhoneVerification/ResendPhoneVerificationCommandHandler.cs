@@ -1,5 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Helpers;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
@@ -27,7 +28,7 @@ public class ResendPhoneVerificationCommandHandler(UserManager<AppUser> userMana
 
     private async Task SendPhoneVerificationCodeAsync(AppUser user, UserVerificationChannel requestPhoneVerificationChannel)
     {
-        var code = GenerateVerificationCode();
+        var code = VerificationCodeGenerator.Generate();
         user.PhoneVerificationCode = code;
         user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
         await userManager.UpdateAsync(user);
@@ -44,14 +45,5 @@ public class ResendPhoneVerificationCommandHandler(UserManager<AppUser> userMana
             default:
                 throw new InvalidVerificationChannelException("The selected phone verification channel is invalid.");
         }
-    }
-    
-    private static string GenerateVerificationCode()
-    {
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-        var bytes = new byte[4];
-        rng.GetBytes(bytes);
-        var code = (BitConverter.ToUInt32(bytes, 0) % 900000 + 100000).ToString();
-        return code;
     }
 }
