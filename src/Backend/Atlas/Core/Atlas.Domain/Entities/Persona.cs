@@ -25,6 +25,11 @@ public class Persona : BaseEntity
       };
       return persona;
    }
+   
+   public void UpdateName(string name)
+   {
+      Name = name;
+   }
 
    public void UpdateAlias(string? alias)
    {

@@ -106,7 +106,7 @@ public class PersonaTimelineEvent : BaseEntity
             RelatedEntityType = nameof(Goal),
             RelatedEntityId = goal.Id,  
             Metadata = null,
-            OccurredAt = goal.LastActiveAt ?? DateTime.UtcNow
+            OccurredAt = goal.CompletedAt ?? DateTime.UtcNow
         };
         return goalEvent;
     }

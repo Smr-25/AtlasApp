@@ -3,7 +3,7 @@ using Atlas.Domain.Enums;
 
 namespace Atlas.Domain.Entities;
 
-public class Goal : Persona
+public class Goal : BaseEntity
 {
     public string Title { get; private set; } = null!;
     public string? Description { get; private set; }
@@ -13,7 +13,7 @@ public class Goal : Persona
     public DateTime? DueDate { get; private set; }
     public DateTime? CompletedAt { get; private set; }
     public int ProgressPercentage { get; private set; } = 0;
-    
+    public Guid PersonaId { get; private set; }
     public Persona Persona { get; private set; } = null!;
     public ICollection<Decision> RelatedDecisions { get; private set; } = new List<Decision>();
 
@@ -31,7 +31,7 @@ public class Goal : Persona
         };
         return goal;
     }
-    
+
     public void UpdateProgress(int percentage)
     {
         if (percentage < 0 || percentage > 100)

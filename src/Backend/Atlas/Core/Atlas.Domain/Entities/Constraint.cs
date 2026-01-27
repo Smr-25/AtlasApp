@@ -3,7 +3,7 @@ using Atlas.Domain.Enums;
 
 namespace Atlas.Domain.Entities;
 
-public class Constraint : Persona
+public class Constraint : BaseEntity
 {
     public ConstraintType Type { get; private set; }
     public string Description { get; private set; } = null!;

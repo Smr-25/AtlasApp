@@ -3,7 +3,7 @@ using Atlas.Domain.Enums;
 
 namespace Atlas.Domain.Entities;
 
-public class PersonaState : Persona
+public class PersonaState : BaseEntity
 {
     public LifePhase CurrentPhase { get; private set; } = LifePhase.Execution;
     public MentalLoadLevel MentalLoad { get; private set; } = MentalLoadLevel.Medium;
