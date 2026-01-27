@@ -1,4 +1,5 @@
 using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Application.Services.Interfaces;
@@ -30,9 +31,9 @@ public class RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtSe
 
         var tokenDto = new TokenDto
         (
-            newAccessToken,
+            newAccessToken.Token,
             newRefreshToken.RefreshToken,
-            DateTime.UtcNow.AddMinutes(60),
+            newAccessToken.Expiration,
             newRefreshToken.RefreshTokenExpiresAt
         );
         return ResponseModel<TokenDto>.Success(tokenDto);

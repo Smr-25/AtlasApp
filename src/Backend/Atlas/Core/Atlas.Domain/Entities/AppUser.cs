@@ -70,6 +70,11 @@ public class AppUser : IdentityUser
         RefreshToken = null;
         RefreshTokenExpiresAt = null;
     }
+    public void RevokeAllRefreshTokens()
+    {
+        RefreshToken = null;
+        RefreshTokenExpiresAt = null;
+    }
     public void MarkAsDeleted()
     {
         IsDeleted = true;

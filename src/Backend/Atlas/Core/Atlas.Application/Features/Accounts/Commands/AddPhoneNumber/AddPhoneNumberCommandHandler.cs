@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Helpers;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
@@ -14,14 +15,18 @@ namespace Atlas.Application.Features.Accounts.Commands.AddPhoneNumber;
 public class AddPhoneNumberCommandHandler(
     UserManager<AppUser> userManager,
     ISmsService smsService,
-    ITelegramService telegramService) : IRequestHandler<AddPhoneNumberCommand, ResponseModel<bool>>
+    ITelegramService telegramService,
+    ICurrentUserService currentUserService) : IRequestHandler<AddPhoneNumberCommand, ResponseModel<bool>>
 {
     public async Task<ResponseModel<bool>> Handle(AddPhoneNumberCommand request, CancellationToken cancellationToken)
     {
-        var user = await userManager.FindByIdAsync(request.UserId.ToString());
+        if (!currentUserService.IsAuthenticated)
+            throw new UnauthorizedException("User is not authenticated");
+            
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!);
         if (user == null)
-            throw new NotFoundException("User", request.UserId);
-
+            throw new NotFoundException("User", currentUserService.UserId!);
+        
         if (!string.IsNullOrEmpty(user.PhoneNumber))
             throw new BadRequestException("Phone number already exists. Use update phone number instead.");
 

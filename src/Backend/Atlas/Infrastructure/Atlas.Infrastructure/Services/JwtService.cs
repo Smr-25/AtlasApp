@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Atlas.Application.Common.Interfaces;
+using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
 using Microsoft.Extensions.Options;
@@ -12,8 +14,8 @@ namespace Atlas.Infrastructure.Services;
 public class JwtService(IOptions<JwtSettings> jwtOptions) : IJwtService
 {
     private readonly JwtSettings _jwtSettings = jwtOptions.Value;
-    
-    public string GenerateAccessToken(AppUser user)
+
+    public AccessTokenResponseDto GenerateAccessToken(AppUser user)
     {
         var claims = new List<Claim>
         {
@@ -36,20 +38,24 @@ public class JwtService(IOptions<JwtSettings> jwtOptions) : IJwtService
             expires: DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationMinutes),
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var accessToken = tokenHandler.WriteToken(token);
+        var expiresAt = _jwtSettings.AccessTokenExpirationMinutes;
+        var accessTokenResponse = new AccessTokenResponseDto
+        (
+            Token: accessToken,
+            Expiration: DateTime.UtcNow.AddMinutes(expiresAt)
+        );
+        return accessTokenResponse;
     }
 
-    // public UserRefreshTokenResponseDto GenerateRefreshTokenResponse(AppUser user)
-    // {
-    //     var refreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
-    //     var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
-    //
-    //     var accessToken = GenerateAccessToken(user);
-    //
-    //     return new UserRefreshTokenResponseDto(
-    //         AccessToken: accessToken,
-    //         RefreshToken: refreshToken,
-    //         RefreshTokenExpiresAt: refreshTokenExpiresAt
-    //     );
-    // }
+    public RefreshTokenResponseDto GenerateRefreshTokenResponse(AppUser user)
+    {
+        var refreshTokenResponse = new RefreshTokenResponseDto
+        (
+            RefreshToken: Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+            RefreshTokenExpiresAt: DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays)
+        );
+        return refreshTokenResponse;
+    }
 }

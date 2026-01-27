@@ -6,9 +6,6 @@ public class AddPhoneNumberCommandValidator : AbstractValidator<AddPhoneNumberCo
 {
     public AddPhoneNumberCommandValidator()
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("UserId is required.");
-
         RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage("PhoneNumber is required.")
             .Matches(@"^\+\d{1,3}\d{4,14}(?:x.+)?$").WithMessage("PhoneNumber must be in valid international format.");

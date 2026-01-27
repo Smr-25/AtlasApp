@@ -121,7 +121,7 @@ public class AccountController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("revoke-refresh-token")]
-    public async Task<IActionResult> RevokeRefreshToken([FromBody] RevokeTokenCommand command)
+    public async Task<IActionResult> RevokeRefreshToken([FromBody] RevokeAllTokenCommand command)
     {
         await mediator.Send(command);
         return Ok();

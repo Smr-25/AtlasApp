@@ -41,7 +41,7 @@ public class ExternalLoginCommandHandler(
 
         var externalLoginResponseDto = new ExternalLoginResponseDto
         (
-            AccessToken: accessToken,
+            AccessToken: accessToken.Token,
             RefreshToken: refreshTokenResponse.RefreshToken,
             RefreshTokenExpiration: refreshTokenResponse.RefreshTokenExpiresAt,
             IsNewUser: isNewUser,

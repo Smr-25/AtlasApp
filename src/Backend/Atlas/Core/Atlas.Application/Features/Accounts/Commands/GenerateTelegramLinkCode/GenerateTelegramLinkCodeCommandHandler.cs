@@ -1,3 +1,6 @@
+using Atlas.Application.Common.Exceptions.Common;
+using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
@@ -6,11 +9,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Accounts.Commands.GenerateTelegramLinkCode;
 
-public class GenerateTelegramLinkCodeCommandHandler(UserManager<AppUser> userManager)
+public class GenerateTelegramLinkCodeCommandHandler(UserManager<AppUser> userManager, ICurrentUserService currentUserService)
     : IRequestHandler<GenerateTelegramLinkCodeCommand, ResponseModel<string>>
 {
-    public async Task<ResponseModel<string>> Handle(GenerateTelegramLinkCodeCommand request, CancellationToken cancellationToken)
+    public async Task<ResponseModel<string>> Handle(GenerateTelegramLinkCodeCommand request,
+        CancellationToken cancellationToken)
     {
-        
+        if (!currentUserService.IsAuthenticated)
+            throw new UnauthorizedException("User is not authenticated");
+            
+        var user = await userManager.FindByIdAsync(currentUserService.UserId!);
+        if (user == null)
+            throw new NotFoundException("User", currentUserService.UserId!);
+
+        var linkCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
+
+        user.TelegramLinkCode = linkCode;
+        user.TelegramLinkCodeExpiry = DateTime.UtcNow.AddMinutes(10);
+        await userManager.UpdateAsync(user);
+        return ResponseModel<string>.Success(linkCode);
     }
 }

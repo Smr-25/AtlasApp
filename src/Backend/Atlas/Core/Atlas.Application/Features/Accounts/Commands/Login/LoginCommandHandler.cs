@@ -66,9 +66,9 @@ public class LoginCommandHandler(
         user.UpdateLastLogin();
         await userManager.UpdateAsync(user);
         var response = new AuthResponseDto(
-            AccessToken: accessToken,
+            AccessToken: accessToken.Token,
             RefreshToken: refreshToken.RefreshToken,
-            AccessTokenExpiration: DateTime.UtcNow.AddMinutes(60),
+            AccessTokenExpiration: accessToken.Expiration,
             RefreshTokenExpiration: refreshToken.RefreshTokenExpiresAt,
             UserId: user.Id,
             UserName: user.UserName!,
