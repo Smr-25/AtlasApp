@@ -74,6 +74,7 @@ public class AppUser : IdentityUser
     {
         RefreshToken = null;
         RefreshTokenExpiresAt = null;
+        SecurityStamp = Guid.NewGuid().ToString();
     }
     public void MarkAsDeleted()
     {

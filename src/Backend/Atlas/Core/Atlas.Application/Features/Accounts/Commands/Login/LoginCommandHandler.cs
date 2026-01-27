@@ -1,13 +1,12 @@
 using Atlas.Application.Common.Exceptions.Users;
+using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
-using Atlas.Application.Services.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Atlas.Application.Features.Accounts.Commands.Login;
@@ -21,7 +20,7 @@ public class LoginCommandHandler(
 
     public async Task<ResponseModel<AuthResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await FindUserByEmailOrUserNameAsync(request.Email, request.UserName);
+        var user = await userManager.FindByEmailOrUserNameAsync(request.Email, request.UserName);
 
         if (user == null)
             throw new InvalidCredentialsException("Invalid UserName/Email or Password.");
@@ -77,16 +76,5 @@ public class LoginCommandHandler(
         );
 
         return ResponseModel<AuthResponseDto>.Success(response);
-    }
-
-    private async Task<AppUser?> FindUserByEmailOrUserNameAsync(string? email, string? userName)
-    {
-        if (!string.IsNullOrEmpty(email))
-            return await userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
-
-        if (!string.IsNullOrEmpty(userName))
-            return await userManager.Users.FirstOrDefaultAsync(u => u.UserName == userName);
-
-        return null;
     }
 }

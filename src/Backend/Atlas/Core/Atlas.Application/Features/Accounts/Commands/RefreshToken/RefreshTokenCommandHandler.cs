@@ -2,7 +2,6 @@ using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
-using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -17,11 +16,17 @@ public class RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtSe
         CancellationToken cancellationToken)
     {
         var user = await userManager.Users.FirstOrDefaultAsync(u =>
-            u.RefreshToken == request.RefreshToken);
+            u.RefreshToken == request.RefreshToken, cancellationToken);
 
         if (user == null || user.RefreshToken != request.RefreshToken ||
             user.RefreshTokenExpiresAt < DateTime.UtcNow)
-            throw new InvalidCredentialsException("Invalid refresh token.");
+            throw new InvalidCredentialsException("Invalid or expired refresh token.");
+
+        if (user.IsDeleted)
+            throw new UnauthorizedException("This account has been deleted.");
+
+        if (user.IsLockedOut)
+            throw new AccountLockedException("Account is locked. Token refresh is not allowed.");
 
         var newAccessToken = jwtService.GenerateAccessToken(user);
         var newRefreshToken = jwtService.GenerateRefreshTokenResponse(user);

@@ -1,11 +1,9 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
-using Atlas.Application.Common.Helpers;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
-using Atlas.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,8 +12,7 @@ namespace Atlas.Application.Features.Accounts.Commands.AddPhoneNumber;
 
 public class AddPhoneNumberCommandHandler(
     UserManager<AppUser> userManager,
-    ISmsService smsService,
-    ITelegramService telegramService,
+    IPhoneVerificationService phoneVerificationService,
     ICurrentUserService currentUserService) : IRequestHandler<AddPhoneNumberCommand, ResponseModel<bool>>
 {
     public async Task<ResponseModel<bool>> Handle(AddPhoneNumberCommand request, CancellationToken cancellationToken)
@@ -31,7 +28,7 @@ public class AddPhoneNumberCommandHandler(
             throw new BadRequestException("Phone number already exists. Use update phone number instead.");
 
         var existingPhone = await userManager.Users
-            .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+            .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber, cancellationToken);
 
         if (existingPhone != null)
             throw new AlreadyExistException("PhoneNumber", request.PhoneNumber);
@@ -40,30 +37,8 @@ public class AddPhoneNumberCommandHandler(
         user.PreferredVerificationChannel = request.VerificationChannel;
         await userManager.UpdateAsync(user);
 
-        await SendPhoneVerificationCodeAsync(user, request.VerificationChannel);
+        await phoneVerificationService.SendVerificationCodeAsync(user, request.VerificationChannel);
 
         return ResponseModel<bool>.Success(true);
-    }
-
-    private async Task SendPhoneVerificationCodeAsync(AppUser user,
-        UserVerificationChannel requestPhoneVerificationChannel)
-    {
-        var code = VerificationCodeGenerator.Generate();
-        user.PhoneVerificationCode = code;
-        user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-
-        switch (requestPhoneVerificationChannel)
-        {
-            case UserVerificationChannel.Sms:
-                await smsService.SendVerificationSmsAsync(user.PhoneNumber!, code);
-                break;
-            case UserVerificationChannel.Telegram:
-                if (!string.IsNullOrEmpty(user.TelegramChatId))
-                    await telegramService.SendVerificationCodeAsync(user.TelegramChatId, code);
-                break;
-            default:
-                throw new InvalidVerificationChannelException("The selected phone verification channel is invalid.");
-        }
     }
 }

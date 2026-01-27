@@ -24,7 +24,8 @@ public static class ServiceRegistration
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ISmsService, SmsService>();
             services.AddScoped<ITelegramService, TelegramService>();
-            services.AddScoped<IExternalAuthService, ExternalAuthService>();
+            services.AddScoped<IExternalAuthService, ExternalAuthService>(); 
+            services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
         }
     }
 }

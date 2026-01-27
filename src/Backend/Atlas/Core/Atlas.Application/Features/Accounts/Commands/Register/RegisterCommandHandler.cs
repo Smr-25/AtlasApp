@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Helpers;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
@@ -14,8 +15,7 @@ namespace Atlas.Application.Features.Accounts.Commands.Register;
 public class RegisterCommandHandler(
     UserManager<AppUser> userManager,
     IEmailService emailService,
-    ISmsService smsService,
-    ITelegramService telegramService
+    IPhoneVerificationService phoneVerificationService
 ) : IRequestHandler<RegisterCommand, ResponseModel<bool>>
 {
     public async Task<ResponseModel<bool>> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -51,7 +51,7 @@ public class RegisterCommandHandler(
         await SendEmailVerificationCodeAsync(user);
         
         if (!string.IsNullOrEmpty(request.PhoneNumber) && request.PhoneVerificationChannel.HasValue)
-            await SendPhoneVerificationCodeAsync(user, request.PhoneVerificationChannel.Value);
+            await phoneVerificationService.SendVerificationCodeAsync(user, request.PhoneVerificationChannel.Value);
         
         return ResponseModel<bool>.Success(true);
     }
@@ -64,26 +64,4 @@ public class RegisterCommandHandler(
         await userManager.UpdateAsync(user);
         await emailService.SendVerificationEmailAsync(user.Email!, code);
     }
-    
-    private async Task SendPhoneVerificationCodeAsync(AppUser user, UserVerificationChannel requestPhoneVerificationChannel)
-    {
-        var code = VerificationCodeGenerator.Generate();
-        user.PhoneVerificationCode = code;
-        user.PhoneVerificationExpiresAt = DateTime.UtcNow.AddMinutes(10);
-        await userManager.UpdateAsync(user);
-
-        switch (requestPhoneVerificationChannel)
-        {
-            case UserVerificationChannel.Sms:
-                await smsService.SendVerificationSmsAsync(user.PhoneNumber!, code);
-                break;
-            case UserVerificationChannel.Telegram:
-                if (!string.IsNullOrEmpty(user.TelegramChatId))
-                    await telegramService.SendVerificationCodeAsync(user.TelegramChatId, code);
-                break;
-            default:
-                throw new InvalidVerificationChannelException("The selected phone verification channel is invalid.");
-        }
-    }
-    
 }

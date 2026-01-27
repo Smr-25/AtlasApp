@@ -71,7 +71,7 @@ public class ExternalLoginCommandHandler(
             return (user, false);
         }
 
-        var userName = GenerateUserNameFromEmail(externalUser.Email);
+        var userName = await GenerateUniqueUserNameAsync(externalUser.Email);
         var fullName = externalUser.FullName ?? externalUser.Email.Split('@')[0];
 
         user = AppUser.Create(
@@ -99,10 +99,25 @@ public class ExternalLoginCommandHandler(
         return (user, true);
     }
 
-    private static string GenerateUserNameFromEmail(string email)
+    private async Task<string> GenerateUniqueUserNameAsync(string email)
     {
         var baseUserName = email.Split('@')[0];
-        var random = Random.Shared;
-        return $"{baseUserName}{random.Next(1000, 9999)}";
+        var userName = baseUserName;
+        var suffix = Random.Shared.Next(1000, 9999);
+
+        var attempts = 0;
+        while (await userManager.FindByNameAsync(userName) != null && attempts < 10)
+        {
+            userName = $"{baseUserName}{suffix}";
+            suffix = Random.Shared.Next(1000, 9999);
+            attempts++;
+        }
+
+        if (attempts >= 10)
+        {
+            userName = $"{baseUserName}{Guid.NewGuid().ToString("N")[..6]}";
+        }
+
+        return userName;
     }
 }
