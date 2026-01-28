@@ -134,9 +134,9 @@ public class AccountController(IMediator mediator) : ControllerBase
     [Authorize]
     [HttpGet("profile")]
     [EnableRateLimiting("api")]
-    public async Task<IActionResult> GetProfile()
+    public async Task<IActionResult> GetProfile(GetProfileQuery query)
     {
-        var result = await mediator.Send(new GetProfileQuery());
+        var result = await mediator.Send(query);
         return Ok(result);
     }
     

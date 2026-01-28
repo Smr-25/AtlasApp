@@ -20,13 +20,5 @@
         <ProjectReference Include="..\Atlas.Domain\Atlas.Domain.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Features\Personas\Commands\ActivePersona\" />
-      <Folder Include="Features\Personas\Commands\DeactivePersona\" />
-      <Folder Include="Features\Personas\Queries\CheckPersonaExists\" />
-      <Folder Include="Features\Personas\Queries\GetMyPersona\" />
-      <Folder Include="Features\Personas\Queries\GetPersonaById\" />
-    </ItemGroup>
-
 
 </Project>
