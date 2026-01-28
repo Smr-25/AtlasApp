@@ -20,5 +20,9 @@
         <ProjectReference Include="..\Atlas.Domain\Atlas.Domain.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\PersonaStates\Queries\" />
+    </ItemGroup>
+
 
 </Project>
