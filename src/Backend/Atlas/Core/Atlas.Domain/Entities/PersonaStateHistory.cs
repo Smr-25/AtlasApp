@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
 
@@ -14,6 +15,8 @@ public class PersonaStateHistory : BaseEntity
     public int DurationDays => (EndedAt - StartedAt).Days;
     public string? Note { get; private set; }
     public Guid PersonaId { get; private set; }
+    
+    [JsonIgnore]
     public Persona Persona { get; private set; } = null!;
     public static PersonaStateHistory CreateFrom(PersonaState state)
     {

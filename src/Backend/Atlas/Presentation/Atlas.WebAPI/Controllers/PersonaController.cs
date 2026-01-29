@@ -1,65 +1,57 @@
-using Atlas.Application.Features.Personas.Commands.ActivePersona;
+using Atlas.Application.Common.Models;
+using Atlas.Application.Features.Personas.Commands.ActivatePersona;
 using Atlas.Application.Features.Personas.Commands.CreatePersona;
-using Atlas.Application.Features.Personas.Commands.DeactivePersona;
+using Atlas.Application.Features.Personas.Commands.DeactivatePersona;
 using Atlas.Application.Features.Personas.Commands.UpdatePersona;
+using Atlas.Application.Features.Personas.Dtos;
 using Atlas.Application.Features.Personas.Queries.CheckPersonaExists;
 using Atlas.Application.Features.Personas.Queries.GetMyPersona;
-using Atlas.Application.Features.Personas.Queries.GetPersonaById;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PersonaController(IMediator mediator) : ControllerBase
 {
-    [HttpPost("create")]
-    public async Task<IActionResult> CreatePersona(CreatePersonaCommand command)
-    {
-        var result = await mediator.Send(command);
-        return Ok(result);
-    }
+    #region Commands
 
-    [HttpPut("update")]
-    public async Task<IActionResult> UpdatePersona(UpdatePersonaCommand command)
-    {
-        var result = await mediator.Send(command);
-        return Ok(result);
-    }
+    [HttpPost]
+    [ProducesResponseType(typeof(ResponseModel<PersonaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Create([FromBody] CreatePersonaCommand command)
+        => Ok(await mediator.Send(command));
 
-    [HttpPost("active")]
-    public async Task<IActionResult> ActivePersona(ActivePersonaCommand command)
-    {
-        var result = await mediator.Send(command);
-        return Ok(result);
-    }
+    [HttpPut]
+    [ProducesResponseType(typeof(ResponseModel<PersonaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Update([FromBody] UpdatePersonaCommand command)
+        => Ok(await mediator.Send(command));
 
-    [HttpPost("deactive")]
-    public async Task<IActionResult> DeactivePersona(DeactivePersonaCommand command)
-    {
-        var result = await mediator.Send(command);
-        return Ok(result);
-    }
+    [HttpPatch("activate")]
+    [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Activate()
+        => Ok(await mediator.Send(new ActivatePersonaCommand()));
+
+    [HttpPatch("deactivate")]
+    [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Deactivate()
+        => Ok(await mediator.Send(new DeactivatePersonaCommand()));
+
+    #endregion
+
+    #region Queries
+
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(ResponseModel<PersonaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMe()
+        => Ok(await mediator.Send(new GetMyPersonaQuery()));
 
     [HttpGet("exists")]
-    public async Task<IActionResult> CheckPersonaExists(CheckPersonaExistsQuery query)
-    {
-        var result = await mediator.Send(query);
-        return Ok(result);
-    }
+    [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Exists()
+        => Ok(await mediator.Send(new CheckPersonaExistsQuery()));
 
-    [HttpGet("my-persona")]
-    public async Task<IActionResult> GetMyPersona(GetMyPersonaQuery query)
-    {
-        var result = await mediator.Send(query);
-        return Ok(result);
-    }
-
-    [HttpGet("my-persona-Id")]
-    public async Task<IActionResult> GetMyPersonaId(GetPersonaByIdQuery query)
-    {
-        var result = await mediator.Send(query);
-        return Ok(result.Data?.Id);
-    }
+    #endregion
 }

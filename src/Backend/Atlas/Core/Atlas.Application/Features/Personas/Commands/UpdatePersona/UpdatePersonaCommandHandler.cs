@@ -4,26 +4,33 @@ using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Personas.Dtos;
 using AutoMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+
 namespace Atlas.Application.Features.Personas.Commands.UpdatePersona;
 
-public class UpdatePersonaCommandHandler(IApplicationDbContext applicationDbContext, IMapper mapper)
+public class UpdatePersonaCommandHandler(
+    IApplicationDbContext applicationDbContext,
+    ICurrentUserService currentUserService,
+    IMapper mapper)
     : IRequestHandler<UpdatePersonaCommand, ResponseModel<PersonaDto>>
 {
     public async Task<ResponseModel<PersonaDto>> Handle(UpdatePersonaCommand request,
         CancellationToken cancellationToken)
     {
-        var persona = applicationDbContext.Personas.Find(request.Name);
-        if (persona == null)
-            throw new NotFoundException("Persona not found.");
+        var persona = await applicationDbContext.Personas
+            .FirstOrDefaultAsync(p => p.UserId.Equals(currentUserService.UserId), cancellationToken);
 
-        var existingPersonaWithName = applicationDbContext.Personas
-            .FirstOrDefault(p => p.Name == request.Name && p.Name != request.Name);
+        if (persona == null)
+            throw new NotFoundException("Persona not found for the current user.");
+        
+        var existingPersonaWithName = await applicationDbContext.Personas
+            .FirstOrDefaultAsync(p => p.Name == request.Name && p.Id != persona.Id, cancellationToken);
 
         if (existingPersonaWithName != null)
             throw new AlreadyExistException("Another persona with the same name already exists.");
 
         persona.UpdateName(request.Name);
-        
+
         var existingPersonaWithAlias = applicationDbContext.Personas
             .FirstOrDefault(p => p.Alias == request.Alias && p.Name != request.Name);
 

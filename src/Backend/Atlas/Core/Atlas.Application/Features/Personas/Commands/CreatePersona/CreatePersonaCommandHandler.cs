@@ -7,13 +7,17 @@ using MediatR;
 
 namespace Atlas.Application.Features.Personas.Commands.CreatePersona;
 
-public class CreatePersonaCommandHandler(IApplicationDbContext applicationDbContext, IMapper mapper)
+public class CreatePersonaCommandHandler(
+    IApplicationDbContext applicationDbContext,
+    ICurrentUserService currentUserService,
+    IMapper mapper)
     : IRequestHandler<CreatePersonaCommand, ResponseModel<PersonaDto>>
 {
-    public async Task<ResponseModel<PersonaDto>> Handle(CreatePersonaCommand request, CancellationToken cancellationToken)
+    public async Task<ResponseModel<PersonaDto>> Handle(CreatePersonaCommand request,
+        CancellationToken cancellationToken)
     {
         var persona = Persona.Create(
-            userId: Guid.NewGuid(), 
+            userId: new Guid(currentUserService.UserId!),
             name: request.Name,
             alias: request.Alias
         );

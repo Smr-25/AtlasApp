@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Personas.Queries.CheckPersonaExists;
 
@@ -12,7 +13,7 @@ public class CheckPersonaExistsQueryHandler(
     public async Task<ResponseModel<bool>> Handle(CheckPersonaExistsQuery request, CancellationToken cancellationToken)
     {
         var persona = await applicationDbContext.Personas
-            .FindAsync([currentUserService.UserId], cancellationToken);
+            .FirstOrDefaultAsync(p => p.UserId.Equals(currentUserService.UserId), cancellationToken);
         var exists = persona != null;
         return ResponseModel<bool>.Success(exists);
     }

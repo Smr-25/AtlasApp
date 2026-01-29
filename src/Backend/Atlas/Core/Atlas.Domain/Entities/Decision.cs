@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
 
@@ -14,10 +15,16 @@ public class Decision : BaseEntity
     public DateTime? ClosedAt { get; private set; }
     public Guid? GoalId { get; private set; }
     public Guid PersonaId { get; private set; }
+    
+    [JsonIgnore]
     public Persona Persona { get; private set; } = null!;
+    [JsonIgnore]
     public DecisionContext? Context { get; private set; }
+    [JsonIgnore]
     public DecisionOutcome? Outcome { get; private set; }
+    [JsonIgnore]
     public ICollection<Reflection> Reflections { get; private set; } = new List<Reflection>();
+    [JsonIgnore]
     public Goal? RelatedGoal { get; private set; }
 
     public static Decision Create(Guid personaId, string title, string? description = null,

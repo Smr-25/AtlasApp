@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
 
@@ -11,6 +12,8 @@ public class Constraint : BaseEntity
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid PersonaId { get; private set; }
+    
+    [JsonIgnore]
     public Persona Persona { get; private set; } = null!;
 
     public static Constraint Create(Guid personaId, ConstraintType type, string description,

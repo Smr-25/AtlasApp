@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
 
@@ -14,7 +15,10 @@ public class Goal : BaseEntity
     public DateTime? CompletedAt { get; private set; }
     public int ProgressPercentage { get; private set; } = 0;
     public Guid PersonaId { get; private set; }
+    
+    [JsonIgnore]
     public Persona Persona { get; private set; } = null!;
+    [JsonIgnore]
     public ICollection<Decision> RelatedDecisions { get; private set; } = new List<Decision>();
 
     public static Goal Create(Guid personaId, string title, string? description = null,

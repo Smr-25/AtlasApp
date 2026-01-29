@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
 
@@ -13,6 +14,8 @@ public class PersonaTimelineEvent : BaseEntity
     public string? Metadata { get; private set; }
     public DateTime OccurredAt { get; private set; } = DateTime.UtcNow;
     public Guid PersonaId { get; private set; }
+    
+    [JsonIgnore]
     public Persona? Persona { get; private set; }
 
     public static PersonaTimelineEvent CreateStateChange(Guid personaId, LifePhase oldPhase, LifePhase newPhase)

@@ -1,25 +1,34 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 
 namespace Atlas.Domain.Entities;
 
 public class Persona : BaseEntity
 {
-   public string Name { get; set; } = null!;
+   public string Name { get; private set; } = null!;
    public string? Alias { get; private set; }
    public bool IsActive { get; private set; } = true;
    public DateTime? LastActiveAt { get; private set; }
    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
    public DateTime? DeactivatedAt { get; private set; }
+   
+   [JsonIgnore]
    public PersonaState? CurrentState { get; private set; } 
-   public ICollection<PersonaStateHistory> StateHistory { get; private set; } = new List<PersonaStateHistory> { };
+   [JsonIgnore]
+   public ICollection<PersonaStateHistory> StateHistory { get; private set; } = new List<PersonaStateHistory>();
+   [JsonIgnore]
    public ICollection<Decision> Decisions { get; private set; } = new List<Decision>();
+   [JsonIgnore]
    public ICollection<Goal> Goals { get; private set; } = new List<Goal>();
+   [JsonIgnore]
    public ICollection<Constraint> Constraints { get; private set; } = new List<Constraint>();
+   [JsonIgnore]
    public ICollection<PersonaTimelineEvent> TimelineEvents { get; private set; } = new List<PersonaTimelineEvent>();
    public static Persona Create(Guid userId, string name, string? alias = null)
    {
       var persona = new Persona
       {
+         UserId =  userId,
          Name = name,
          Alias = alias
       };

@@ -20,5 +20,10 @@
         <ProjectReference Include="..\Atlas.Domain\Atlas.Domain.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\Decisions\Dtos\" />
+      <Folder Include="Features\Decisions\Queires\" />
+    </ItemGroup>
+
 
 </Project>

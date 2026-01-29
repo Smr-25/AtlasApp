@@ -18,11 +18,11 @@ public class InitializeStateCommandValidator : AbstractValidator<InitializeState
             .WithMessage("Invalid MentalLoadLevel value.");
         
         RuleFor(x => x.EnergyLevel)
-            .InclusiveBetween(0, 100)
-            .WithMessage("EnergyLevel must be between 0 and 100.");
+            .InclusiveBetween(1, 10)
+            .WithMessage("EnergyLevel must be between 1 and 10.");
         
         RuleFor(x => x.FocusLevel)
-            .InclusiveBetween(0, 100)
-            .WithMessage("FocusLevel must be between 0 and 100.");
+            .InclusiveBetween(1, 10)
+            .WithMessage("FocusLevel must be between 1 and 10.");
     }
 }

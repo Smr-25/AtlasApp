@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
 
@@ -12,6 +13,8 @@ public class PersonaState : BaseEntity
     public DateTime LastUpdatedAt { get; private set; } = DateTime.UtcNow;
     public string? Note { get; private set; } 
     public Guid PersonaId { get; private set; }
+    
+    [JsonIgnore]
     public Persona Persona { get; private set; } = null!;
 
     public static PersonaState Create(Guid personaId, LifePhase phase, MentalLoadLevel mentalLoad)
