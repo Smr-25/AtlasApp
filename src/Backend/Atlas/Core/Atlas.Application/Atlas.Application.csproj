@@ -21,7 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Decisions\Dtos\" />
       <Folder Include="Features\Decisions\Queires\" />
     </ItemGroup>
 

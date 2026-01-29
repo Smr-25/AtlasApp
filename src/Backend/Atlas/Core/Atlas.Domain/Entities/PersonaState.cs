@@ -17,18 +17,13 @@ public class PersonaState : BaseEntity
     [JsonIgnore]
     public Persona Persona { get; private set; } = null!;
 
-    public static PersonaState Create(Guid personaId, LifePhase phase, MentalLoadLevel mentalLoad)
+    public static PersonaState Create(Guid personaId, LifePhase phase, MentalLoadLevel mentalLoad) => new()
     {
-        var personaState = new PersonaState
-        {
-            PersonaId = personaId,
-            CurrentPhase = phase,
-            MentalLoad = mentalLoad,
-            LastUpdatedAt = DateTime.UtcNow
-        };
-
-        return personaState;
-    }
+        PersonaId = personaId,
+        CurrentPhase = phase,
+        MentalLoad = mentalLoad,
+        LastUpdatedAt = DateTime.UtcNow
+    };
 
     public void UpdatePhase(LifePhase newPhase, string? note = null)
     {
@@ -55,10 +50,7 @@ public class PersonaState : BaseEntity
         LastUpdatedAt = DateTime.UtcNow;
     }
 
-    public PersonaStateHistory ToHistory()
-    {
-        var history = PersonaStateHistory.CreateFrom(this);
-        return history;
-    }
+    public PersonaStateHistory ToHistory() => PersonaStateHistory.CreateFrom(this);
+    
 
 }

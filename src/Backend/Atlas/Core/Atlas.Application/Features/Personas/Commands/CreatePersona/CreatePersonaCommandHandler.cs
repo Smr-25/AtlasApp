@@ -17,7 +17,7 @@ public class CreatePersonaCommandHandler(
         CancellationToken cancellationToken)
     {
         var persona = Persona.Create(
-            userId: new Guid(currentUserService.UserId!),
+            userId: Guid.Parse(currentUserService.UserId!),
             name: request.Name,
             alias: request.Alias
         );
