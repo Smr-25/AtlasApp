@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
+using Atlas.Domain.Entities;
 using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,6 @@ public class GetStateHistoryQueryHandler(IApplicationDbContext applicationDbCont
 {
     public async Task<ResponseModel<PagedResult>> Handle(GetStateHistoryQuery request, CancellationToken cancellationToken)
     {
-       throw new  NotImplementedException();
+        throw new NotImplementedException();
     }   
 }

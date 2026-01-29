@@ -10,7 +10,6 @@ namespace Atlas.Application.Features.Personas.Commands.UpdatePersona;
 
 public class UpdatePersonaCommandHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService,
     IMapper mapper)
     : IRequestHandler<UpdatePersonaCommand, ResponseModel<PersonaDto>>
 {
@@ -18,10 +17,9 @@ public class UpdatePersonaCommandHandler(
         CancellationToken cancellationToken)
     {
         var persona = await applicationDbContext.Personas
-            .FirstOrDefaultAsync(p => p.UserId.Equals(currentUserService.UserId), cancellationToken);
-
+            .FirstOrDefaultAsync(p => p.Id == request.PersonaId, cancellationToken);
         if (persona == null)
-            throw new NotFoundException("Persona not found for the current user.");
+            throw new NotFoundException("Persona not found.");
         
         var existingPersonaWithName = await applicationDbContext.Personas
             .FirstOrDefaultAsync(p => p.Name == request.Name && p.Id != persona.Id, cancellationToken);

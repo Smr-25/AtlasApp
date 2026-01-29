@@ -5,6 +5,7 @@ using MediatR;
 namespace Atlas.Application.Features.Personas.Commands.UpdatePersona;
 
 public record UpdatePersonaCommand(
+    Guid PersonaId,
     string Name,
     string? Alias = null
 ) : IRequest<ResponseModel<PersonaDto>>;

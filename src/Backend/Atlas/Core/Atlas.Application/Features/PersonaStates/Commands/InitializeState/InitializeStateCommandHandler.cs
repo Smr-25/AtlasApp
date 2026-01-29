@@ -11,7 +11,6 @@ namespace Atlas.Application.Features.PersonaStates.Commands.InitializeState;
 
 public class InitializeStateCommandHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService,
     IMapper mapper) : IRequestHandler<InitializeStateCommand, ResponseModel<PersonaStateDto>>
 {
     public async Task<ResponseModel<PersonaStateDto>> Handle(InitializeStateCommand request,

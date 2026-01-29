@@ -15,17 +15,12 @@ public class Decision : BaseEntity
     public DateTime? ClosedAt { get; private set; }
     public Guid? GoalId { get; private set; }
     public Guid PersonaId { get; private set; }
-    
-    [JsonIgnore]
-    public Persona Persona { get; private set; } = null!;
-    [JsonIgnore]
-    public DecisionContext? Context { get; private set; }
-    [JsonIgnore]
-    public DecisionOutcome? Outcome { get; private set; }
-    [JsonIgnore]
-    public ICollection<Reflection> Reflections { get; private set; } = new List<Reflection>();
-    [JsonIgnore]
-    public Goal? RelatedGoal { get; private set; }
+
+    [JsonIgnore] public Persona Persona { get; private set; } = null!;
+    [JsonIgnore] public DecisionContext? Context { get; private set; }
+    [JsonIgnore] public DecisionOutcome? Outcome { get; private set; }
+    [JsonIgnore] public ICollection<Reflection> Reflections { get; private set; } = new List<Reflection>();
+    [JsonIgnore] public Goal? RelatedGoal { get; private set; }
 
     public static Decision Create(Guid personaId, string title, string? description = null,
         DecisionPriority priority = DecisionPriority.Medium, Guid? relatedGoalId = null)
@@ -41,11 +36,22 @@ public class Decision : BaseEntity
         };
         return decision;
     }
-
-    public void UpdateStatus(DecisionStatus newStatus)
+    
+    public Decision Update(string? title = null, string? description = null,
+        DecisionPriority? priority = null)
     {
-        Status = newStatus;
+        if (!string.IsNullOrWhiteSpace(title))
+            Title = title;
+        if (description != null)
+            Description = description;
+        if (priority.HasValue)
+            Priority = priority.Value;
+        UpdatedAt = DateTime.UtcNow;
+        return this;
     }
+
+    public void UpdateStatus(DecisionStatus newStatus) => Status = newStatus;
+
 
     public void Execute()
     {
@@ -60,18 +66,12 @@ public class Decision : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void AddReflection(Reflection reflection)
+    public void Postpone(string? note = null)
     {
-        Reflections.Add(reflection);
+        Status = DecisionStatus.Postponed;
+        UpdatedAt = DateTime.UtcNow;
     }
-
-    public void SetContext(DecisionContext context)
-    {
-        Context = context;
-    }
-
-    public void SetOutcome(DecisionOutcome outcome)
-    {
-        Outcome = outcome;
-    }
+    public void AddReflection(Reflection reflection) => Reflections.Add(reflection);
+    public void SetContext(DecisionContext context) => Context = context;
+    public void SetOutcome(DecisionOutcome outcome) => Outcome = outcome;
 }

@@ -6,6 +6,9 @@ public class UpdatePersonaCommandValidator : AbstractValidator<UpdatePersonaComm
 {
     public UpdatePersonaCommandValidator()
     {
+        RuleFor(x => x.PersonaId)
+            .NotEmpty().WithMessage("Persona ID is required.");
+        
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Persona name is required.")
             .MaximumLength(100).WithMessage("Persona name must not exceed 100 characters.");
