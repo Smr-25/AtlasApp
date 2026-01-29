@@ -18,7 +18,7 @@ public class CreateDecisionCommandHandler(
         CancellationToken cancellationToken)
     {
         var persona = await applicationDbContext.Personas
-            .FirstOrDefaultAsync(x => x.UserId.ToString() == currentUserService.UserId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.UserId.Equals(currentUserService.UserId), cancellationToken);
         if (persona is null)
             throw new NotFoundException("Persona for current user not found");
         

@@ -16,14 +16,8 @@ public class AbandonDecisionCommandHandler(
     public async Task<ResponseModel<DecisionDto>> Handle(AbandonDecisionCommand request,
         CancellationToken cancellationToken)
     {
-        var persona = await applicationDbContext.Personas
-            .FirstOrDefaultAsync(x => x.UserId.ToString() == currentUserService.UserId, cancellationToken);
-
-        if (persona is null)
-            throw new NotFoundException("Persona for current user not found");
-
         var decision = await applicationDbContext.Decisions
-            .FirstOrDefaultAsync(x => x.Id == request.DecisionId && x.PersonaId == persona.Id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == request.DecisionId, cancellationToken);
 
         if (decision is null)
             throw new NotFoundException("Decision not found");
