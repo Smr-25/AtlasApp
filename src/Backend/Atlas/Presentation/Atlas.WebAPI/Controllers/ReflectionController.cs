@@ -14,13 +14,6 @@ namespace Atlas.WebAPI.Controllers;
 [Authorize]
 public class ReflectionController(IMediator mediator) : ControllerBase
 {
-    // POST   /api/reflections              → CreateReflection
-    //     GET    /api/reflections/{id}         → GetReflectionById
-    //     GET    /api/reflections              → GetMyReflections
-    //     GET    /api/reflections/type/{type}  → GetReflectionsByType
-    //     PUT    /api/reflections/{id}         → UpdateReflection
-    //     DELETE /api/reflections/{id}         → DeleteReflection
-
     [HttpGet]
     public async Task<IActionResult> GetMyReflections()
     {
