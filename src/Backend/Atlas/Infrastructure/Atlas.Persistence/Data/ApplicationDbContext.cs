@@ -19,7 +19,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Goal> Goals { get; set; }
     public DbSet<Constraint> Constraints { get; set; }
     public DbSet<Reflection> Reflections { get; set; }
-    public DbSet<TimeLine> TimeLines { get; set; }
     public DbSet<PersonaTimelineEvent> PersonaTimelineEvents { get; set; }
     
 
