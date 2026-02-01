@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -9,9 +8,9 @@ using Microsoft.AspNetCore.Identity;
 namespace Atlas.Application.Features.Accounts.Commands.ChangePassword;
 
 public class ChangePasswordCommandHandler(UserManager<AppUser> userManager, ICurrentUserService currentUserService)
-    : IRequestHandler<ChangePasswordCommand, ResponseModel<bool>>
+    : IRequestHandler<ChangePasswordCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
         if (!currentUserService.IsAuthenticated)
             throw new UnauthorizedException("User is not authenticated");
@@ -29,6 +28,6 @@ public class ChangePasswordCommandHandler(UserManager<AppUser> userManager, ICur
         if (!result.Succeeded)
             throw new IdentityException(result.Errors.Select(e => e.Description));
 
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 }

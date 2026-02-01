@@ -1,15 +1,14 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
 namespace Atlas.Application.Features.Accounts.Commands.VerifyEmail;
 
-public class VerifyEmailCommandHandler(UserManager<AppUser> userManager) : IRequestHandler<VerifyEmailCommand,ResponseModel<bool>>
+public class VerifyEmailCommandHandler(UserManager<AppUser> userManager) : IRequestHandler<VerifyEmailCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
 
@@ -28,6 +27,6 @@ public class VerifyEmailCommandHandler(UserManager<AppUser> userManager) : IRequ
             user.Activate();
 
         await userManager.UpdateAsync(user);
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 }

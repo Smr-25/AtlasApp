@@ -1,4 +1,3 @@
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using MediatR;
 
@@ -8,4 +7,4 @@ public record LoginCommand(
     string? Email,
     string? UserName,
     string Password
-) : IRequest<ResponseModel<AuthResponseDto>>;
+) : IRequest<AuthResponseDto>;

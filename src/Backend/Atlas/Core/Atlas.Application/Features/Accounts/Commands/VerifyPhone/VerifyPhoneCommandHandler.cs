@@ -1,6 +1,5 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -9,9 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Atlas.Application.Features.Accounts.Commands.VerifyPhone;
 
 public class VerifyPhoneCommandHandler(UserManager<AppUser> userManager)
-    : IRequestHandler<VerifyPhoneCommand, ResponseModel<bool>>
+    : IRequestHandler<VerifyPhoneCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(VerifyPhoneCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(VerifyPhoneCommand request, CancellationToken cancellationToken)
     {
         var user = await userManager.Users.FirstOrDefaultAsync(u=>u.PhoneNumber == request.PhoneNumber);
 
@@ -30,6 +29,6 @@ public class VerifyPhoneCommandHandler(UserManager<AppUser> userManager)
             user.Activate();
 
         await userManager.UpdateAsync(user);
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 }

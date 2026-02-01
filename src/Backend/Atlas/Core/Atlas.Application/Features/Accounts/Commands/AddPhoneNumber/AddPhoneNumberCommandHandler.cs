@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
@@ -13,9 +12,9 @@ namespace Atlas.Application.Features.Accounts.Commands.AddPhoneNumber;
 public class AddPhoneNumberCommandHandler(
     UserManager<AppUser> userManager,
     IPhoneVerificationService phoneVerificationService,
-    ICurrentUserService currentUserService) : IRequestHandler<AddPhoneNumberCommand, ResponseModel<bool>>
+    ICurrentUserService currentUserService) : IRequestHandler<AddPhoneNumberCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(AddPhoneNumberCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(AddPhoneNumberCommand request, CancellationToken cancellationToken)
     {
         if (!currentUserService.IsAuthenticated)
             throw new UnauthorizedException("User is not authenticated");
@@ -39,6 +38,6 @@ public class AddPhoneNumberCommandHandler(
 
         await phoneVerificationService.SendVerificationCodeAsync(user, request.VerificationChannel);
 
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 }

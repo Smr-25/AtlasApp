@@ -1,6 +1,5 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -8,9 +7,9 @@ using Microsoft.AspNetCore.Identity;
 namespace Atlas.Application.Features.Accounts.Commands.ResetPassword;
 
 public class ResetPasswordCommandHandler(UserManager<AppUser> userManager)
-    : IRequestHandler<ResetPasswordCommand, ResponseModel<bool>>
+    : IRequestHandler<ResetPasswordCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
@@ -29,6 +28,6 @@ public class ResetPasswordCommandHandler(UserManager<AppUser> userManager)
         user.ResetPasswordExpiresAt = null;
         await userManager.UpdateAsync(user);
 
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 }

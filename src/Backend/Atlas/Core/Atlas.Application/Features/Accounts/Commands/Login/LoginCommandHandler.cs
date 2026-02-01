@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
@@ -14,11 +13,11 @@ namespace Atlas.Application.Features.Accounts.Commands.Login;
 public class LoginCommandHandler(
     UserManager<AppUser> userManager,
     IJwtService jwtService,
-    IOptions<LockoutSettings> options) : IRequestHandler<LoginCommand, ResponseModel<AuthResponseDto>>
+    IOptions<LockoutSettings> options) : IRequestHandler<LoginCommand, AuthResponseDto>
 {
     private readonly LockoutSettings _lockoutSettings = options.Value;
 
-    public async Task<ResponseModel<AuthResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByEmailOrUserNameAsync(request.Email, request.UserName);
 
@@ -75,6 +74,6 @@ public class LoginCommandHandler(
             FullName: user.FullName
         );
 
-        return ResponseModel<AuthResponseDto>.Success(response);
+        return response;
     }
 }

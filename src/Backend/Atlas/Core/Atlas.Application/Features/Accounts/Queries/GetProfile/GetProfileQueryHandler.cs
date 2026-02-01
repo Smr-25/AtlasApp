@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Entities;
 using AutoMapper;
@@ -14,9 +13,9 @@ public class GetProfileQueryHandler(
     UserManager<AppUser> userManager,
     ICurrentUserService currentUserService,
     IMapper mapper
-    ) : IRequestHandler<GetProfileQuery,ResponseModel<AccountDto>>
+    ) : IRequestHandler<GetProfileQuery, AccountDto>
 {
-    public async Task<ResponseModel<AccountDto>> Handle(GetProfileQuery request, CancellationToken cancellationToken)
+    public async Task<AccountDto> Handle(GetProfileQuery request, CancellationToken cancellationToken)
     {
     
         if (!currentUserService.IsAuthenticated || currentUserService.UserId == null)
@@ -27,6 +26,6 @@ public class GetProfileQueryHandler(
             throw new NotFoundException("User", currentUserService.UserId!);
        
         var profile = mapper.Map<AccountDto>(user);
-        return ResponseModel<AccountDto>.Success(profile);
+        return profile;
     }
 }

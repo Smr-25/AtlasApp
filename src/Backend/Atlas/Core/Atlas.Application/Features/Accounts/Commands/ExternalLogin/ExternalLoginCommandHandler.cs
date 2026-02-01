@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Application.Models;
 using Atlas.Application.Services.Interfaces;
@@ -15,9 +14,9 @@ public class ExternalLoginCommandHandler(
     UserManager<AppUser> userManager,
     IJwtService jwtService,
     IExternalAuthService externalAuthService)
-    : IRequestHandler<ExternalLoginCommand, ResponseModel<ExternalLoginResponseDto>>
+    : IRequestHandler<ExternalLoginCommand, ExternalLoginResponseDto>
 {
-    public async Task<ResponseModel<ExternalLoginResponseDto>> Handle(ExternalLoginCommand request,
+    public async Task<ExternalLoginResponseDto> Handle(ExternalLoginCommand request,
         CancellationToken cancellationToken)
     {
         var externalUser = request.Provider.ToLower() switch
@@ -49,7 +48,7 @@ public class ExternalLoginCommandHandler(
             Email: user.Email!,
             FullName: user.FullName
         );
-        return ResponseModel<ExternalLoginResponseDto>.Success(externalLoginResponseDto);
+        return externalLoginResponseDto;
     }
 
     private async Task<(AppUser User, bool IsNewUser)> FindOrCreateExternalUserAsync(ExternalUserInfo externalUser)

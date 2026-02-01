@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -10,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Atlas.Application.Features.Accounts.Commands.GenerateTelegramLinkCode;
 
 public class GenerateTelegramLinkCodeCommandHandler(UserManager<AppUser> userManager, ICurrentUserService currentUserService)
-    : IRequestHandler<GenerateTelegramLinkCodeCommand, ResponseModel<string>>
+    : IRequestHandler<GenerateTelegramLinkCodeCommand, string>
 {
-    public async Task<ResponseModel<string>> Handle(GenerateTelegramLinkCodeCommand request,
+    public async Task<string> Handle(GenerateTelegramLinkCodeCommand request,
         CancellationToken cancellationToken)
     {
         if (!currentUserService.IsAuthenticated)
@@ -27,6 +26,6 @@ public class GenerateTelegramLinkCodeCommandHandler(UserManager<AppUser> userMan
         user.TelegramLinkCode = linkCode;
         user.TelegramLinkCodeExpiry = DateTime.UtcNow.AddMinutes(10);
         await userManager.UpdateAsync(user);
-        return ResponseModel<string>.Success(linkCode);
+        return linkCode;
     }
 }

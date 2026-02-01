@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Helpers;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
@@ -10,9 +9,9 @@ using Microsoft.AspNetCore.Identity;
 namespace Atlas.Application.Features.Accounts.Commands.ResendEmailVerification;
 
 public class ResendEmailVerificationCommandHandler(UserManager<AppUser> userManager, IEmailService emailService)
-    : IRequestHandler<ResendEmailVerificationCommand, ResponseModel<bool>>
+    : IRequestHandler<ResendEmailVerificationCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(ResendEmailVerificationCommand request,
+    public async Task<bool> Handle(ResendEmailVerificationCommand request,
         CancellationToken cancellationToken)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
@@ -23,7 +22,7 @@ public class ResendEmailVerificationCommandHandler(UserManager<AppUser> userMana
             throw new AlreadyVerifiedException("Email");
 
         await SendEmailVerificationCodeAsync(user);
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 
     private async Task SendEmailVerificationCodeAsync(AppUser user)

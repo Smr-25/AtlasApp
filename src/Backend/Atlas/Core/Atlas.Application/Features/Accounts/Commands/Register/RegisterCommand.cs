@@ -1,4 +1,3 @@
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Enums;
 using MediatR;
 
@@ -12,4 +11,4 @@ public record RegisterCommand(
     string Password,
     string ConfirmPassword,
     UserVerificationChannel? PhoneVerificationChannel
-) : IRequest<ResponseModel<bool>>;
+) : IRequest<bool>;

@@ -1,4 +1,3 @@
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using MediatR;
 
@@ -9,4 +8,4 @@ public record ExternalLoginCommand(
     string IdToken,
     string? AccessToken = null,
     string? AuthorizationCode = null
-): IRequest<ResponseModel<ExternalLoginResponseDto>>;
+): IRequest<ExternalLoginResponseDto>;

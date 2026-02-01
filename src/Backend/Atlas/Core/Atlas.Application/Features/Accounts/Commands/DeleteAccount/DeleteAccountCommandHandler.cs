@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -9,9 +8,9 @@ using Microsoft.AspNetCore.Identity;
 namespace Atlas.Application.Features.Accounts.Commands.DeleteAccount;
 
 public class DeleteAccountCommandHandler(UserManager<AppUser> userManager, ICurrentUserService currentUserService)
-    : IRequestHandler<DeleteAccountCommand, ResponseModel<bool>>
+    : IRequestHandler<DeleteAccountCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
     {
         if (!currentUserService.IsAuthenticated)
             throw new UnauthorizedException("User is not authenticated");
@@ -23,6 +22,6 @@ public class DeleteAccountCommandHandler(UserManager<AppUser> userManager, ICurr
 
         user.MarkAsDeleted();
         await userManager.UpdateAsync(user);
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 }

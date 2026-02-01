@@ -1,6 +1,5 @@
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Entities;
 using MediatR;
@@ -10,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Atlas.Application.Features.Accounts.Commands.RefreshToken;
 
 public class RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtService jwtService)
-    : IRequestHandler<RefreshTokenCommand, ResponseModel<TokenDto>>
+    : IRequestHandler<RefreshTokenCommand, TokenDto>
 {
-    public async Task<ResponseModel<TokenDto>> Handle(RefreshTokenCommand request,
+    public async Task<TokenDto> Handle(RefreshTokenCommand request,
         CancellationToken cancellationToken)
     {
         var user = await userManager.Users.FirstOrDefaultAsync(u =>
@@ -41,6 +40,6 @@ public class RefreshTokenCommandHandler(UserManager<AppUser> userManager, IJwtSe
             newAccessToken.Expiration,
             newRefreshToken.RefreshTokenExpiresAt
         );
-        return ResponseModel<TokenDto>.Success(tokenDto);
+        return tokenDto;
     }
 }

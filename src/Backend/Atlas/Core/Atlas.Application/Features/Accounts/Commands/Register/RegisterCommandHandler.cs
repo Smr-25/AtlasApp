@@ -2,7 +2,6 @@ using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Helpers;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using Atlas.Domain.Enums;
@@ -16,9 +15,9 @@ public class RegisterCommandHandler(
     UserManager<AppUser> userManager,
     IEmailService emailService,
     IPhoneVerificationService phoneVerificationService
-) : IRequestHandler<RegisterCommand, ResponseModel<bool>>
+) : IRequestHandler<RegisterCommand, bool>
 {
-    public async Task<ResponseModel<bool>> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         var existingUser = await userManager.FindByNameAsync(request.UserName);
         if (existingUser != null)
@@ -53,7 +52,7 @@ public class RegisterCommandHandler(
         if (!string.IsNullOrEmpty(request.PhoneNumber) && request.PhoneVerificationChannel.HasValue)
             await phoneVerificationService.SendVerificationCodeAsync(user, request.PhoneVerificationChannel.Value);
         
-        return ResponseModel<bool>.Success(true);
+        return true;
     }
 
     private async Task SendEmailVerificationCodeAsync(AppUser user)

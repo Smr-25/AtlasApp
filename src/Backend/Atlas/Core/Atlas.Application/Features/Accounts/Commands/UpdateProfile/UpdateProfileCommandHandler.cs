@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Entities;
 using AutoMapper;
@@ -11,9 +10,9 @@ using Microsoft.AspNetCore.Identity;
 namespace Atlas.Application.Features.Accounts.Commands.UpdateProfile;
 
 public class UpdateProfileCommandHandler(UserManager<AppUser> userManager, IMapper mapper, ICurrentUserService currentUserService)
-    : IRequestHandler<UpdateProfileCommand, ResponseModel<AccountDto>>
+    : IRequestHandler<UpdateProfileCommand, AccountDto>
 {
-    public async Task<ResponseModel<AccountDto>> Handle(UpdateProfileCommand request,
+    public async Task<AccountDto> Handle(UpdateProfileCommand request,
         CancellationToken cancellationToken)
     {
         if (!currentUserService.IsAuthenticated)
@@ -38,6 +37,6 @@ public class UpdateProfileCommandHandler(UserManager<AppUser> userManager, IMapp
             throw new IdentityException(result.Errors.Select(e => e.Description));
         var accountDto = mapper.Map<AccountDto>(user);
         
-        return ResponseModel<AccountDto>.Success(accountDto);
+        return accountDto;
     }
 }
