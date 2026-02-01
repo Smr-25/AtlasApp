@@ -1,40 +1,159 @@
-using System.Text.Json.Serialization;
+using Atlas.Domain.Abstractions;
 using Atlas.Domain.Entities.Common;
+using Atlas.Domain.Enums;
+using Atlas.Domain.Exceptions;
 
 namespace Atlas.Domain.Entities;
 
-public class Persona : BaseEntity
+public class Persona : BaseEntity, IAggregateRoot
 {
+    private readonly List<Integration> _integrations = [];
+    private readonly List<Workspace> _workspaces = [];
+
+    public Guid UserId { get; private set; }
     public string Name { get; private set; } = null!;
-    public string? Alias { get; private set; }
-    public bool IsActive { get; private set; } = true;
-    public DateTime? LastActiveAt { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public DateTime? DeactivatedAt { get; private set; }
-    [JsonIgnore] public PersonaState? CurrentState { get; private set; }
+    public string? Bio { get; private set; }
+    public PersonaType Type { get; private set; }
+    public string? Config { get; private set; }
+    public bool IsPrimary { get; private set; }
+    public IReadOnlyCollection<Integration> Integrations => _integrations.AsReadOnly();
+    public IReadOnlyCollection<Workspace> Workspaces => _workspaces.AsReadOnly();
 
-    [JsonIgnore]
-    public ICollection<PersonaStateHistory> StateHistory { get; private set; } = new List<PersonaStateHistory>();
-
-    [JsonIgnore] public ICollection<Decision> Decisions { get; private set; } = new List<Decision>();
-    [JsonIgnore] public ICollection<Goal> Goals { get; private set; } = new List<Goal>();
-    [JsonIgnore] public ICollection<Constraint> Constraints { get; private set; } = new List<Constraint>();
-
-    [JsonIgnore]
-    public ICollection<PersonaTimelineEvent> TimelineEvents { get; private set; } = new List<PersonaTimelineEvent>();
-
-    public static Persona Create(Guid userId, string name, string? alias = null) => new() { Name = name, Alias = alias };
-    public void UpdateName(string name) => Name = name;
-    public void UpdateAlias(string? alias) => Alias = alias;
-    public void Deactivate()
+    private Persona()
     {
-        IsActive = false;
-        DeactivatedAt = DateTime.UtcNow;
     }
-    public void Activate()
+
+    public static Persona Create(
+        Guid userId,
+        string name,
+        PersonaType type,
+        string? bio = null,
+        bool isPrimary = false)
     {
-        IsActive = true;
-        DeactivatedAt = null;
+        if (userId == Guid.Empty)
+            throw new InvalidEntityStateException(nameof(Persona), nameof(UserId),
+                "User ID cannot be empty.");
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidEntityStateException(nameof(Persona), nameof(Name),
+                "Persona name cannot be empty.");
+
+        if (name.Length > 100)
+            throw new InvalidEntityStateException(nameof(Persona), nameof(Name),
+                "Persona name cannot exceed 100 characters.");
+
+        if (bio?.Length > 500)
+            throw new InvalidEntityStateException(nameof(Persona), nameof(Bio),
+                "Bio cannot exceed 500 characters.");
+
+        return new Persona
+        {
+            UserId = userId,
+            Name = name.Trim(),
+            Type = type,
+            Bio = bio?.Trim(),
+            IsPrimary = isPrimary
+        };
     }
-    public void UpdateLastActive() => LastActiveAt = DateTime.UtcNow;
+
+    public void UpdateProfile(string name, string? bio)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidEntityStateException(nameof(Persona), nameof(Name),
+                "Persona name cannot be empty.");
+
+        if (name.Length > 100)
+            throw new InvalidEntityStateException(nameof(Persona), nameof(Name),
+                "Persona name cannot exceed 100 characters.");
+
+        if (bio?.Length > 500)
+            throw new InvalidEntityStateException(nameof(Persona), nameof(Bio),
+                "Bio cannot exceed 500 characters.");
+
+        Name = name.Trim();
+        Bio = bio?.Trim();
+        SetModified();
+    }
+
+    public void UpdateConfig(string? config)
+    {
+        Config = config;
+        SetModified();
+    }
+
+    public void ChangeType(PersonaType newType)
+    {
+        if (Type == newType) return;
+
+        Type = newType;
+        Config = null;
+        SetModified();
+    }
+
+    public void SetAsPrimary()
+    {
+        IsPrimary = true;
+        SetModified();
+    }
+
+    public void RemovePrimaryStatus()
+    {
+        IsPrimary = false;
+        SetModified();
+    }
+
+    public void AddIntegration(Integration integration)
+    {
+        if (integration == null)
+            throw new ArgumentNullException(nameof(integration));
+
+        if (_integrations.Any(i => i.Provider == integration.Provider &&
+                                   i.Name == integration.Name &&
+                                   !i.IsDeleted))
+        {
+            throw new BusinessRuleViolationException(
+                "DuplicateIntegration",
+                $"An integration with provider '{integration.Provider.ToString()}' and name '{integration.Name}' already exists.");
+        }
+
+        _integrations.Add(integration);
+        SetModified();
+    }
+
+    public void RemoveIntegration(Guid integrationId)
+    {
+        var integration = _integrations.FirstOrDefault(i => i.Id == integrationId);
+        if (integration == null)
+            throw new EntityNotFoundException(nameof(Integration), integrationId);
+
+        integration.Delete();
+        SetModified();
+    }
+
+    public void AddWorkspace(Workspace workspace)
+    {
+        if (workspace == null)
+            throw new ArgumentNullException(nameof(workspace));
+
+        if (_workspaces.Any(w => w.Name.Equals(workspace.Name, StringComparison.OrdinalIgnoreCase) &&
+                                 !w.IsDeleted))
+        {
+            throw new BusinessRuleViolationException(
+                "DuplicateWorkspace",
+                $"A workspace named '{workspace.Name}' already exists.");
+        }
+
+        _workspaces.Add(workspace);
+        SetModified();
+    }
+
+    public void RemoveWorkspace(Guid workspaceId)
+    {
+        var workspace = _workspaces.FirstOrDefault(w => w.Id == workspaceId);
+        if (workspace == null)
+            throw new EntityNotFoundException(nameof(Workspace), workspaceId);
+
+        workspace.Delete();
+        SetModified();
+    }
 }

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Atlas.Application.MapProfiles;
 using Atlas.Application.Settings;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
@@ -13,10 +12,6 @@ public static class ServiceRegistration
     {
         public void AddApplicationServices(IConfiguration configuration)
         {
-            services.AddAutoMapper(opt =>
-            {
-                opt.AddMaps(typeof(PersonaMapProfile).Assembly);
-            });
             services.AddMediatR(opt => {
                 opt.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             });
