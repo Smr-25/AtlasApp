@@ -3,11 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Atlas.Persistence.Configurations;
-
 public class UserConfiguration : IEntityTypeConfiguration<AppUser>
 {
     public void Configure(EntityTypeBuilder<AppUser> builder)
     {
+        builder.ToTable("Users", "identity");
+        
         builder.Property(u => u.FullName)
             .IsRequired()
             .HasMaxLength(100);
@@ -28,10 +29,12 @@ public class UserConfiguration : IEntityTypeConfiguration<AppUser>
             .HasMaxLength(20);
         builder.HasIndex(u => u.PhoneNumber)
             .IsUnique()
-            .HasFilter("[PhoneNumber] IS NOT NULL");
+            .HasFilter("\"PhoneNumber\" IS NOT NULL"); 
 
         builder.Property(u => u.Status)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(50);
 
         builder.Property(u => u.CreatedAt)
             .IsRequired();
