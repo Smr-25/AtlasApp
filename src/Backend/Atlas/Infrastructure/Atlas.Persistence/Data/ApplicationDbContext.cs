@@ -10,10 +10,15 @@ namespace Atlas.Persistence.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<AppUser,IdentityRole<Guid>,Guid>(options), IApplicationDbContext
 {
-    public DbSet<Persona> Personas { get; set; } = null!;
-    public DbSet<Integration> Integrations { get; set; } = null!;
+    public DbSet<AppUser> Users { get; set; } 
+    public DbSet<Persona> Personas { get; set; } 
+    public DbSet<Integration> Integrations { get; set; } 
     public DbSet<Workspace> Workspaces { get; set; } = null!;
     public DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; set; } = null!;
+    public DbSet<Profession> Professions { get; set; } 
+    public DbSet<Interest> Interests { get; set; }
+    public DbSet<OnboardingQuestion> OnboardingQuestions { get; set; }
+    public DbSet<OnboardingOption> OnboardingOptions { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

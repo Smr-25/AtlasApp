@@ -1,5 +1,6 @@
 using Atlas.Application.Features.Personas.Commands.AddIntegration;
 using Atlas.Application.Features.Personas.Commands.CreatePersona;
+using Atlas.Application.Features.Personas.Queries.GetPersonas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,5 +22,12 @@ public class PersonaController : ApiControllerBase
             return BadRequestResponse("URL ID and Body ID mismatch");
         var integrationId = await Mediator.Send(command);
         return OkResponse(integrationId);
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await Mediator.Send(new GetPersonasQuery());
+        return OkResponse(result);
     }
 }
