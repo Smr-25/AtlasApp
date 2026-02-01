@@ -1,13 +1,14 @@
 using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
 using Atlas.Domain.Entities.Common;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Persistence.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : IdentityDbContext<AppUser>(options), IApplicationDbContext
+    : IdentityDbContext<AppUser,IdentityRole<Guid>,Guid>(options), IApplicationDbContext
 {
     public DbSet<Persona> Personas { get; set; } = null!;
     public DbSet<Integration> Integrations { get; set; } = null!;
@@ -37,19 +38,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         modelBuilder.Entity<AppUser>().ToTable("Users", "identity");
 
-        // Configure other Identity tables
-        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRole>()
-            .ToTable("Roles", "identity");
-        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<string>>()
-            .ToTable("UserRoles", "identity");
-        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserClaim<string>>()
-            .ToTable("UserClaims", "identity");
-        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserLogin<string>>()
-            .ToTable("UserLogins", "identity");
-        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserToken<string>>()
-            .ToTable("UserTokens", "identity");
-        modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>>()
-            .ToTable("RoleClaims", "identity");
+        modelBuilder.Entity<IdentityRole<Guid>>().ToTable("Roles", "identity");
+        modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles", "identity");
+        modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims", "identity");
+        modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins", "identity");
+        modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims", "identity");
+        modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens", "identity");
     }
     
     private void UpdateAuditFields()
@@ -62,11 +56,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             switch (entry.State)
             {
                 case EntityState.Added:
-                    // CreatedAt is set in the entity constructor, but ensure it's set
                     if (entry.Entity.CreatedAt == default)
-                    {
                         entry.Property(nameof(BaseEntity.CreatedAt)).CurrentValue = now;
-                    }
+                    
 
                     break;
 

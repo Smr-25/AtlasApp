@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Atlas.Domain.Entities;
 
-public class AppUser : IdentityUser
+public class AppUser : IdentityUser<Guid>
 {
     public string FullName { get; set; } = null!;
     public UserStatus Status { get; private set; }

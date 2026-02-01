@@ -19,7 +19,7 @@ public class JwtService(IOptions<JwtSettings> jwtOptions) : IJwtService
     {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.Id),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email!),
             new(ClaimTypes.Name, user.UserName!),
             new("FullName", user.FullName)

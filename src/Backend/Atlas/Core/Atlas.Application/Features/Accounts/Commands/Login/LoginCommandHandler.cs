@@ -69,7 +69,7 @@ public class LoginCommandHandler(
             RefreshToken: refreshToken.RefreshToken,
             AccessTokenExpiration: accessToken.Expiration,
             RefreshTokenExpiration: refreshToken.RefreshTokenExpiresAt,
-            UserId: user.Id,
+            UserId: user.Id.ToString(),
             UserName: user.UserName!,
             Email: user.Email!,
             FullName: user.FullName

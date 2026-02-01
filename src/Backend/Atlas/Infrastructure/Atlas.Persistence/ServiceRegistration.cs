@@ -16,30 +16,24 @@ public static class ServiceRegistration
 {
     extension(IServiceCollection services)
     {
-        public void AddPersistanceServices(IConfiguration configuration)
+        public void AddPersistenceServices(IConfiguration configuration)
         {
-            // Configure PostgreSQL with Npgsql
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseNpgsql(
-                    configuration.GetConnectionString("DefaultConnection"),
-                    npgsqlOptions =>
-                    {
-                        npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "atlas");
-                        npgsqlOptions.EnableRetryOnFailure(
-                            maxRetryCount: 3,
-                            maxRetryDelay: TimeSpan.FromSeconds(30),
-                            errorCodesToAdd: null);
-                    });
+                    configuration.GetConnectionString("PostgreSqlConnection"),
+                    npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "atlas")
+                );
                 
-                // Enable sensitive data logging in development
                 #if DEBUG
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
                 #endif
             });
+            
+            services.AddScoped<IApplicationDbContext>(provider => 
+                provider.GetRequiredService<ApplicationDbContext>());
 
-            services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
 
             var passwordPolicy = configuration.GetSection("PasswordPolicySettings").Get<PasswordPolicySettings>()
                                  ?? new PasswordPolicySettings();

@@ -45,7 +45,7 @@ public class ExternalLoginCommandHandler(
             RefreshToken: refreshTokenResponse.RefreshToken,
             RefreshTokenExpiration: refreshTokenResponse.RefreshTokenExpiresAt,
             IsNewUser: isNewUser,
-            UserId: user.Id,
+            UserId: user.Id.ToString(),
             Email: user.Email!,
             FullName: user.FullName
         );

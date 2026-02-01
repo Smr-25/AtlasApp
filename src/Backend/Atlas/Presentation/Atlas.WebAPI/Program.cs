@@ -18,7 +18,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddPersistanceServices(builder.Configuration);
+builder.Services.AddPersistenceServices(builder.Configuration);
 
 var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>()
                         ?? new RateLimitSettings();
