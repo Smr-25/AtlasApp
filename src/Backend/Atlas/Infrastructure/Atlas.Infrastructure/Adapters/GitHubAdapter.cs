@@ -11,29 +11,54 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory) : IIntegrationA
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("GitHub");
 
     public IntegrationProvider Provider => IntegrationProvider.GitHub;
-    
-    public async Task<List<ExternalResourceDto>> GetResourcesAsync(string accessToken, CancellationToken cancellationToken)
+
+    public async Task<List<ExternalResourceDto>> GetResourcesAsync(string accessToken,
+        CancellationToken cancellationToken)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/repos?sort=updated&per_page=50");
-        
+        var request =
+            new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/repos?sort=updated&per_page=50");
+
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        request.Headers.UserAgent.ParseAdd("Atlas-App"); 
+        request.Headers.UserAgent.ParseAdd("Atlas-App");
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        
-        if (!response.IsSuccessStatusCode) return []; 
-        
+
+        if (!response.IsSuccessStatusCode) return [];
+
         var repos = await response.Content.ReadFromJsonAsync<List<GitHubRepoDto>>(cancellationToken: cancellationToken);
 
         if (repos == null) return [];
 
         return repos.Select(r => new ExternalResourceDto(
-            r.id.ToString(),
-            r.name,
-            r.description,
-            r.html_url,
+            r.Id.ToString(),
+            r.Name,
+            BuildDescription(r),
+            r.HtmlUrl,
             "Repository"
         )).ToList();
     }
-    private record GitHubRepoDto(long id, string name, string description, string html_url);
+    
+    private string BuildDescription(GitHubRepoDto r)
+    {
+        var parts = new List<string>();
+        
+        if (!string.IsNullOrEmpty(r.Language)) parts.Add($"💻 {r.Language}");
+        if (r.StargazersCount > 0) parts.Add($"⭐ {r.StargazersCount}");
+        
+        if (r.PushedAt.HasValue) 
+            parts.Add($"📅 {r.PushedAt.Value:MMM dd}");
+        if (!string.IsNullOrEmpty(r.Description)) parts.Add($"- {r.Description}");
+
+        return string.Join(" • ", parts);
+    }
+
+    private record GitHubRepoDto(
+        long Id,
+        string Name,
+        string Description,
+        string HtmlUrl,
+        string Language,
+        int StargazersCount,
+        DateTime? PushedAt
+    );
 }
