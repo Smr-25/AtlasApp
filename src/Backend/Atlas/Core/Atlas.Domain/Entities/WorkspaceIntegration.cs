@@ -15,7 +15,7 @@ public class WorkspaceIntegration : BaseEntity
     private WorkspaceIntegration() { }
 
    
-    internal static WorkspaceIntegration Create(Guid workspaceId, Guid integrationId, string? config = null)
+    public static WorkspaceIntegration Create(Guid workspaceId, Guid integrationId, string? config = null)
     {
         return new WorkspaceIntegration
         {
