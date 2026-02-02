@@ -26,6 +26,7 @@ public static class ServiceRegistration
             services.AddScoped<ITelegramService, TelegramService>();
             services.AddScoped<IExternalAuthService, ExternalAuthService>(); 
             services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
+            services.AddScoped<IEncryptionService, EncryptionService>();
         }
     }
 }
