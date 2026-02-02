@@ -25,7 +25,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Atlas.WebAPI.Controllers;
 
 [EnableRateLimiting("fixed")]
-public class AccountController : ApiControllerBase
+public class AccountsController : ApiControllerBase
 {
     #region Auth Endpoints (Public)
     

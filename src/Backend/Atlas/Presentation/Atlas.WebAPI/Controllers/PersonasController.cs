@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
 
-public class PersonaController : ApiControllerBase
+[Authorize]
+public class PersonasController : ApiControllerBase
 {
     [HttpPost("create")]
     public async Task<IActionResult> CreatePersona([FromBody] CreatePersonaCommand command)

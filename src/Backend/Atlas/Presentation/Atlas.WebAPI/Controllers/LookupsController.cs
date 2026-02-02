@@ -1,10 +1,12 @@
 using Atlas.Application.Features.Accounts.Queries;
 using Atlas.Application.Features.Accounts.Queries.GetOnboardingQuestions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
 
-public class LookupController : ApiControllerBase
+[Authorize]
+public class LookupsController : ApiControllerBase
 {
     [HttpGet("questions/{professionId}")]
     public async Task<IActionResult> GetQuestions(Guid professionId)

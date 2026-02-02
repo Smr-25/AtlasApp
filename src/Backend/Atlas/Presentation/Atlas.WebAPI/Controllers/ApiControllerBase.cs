@@ -4,34 +4,24 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
 
-/// <summary>
-/// Base controller providing common functionality for all API controllers.
-/// Handles response wrapping, mediator access, and standardized response formats.
-/// </summary>
+
 [ApiController]
 [Route("api/[controller]")]
 public abstract class ApiControllerBase : ControllerBase
 {
     private ISender? _mediator;
-
-    /// <summary>
-    /// Gets the MediatR sender instance for dispatching commands and queries.
-    /// </summary>
+    
     protected ISender Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<ISender>();
 
     #region Success Responses
 
-    /// <summary>
-    /// Returns 200 OK with data wrapped in ResponseModel.
-    /// </summary>
+    
     protected IActionResult OkResponse<T>(T data)
     {
         return Ok(ResponseModel<T>.Success(data));
     }
 
-    /// <summary>
-    /// Returns 201 Created with data wrapped in ResponseModel.
-    /// </summary>
+    
     protected IActionResult CreatedResponse<T>(T data, string? location = null)
     {
         var response = ResponseModel<T>.Success(data);
@@ -40,9 +30,7 @@ public abstract class ApiControllerBase : ControllerBase
         return Created(location, response);
     }
 
-    /// <summary>
-    /// Returns 204 No Content.
-    /// </summary>
+   
     protected IActionResult NoContentResponse()
     {
         return NoContent();
