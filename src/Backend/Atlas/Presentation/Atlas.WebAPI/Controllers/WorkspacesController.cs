@@ -1,5 +1,8 @@
 using Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
+using Atlas.Application.Features.Workspaces.Commands.LinkIntegration;
+using Atlas.Application.Features.Workspaces.Commands.UpdateLinkConfig;
 using Atlas.Application.Features.Workspaces.Queries.GetWorkspacesByPersona;
+using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceTools;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,5 +23,26 @@ public class WorkspacesController : ApiControllerBase
     {
         var workspaceId = await Mediator.Send(command);
         return CreatedResponse(workspaceId);
+    }
+    
+    [HttpPost("link-tool")]
+    public async Task<IActionResult> LinkTool([FromBody] LinkIntegrationCommand command)
+    {
+        await Mediator.Send(command);
+        return OkResponse("Integration linked successfully.");
+    }
+    
+    [HttpGet("{id}/tools")]
+    public async Task<IActionResult> GetTools(Guid id)
+    {
+        var result = await Mediator.Send(new GetWorkspaceToolsQuery(id));
+        return OkResponse(result);
+    }
+    
+    [HttpPut("link-config")]
+    public async Task<IActionResult> UpdateLinkConfig([FromBody] UpdateLinkConfigCommand command)
+    {
+        await Mediator.Send(command);
+        return OkResponse("Configuration updated.");
     }
 }

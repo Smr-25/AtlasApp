@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Services.Interfaces;
 using Atlas.Application.Settings;
+using Atlas.Infrastructure.Adapters;
 using Atlas.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,11 +15,12 @@ public static class ServiceRegistration
         public void AddInfrastructureServices(IConfiguration configuration)
         {
             services.AddHttpContextAccessor();
+            services.AddHttpClient("GitHub");
             services.Configure<EmailSettings>(configuration.GetSection("ThirdPartyServices:EmailSettings"));
             services.Configure<SmsSettings>(configuration.GetSection("ThirdPartyServices:SmsSettings"));
             services.Configure<TelegramSettings>(configuration.GetSection("ThirdPartyServices:TelegramSettings"));
             services.Configure<ExternalAuthSettings>(configuration.GetSection("ExternalAuthSettings"));
-            
+           
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
@@ -27,6 +29,7 @@ public static class ServiceRegistration
             services.AddScoped<IExternalAuthService, ExternalAuthService>(); 
             services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
             services.AddScoped<IEncryptionService, EncryptionService>();
+            services.AddScoped<IIntegrationAdapter, GitHubAdapter>();
         }
     }
 }

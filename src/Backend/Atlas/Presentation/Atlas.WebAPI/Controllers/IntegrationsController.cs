@@ -1,4 +1,5 @@
 using Atlas.Application.Features.Integrations.Commands.AddIntegration;
+using Atlas.Application.Features.Integrations.Queries.GetIntegrationResources;
 using Atlas.Application.Features.Integrations.Queries.GetIntegrationsByPersona;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,13 @@ public class IntegrationsController : ApiControllerBase
     public async Task<IActionResult> GetByPersona(Guid personaId)
     {
         var result = await Mediator.Send(new GetIntegrationsByPersonaQuery(personaId));
+        return OkResponse(result);
+    }
+    
+    [HttpGet("{id}/resources")]
+    public async Task<IActionResult> GetResources(Guid id)
+    {
+        var result = await Mediator.Send(new GetIntegrationResourcesQuery(id));
         return OkResponse(result);
     }
 }
