@@ -38,6 +38,7 @@ public static class ServiceRegistration
             services.AddScoped<IAiService, OpenAiService>();
             services.AddScoped<IGreetingService, GreetingService>();
             services.AddScoped<IActivityService, ActivityService>();
+            services.AddSingleton<IDockerService, DockerService>();
         }
     }
 }
