@@ -1,4 +1,5 @@
 using Atlas.Application.Common.Models;
+using Atlas.Application.Features.Docker.Dtos;
 
 namespace Atlas.Application.Common.Interfaces;
 

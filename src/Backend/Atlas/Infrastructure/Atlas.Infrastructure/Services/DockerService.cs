@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Common.Models;
+using Atlas.Application.Features.Docker.Dtos;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
