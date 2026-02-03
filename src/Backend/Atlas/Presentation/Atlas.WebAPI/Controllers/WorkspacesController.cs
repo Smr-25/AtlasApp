@@ -1,3 +1,4 @@
+using Atlas.Application.Features.Workspaces.Commands.ChatWithWorkspace;
 using Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
 using Atlas.Application.Features.Workspaces.Commands.LinkIntegration;
 using Atlas.Application.Features.Workspaces.Commands.UpdateLinkConfig;
@@ -44,5 +45,12 @@ public class WorkspacesController : ApiControllerBase
     {
         await Mediator.Send(command);
         return OkResponse("Configuration updated.");
+    }
+    
+    [HttpPost("chat")]
+    public async Task<IActionResult> Chat([FromBody] ChatWithWorkspaceCommand command)
+    {
+        var response = await Mediator.Send(command);
+        return OkResponse(new { Response = response });
     }
 }

@@ -5,8 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Dashboard.Queries.GetDashboardStats;
 
-public record GetDashboardStatsQuery : IRequest<DashboardStatsDto>;
-
 public class GetDashboardStatsQueryHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService)
@@ -55,10 +53,10 @@ public class GetDashboardStatsQueryHandler(
         var hour = DateTime.UtcNow.AddHours(4).Hour; 
         var greeting = hour switch
         {
-            < 12 => "Sabahın xeyir ☀️",
-            < 18 => "Hər vaxtın xeyir 👋",
-            < 24 => "Axşamınız xeyir 🌆",
-            _ => "Gecəiniz xeyir 🌙"
+            < 12 => $"Sabahın xeyir ☀️, {userName}",
+            < 18 => $"Hər vaxtın xeyir 👋 , {userName}",
+            < 24 => "Axşamınız xeyir 🌆 , {userName}",
+            _ => "Gecəiniz xeyir 🌙 , {userName}"
         };
 
         return new DashboardStatsDto(
