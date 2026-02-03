@@ -8,7 +8,9 @@ namespace Atlas.Application.Features.Workspaces.Commands.LinkIntegration;
 
 public class LinkIntegrationCommandHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService) : IRequestHandler<LinkIntegrationCommand, bool>
+    ICurrentUserService currentUserService,
+    IActivityService activityService
+) : IRequestHandler<LinkIntegrationCommand, bool>
 {
     public async Task<bool> Handle(LinkIntegrationCommand request, CancellationToken cancellationToken)
     {
@@ -39,6 +41,14 @@ public class LinkIntegrationCommandHandler(
         var link = WorkspaceIntegration.Create(request.WorkspaceId, request.IntegrationId, request.Config);
         await applicationDbContext.WorkspaceIntegrations.AddAsync(link, cancellationToken);
         await applicationDbContext.SaveChangesAsync(cancellationToken);
+
+        await activityService.LogAsync(
+            Guid.Parse(userId!),
+            "LinkIntegration",
+            "Linked integration to workspace",
+            request.WorkspaceId,
+            cancellationToken
+        );
         return true;
     }
 }

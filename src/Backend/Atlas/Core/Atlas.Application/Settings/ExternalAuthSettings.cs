@@ -2,6 +2,7 @@ namespace Atlas.Application.Settings;
 
 public class ExternalAuthSettings
 {
+    public const string SectionName = "ExternalAuthSettings";
     public AppleAuthSettings Apple { get; set; } = new();
     public GoogleAuthSettings Google { get; set; } = new();
 }

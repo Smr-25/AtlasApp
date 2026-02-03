@@ -19,6 +19,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Interest> Interests { get; set; }
     public DbSet<OnboardingQuestion> OnboardingQuestions { get; set; }
     public DbSet<OnboardingOption> OnboardingOptions { get; set; }
+    public DbSet<UserActivity> UserActivities { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

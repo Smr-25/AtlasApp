@@ -16,11 +16,16 @@ public static class ServiceRegistration
         {
             services.AddHttpContextAccessor();
             services.AddHttpClient("GitHub");
-            services.Configure<EmailSettings>(configuration.GetSection("ThirdPartyServices:EmailSettings"));
-            services.Configure<SmsSettings>(configuration.GetSection("ThirdPartyServices:SmsSettings"));
-            services.Configure<TelegramSettings>(configuration.GetSection("ThirdPartyServices:TelegramSettings"));
-            services.Configure<ExternalAuthSettings>(configuration.GetSection("ExternalAuthSettings"));
-           
+            services.AddHttpClient("OpenAI", client =>
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {configuration.GetSection("ThirdPartyServices:AiSettings:ApiKey").Value}");
+            });
+            services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+            services.Configure<SmsSettings>(configuration.GetSection(SmsSettings.SectionName));
+            services.Configure<TelegramSettings>(configuration.GetSection(TelegramSettings.SectionName));
+            services.Configure<ExternalAuthSettings>(configuration.GetSection(ExternalAuthSettings.SectionName));
+            services.Configure<AiSettings>(configuration.GetSection(AiSettings.SectionName));
+            
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
@@ -32,6 +37,7 @@ public static class ServiceRegistration
             services.AddScoped<IIntegrationAdapter, GitHubAdapter>();
             services.AddScoped<IAiService, OpenAiService>();
             services.AddScoped<IGreetingService, GreetingService>();
+            services.AddScoped<IActivityService, ActivityService>();
         }
     }
 }

@@ -13,5 +13,6 @@ public interface IApplicationDbContext
     DbSet<Interest> Interests { get; }
     DbSet<OnboardingQuestion> OnboardingQuestions { get; }
     DbSet<OnboardingOption> OnboardingOptions { get; }
+    DbSet<UserActivity> UserActivities { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

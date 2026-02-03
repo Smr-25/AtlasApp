@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
 
-public class CreateWorkspaceCommandHandler(IApplicationDbContext applicationDbContext,ICurrentUserService currentUserService)
+public class CreateWorkspaceCommandHandler(IApplicationDbContext applicationDbContext,ICurrentUserService currentUserService,IActivityService activityService)
     : IRequestHandler<CreateWorkspaceCommand, Guid>
 {
     public async Task<Guid> Handle(CreateWorkspaceCommand request, CancellationToken cancellationToken)
@@ -28,6 +28,13 @@ public class CreateWorkspaceCommandHandler(IApplicationDbContext applicationDbCo
 
         await applicationDbContext.Workspaces.AddAsync(workspace, cancellationToken);
         await applicationDbContext.SaveChangesAsync(cancellationToken);
+        await activityService.LogAsync(
+            Guid.Parse(userId!),
+            "CreateWorkspace",
+            $"Workspace '{workspace.Name}' created.",
+            workspace.Id,
+            cancellationToken
+        );
         return workspace.Id;
     }
 }
