@@ -40,6 +40,7 @@ public static class ServiceRegistration
             services.AddScoped<IActivityService, ActivityService>();
             services.AddSingleton<IDockerService, DockerService>();
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
+            services.AddTransient<IScriptRunnerService, ScriptRunnerService>();
         }
     }
 }

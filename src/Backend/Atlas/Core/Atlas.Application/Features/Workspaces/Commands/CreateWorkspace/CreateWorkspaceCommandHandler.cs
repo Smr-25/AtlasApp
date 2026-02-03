@@ -11,8 +11,12 @@ public class CreateWorkspaceCommandHandler(IApplicationDbContext applicationDbCo
     public async Task<Guid> Handle(CreateWorkspaceCommand request, CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
+        
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId))
+            throw new UnauthorizedAccessException("User is not authenticated or user ID is invalid.");
+        
         var isPersonaOwner = await applicationDbContext.Personas
-            .AnyAsync(p => p.Id == request.PersonaId && p.UserId.Equals(userId), cancellationToken);
+            .AnyAsync(p => p.Id == request.PersonaId && p.UserId == parsedUserId, cancellationToken);
         
         if (!isPersonaOwner)
             throw new UnauthorizedAccessException("You do not have permission to create a workspace for this persona.");
@@ -29,7 +33,7 @@ public class CreateWorkspaceCommandHandler(IApplicationDbContext applicationDbCo
         await applicationDbContext.Workspaces.AddAsync(workspace, cancellationToken);
         await applicationDbContext.SaveChangesAsync(cancellationToken);
         await activityService.LogAsync(
-            Guid.Parse(userId!),
+            parsedUserId,
             "CreateWorkspace",
             $"Workspace '{workspace.Name}' created.",
             workspace.Id,

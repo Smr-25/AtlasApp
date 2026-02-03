@@ -15,9 +15,14 @@ public class LinkIntegrationCommandHandler(
     public async Task<bool> Handle(LinkIntegrationCommand request, CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
+        
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId))
+            throw new UnauthorizedAccessException("User is not authenticated or user ID is invalid.");
+        
+        
         var workspace = await applicationDbContext.Workspaces
             .Include(w => w.Persona)
-            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && w.Persona.UserId.Equals(userId),
+            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && w.Persona.UserId == parsedUserId,
                 cancellationToken);
 
         if (workspace == null)
@@ -43,7 +48,7 @@ public class LinkIntegrationCommandHandler(
         await applicationDbContext.SaveChangesAsync(cancellationToken);
 
         await activityService.LogAsync(
-            Guid.Parse(userId!),
+            parsedUserId,
             "LinkIntegration",
             "Linked integration to workspace",
             request.WorkspaceId,

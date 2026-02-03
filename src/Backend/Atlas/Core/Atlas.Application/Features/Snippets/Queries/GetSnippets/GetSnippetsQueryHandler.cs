@@ -12,12 +12,12 @@ public class GetSnippetsQueryHandler(IApplicationDbContext applicationDbContext,
     {
         var userId = Guid.Parse(currentUserService.UserId ?? Guid.Empty.ToString());
 
-        var entities = await applicationDbContext.Snippets
+        var snippets = await applicationDbContext.Snippets
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync(cancellationToken);
             
-        return entities.Select(s => new SnippetDto(
+        return snippets.Select(s => new SnippetDto(
             s.Id,
             s.Title,
             s.Code,

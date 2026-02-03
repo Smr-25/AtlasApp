@@ -10,12 +10,17 @@ public class CreateSnippetCommandHandler(IApplicationDbContext applicationDbCont
     public async Task<Guid> Handle(CreateSnippetCommand request, CancellationToken cancellationToken)
     {
         var userId = currentUserService.UserId;
+        
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId))
+            throw new UnauthorizedAccessException("User is not authenticated or user ID is invalid.");
+        
+        
         var snippet = Snippet.Create(
             title: request.Title,
             code: request.Code,
             language: request.Language,
             tags: request.Tags,
-            userId: Guid.Parse(userId!)
+            userId: parsedUserId
         );
 
         await applicationDbContext.Snippets.AddAsync(snippet, cancellationToken);
