@@ -14,5 +14,6 @@ public interface IApplicationDbContext
     DbSet<OnboardingQuestion> OnboardingQuestions { get; }
     DbSet<OnboardingOption> OnboardingOptions { get; }
     DbSet<UserActivity> UserActivities { get; }
+    DbSet<Snippet> Snippets { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -20,6 +20,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<OnboardingQuestion> OnboardingQuestions { get; set; }
     public DbSet<OnboardingOption> OnboardingOptions { get; set; }
     public DbSet<UserActivity> UserActivities { get; set; }
+    public DbSet<Snippet> Snippets { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
 
+[Authorize]
 public class SystemController : ApiControllerBase
 {
     [HttpGet("ides")]
