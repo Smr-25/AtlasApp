@@ -39,6 +39,7 @@ public static class ServiceRegistration
             services.AddScoped<IGreetingService, GreetingService>();
             services.AddScoped<IActivityService, ActivityService>();
             services.AddSingleton<IDockerService, DockerService>();
+            services.AddTransient<ISystemMonitorService, SystemMonitorService>();
         }
     }
 }
