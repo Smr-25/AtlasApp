@@ -16,4 +16,8 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
         .FindFirstValue(ClaimTypes.Name);
 
     public bool IsAuthenticated => httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    public string? Language => httpContextAccessor.HttpContext?.Request.Headers.AcceptLanguage.ToString().Split(',').FirstOrDefault();
+    public int TimezoneOffsetInMinutes => int.TryParse(
+        httpContextAccessor.HttpContext?.Request.Headers["X-Timezone-Offset"].FirstOrDefault(),
+        out var offset) ? offset : 0;
 }

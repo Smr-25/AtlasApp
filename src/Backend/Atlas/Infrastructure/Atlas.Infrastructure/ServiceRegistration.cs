@@ -30,6 +30,8 @@ public static class ServiceRegistration
             services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
             services.AddScoped<IEncryptionService, EncryptionService>();
             services.AddScoped<IIntegrationAdapter, GitHubAdapter>();
+            services.AddScoped<IAiService, OpenAiService>();
+            services.AddScoped<IGreetingService, GreetingService>();
         }
     }
 }

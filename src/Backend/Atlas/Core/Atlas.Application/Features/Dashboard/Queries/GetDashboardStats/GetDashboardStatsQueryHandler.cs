@@ -7,8 +7,9 @@ namespace Atlas.Application.Features.Dashboard.Queries.GetDashboardStats;
 
 public class GetDashboardStatsQueryHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService)
-    : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
+    ICurrentUserService currentUserService,
+    IGreetingService greetingService
+    ) : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
 {
     public async Task<DashboardStatsDto> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
     {
@@ -50,14 +51,11 @@ public class GetDashboardStatsQueryHandler(
             ))
             .ToList();
 
-        var hour = DateTime.UtcNow.AddHours(4).Hour; 
-        var greeting = hour switch
-        {
-            < 12 => $"Sabahın xeyir ☀️, {userName}",
-            < 18 => $"Hər vaxtın xeyir 👋 , {userName}",
-            < 24 => "Axşamınız xeyir 🌆 , {userName}",
-            _ => "Gecəiniz xeyir 🌙 , {userName}"
-        };
+        var greeting = greetingService.GetLocalizedGreeting(
+            userName!, 
+            currentUserService.TimezoneOffsetInMinutes, 
+            currentUserService.Language ?? "en"
+        );
 
         return new DashboardStatsDto(
             greeting,
