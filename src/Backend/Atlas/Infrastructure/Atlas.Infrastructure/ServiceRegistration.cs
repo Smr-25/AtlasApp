@@ -42,6 +42,7 @@ public static class ServiceRegistration
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IScriptRunnerService, ScriptRunnerService>();
             services.AddTransient<INotionService, NotionService>();
+            services.AddTransient<IGmailService, GmailService>();
         }
     }
 }
