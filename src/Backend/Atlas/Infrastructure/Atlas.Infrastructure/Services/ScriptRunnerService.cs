@@ -7,6 +7,10 @@ public class ScriptRunnerService : IScriptRunnerService
 {
     public async Task<string> ExecuteAsync(string command, string arguments, string workingDirectory, CancellationToken cancellationToken = default)
     {
+        
+        if (string.IsNullOrWhiteSpace(workingDirectory) || !Directory.Exists(workingDirectory))
+            workingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        
         var processStartInfo = new ProcessStartInfo
         {
             FileName = command,
@@ -31,7 +35,7 @@ public class ScriptRunnerService : IScriptRunnerService
             var output = await outputTask;
             var error = await errorTask;
 
-            return !string.IsNullOrEmpty(error) ? $"Output:\n{output}\n Error:\n{error}" : output;
+            return !string.IsNullOrEmpty(error) ? $"Output:\n{output} Error:\n{error}" : output;
         }
         catch (Exception ex)
         {

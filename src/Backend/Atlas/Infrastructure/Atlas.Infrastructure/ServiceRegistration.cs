@@ -41,6 +41,7 @@ public static class ServiceRegistration
             services.AddSingleton<IDockerService, DockerService>();
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IScriptRunnerService, ScriptRunnerService>();
+            services.AddTransient<INotionService, NotionService>();
         }
     }
 }
