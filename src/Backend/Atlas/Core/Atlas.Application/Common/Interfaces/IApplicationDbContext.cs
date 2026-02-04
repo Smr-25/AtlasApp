@@ -16,5 +16,6 @@ public interface IApplicationDbContext
     DbSet<UserActivity> UserActivities { get; }
     DbSet<Snippet> Snippets { get; }
     DbSet<Script> Scripts { get; }
+    DbSet<FocusSession> FocusSessions { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

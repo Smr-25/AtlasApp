@@ -22,6 +22,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<UserActivity> UserActivities { get; set; }
     public DbSet<Snippet> Snippets { get; set; }
     public DbSet<Script> Scripts { get; set; }
+    public DbSet<FocusSession> FocusSessions { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
