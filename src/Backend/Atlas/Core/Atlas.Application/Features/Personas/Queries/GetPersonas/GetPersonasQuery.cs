@@ -9,7 +9,7 @@ namespace Atlas.Application.Features.Personas.Queries.GetPersonas;
 
 public record GetPersonasQuery : IRequest<List<PersonaDto>>;
 
-public class GetPersonasQueryHandler(IApplicationDbContext applicationDbContext,IMapper mapper)
+public class GetPersonasQueryHandler(IApplicationDbContext applicationDbContext, IMapper mapper)
     : IRequestHandler<GetPersonasQuery, List<PersonaDto>>
 {
     public async Task<List<PersonaDto>> Handle(GetPersonasQuery request, CancellationToken cancellationToken)

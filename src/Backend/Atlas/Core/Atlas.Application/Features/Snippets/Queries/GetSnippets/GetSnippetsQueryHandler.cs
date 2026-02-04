@@ -1,30 +1,28 @@
+using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Features.Snippets.Dtos;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Snippets.Queries.GetSnippets;
 
-public class GetSnippetsQueryHandler(IApplicationDbContext applicationDbContext, ICurrentUserService currentUserService)
+public class GetSnippetsQueryHandler(
+    IApplicationDbContext applicationDbContext,
+    ICurrentUserService currentUserService,
+    IMapper mapper)
     : IRequestHandler<GetSnippetsQuery, List<SnippetDto>>
 {
     public async Task<List<SnippetDto>> Handle(GetSnippetsQuery request, CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(currentUserService.UserId ?? Guid.Empty.ToString());
+        var userId = currentUserService.GetRequiredUserId();
 
-        var snippets = await applicationDbContext.Snippets
-            .Where(s => s.UserId == userId)
+        return await applicationDbContext.Snippets
+            .AsNoTracking()
+            .Where(s => s.UserId == userId && !s.IsDeleted)
             .OrderByDescending(s => s.CreatedAt)
+            .ProjectTo<SnippetDto>(mapper.ConfigurationProvider)
             .ToListAsync(cancellationToken);
-            
-        return snippets.Select(s => new SnippetDto(
-            s.Id,
-            s.Title,
-            s.Code,
-            s.Language,
-            string.IsNullOrEmpty(s.Tags) ? Array.Empty<string>() : s.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries),
-            s.IsFavorite,
-            s.CreatedAt
-        )).ToList();
     }
 }

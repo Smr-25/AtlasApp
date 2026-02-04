@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Personas.Commands.AddIntegration;
 
-public class AddIntegrationCommandHandler(IApplicationDbContext applicationDbContext)
-    : IRequestHandler<AddIntegrationCommand, Guid>
+public class AddPersonaIntegrationCommandHandler(IApplicationDbContext applicationDbContext)
+    : IRequestHandler<AddPersonaIntegrationCommand, Guid>
 {
-    public async Task<Guid> Handle(AddIntegrationCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(AddPersonaIntegrationCommand request, CancellationToken cancellationToken)
     {
         var persona = await applicationDbContext.Personas
             .Include(p => p.Integrations)

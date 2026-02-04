@@ -17,7 +17,7 @@ public class PersonasController : ApiControllerBase
     }
 
     [HttpPost("{id}/integrations")]
-    public async Task<IActionResult> AddIntegration(Guid id,[FromBody] AddIntegrationCommand command)
+    public async Task<IActionResult> AddIntegration(Guid id, [FromBody] AddPersonaIntegrationCommand command)
     {
         if (id != command.PersonaId) 
             return BadRequestResponse("URL ID and Body ID mismatch");

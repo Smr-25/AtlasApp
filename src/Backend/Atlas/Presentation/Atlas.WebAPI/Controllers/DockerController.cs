@@ -11,35 +11,37 @@ namespace Atlas.WebAPI.Controllers;
 public class DockerController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<ContainerDto>>> GetContainers()
+    public async Task<IActionResult> GetContainers()
     {
-        return await Mediator.Send(new GetContainersQuery());
+        var result = await Mediator.Send(new GetContainersQuery());
+        return OkResponse(result);
     }
 
     [HttpGet("{id}/logs")]
-    public async Task<ActionResult<string>> GetLogs(string id)
+    public async Task<IActionResult> GetLogs(string id)
     {
-        return await Mediator.Send(new GetContainerLogsQuery(id));
+        var result = await Mediator.Send(new GetContainerLogsQuery(id));
+        return OkResponse(result);
     }
     
     [HttpPost("{id}/start")]
-    public async Task<ActionResult> Start(string id)
+    public async Task<IActionResult> Start(string id)
     {
         await Mediator.Send(new ControlContainerCommand(id, DockerAction.Start));
-        return NoContent();
+        return NoContentResponse();
     }
 
     [HttpPost("{id}/stop")]
-    public async Task<ActionResult> Stop(string id)
+    public async Task<IActionResult> Stop(string id)
     {
         await Mediator.Send(new ControlContainerCommand(id, DockerAction.Stop));
-        return NoContent();
+        return NoContentResponse();
     }
     
     [HttpPost("{id}/restart")]
-    public async Task<ActionResult> Restart(string id)
+    public async Task<IActionResult> Restart(string id)
     {
         await Mediator.Send(new ControlContainerCommand(id, DockerAction.Restart));
-        return NoContent();
+        return NoContentResponse();
     }
 }

@@ -10,14 +10,16 @@ namespace Atlas.WebAPI.Controllers;
 public class SnippetsController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<SnippetDto>>> GetAll()
+    public async Task<IActionResult> GetAll()
     {
-        return await Mediator.Send(new GetSnippetsQuery());
+        var result = await Mediator.Send(new GetSnippetsQuery());
+        return OkResponse(result);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Guid>> Create(CreateSnippetCommand command)
+    public async Task<IActionResult> Create([FromBody] CreateSnippetCommand command)
     {
-        return await Mediator.Send(command);
+        var snippetId = await Mediator.Send(command);
+        return CreatedResponse(snippetId);
     }
 }

@@ -1,21 +1,19 @@
-using System.Text;
 using Atlas.Application.Common.Interfaces;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Atlas.Infrastructure.Services;
 
-public class EncryptionService : IEncryptionService
+public class EncryptionService(IDataProtectionProvider provider) : IEncryptionService
 {
+    private readonly IDataProtector _protector = provider.CreateProtector("Atlas.TokenProtection.v1");
+
     public string Encrypt(string input)
     {
-        if (string.IsNullOrEmpty(input)) return input;
-        var bytes = Encoding.UTF8.GetBytes(input);
-        return Convert.ToBase64String(bytes);
+        return string.IsNullOrEmpty(input) ? input : _protector.Protect(input);
     }
 
     public string Decrypt(string input)
     {
-        if (string.IsNullOrEmpty(input)) return input;
-        var bytes = Convert.FromBase64String(input);
-        return Encoding.UTF8.GetString(bytes);
+        return string.IsNullOrEmpty(input) ? input : _protector.Unprotect(input);
     }
 }

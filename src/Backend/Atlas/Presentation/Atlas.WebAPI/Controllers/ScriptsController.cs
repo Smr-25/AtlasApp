@@ -9,15 +9,16 @@ namespace Atlas.WebAPI.Controllers;
 public class ScriptsController : ApiControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<Guid>> Create(CreateScriptCommand command)
+    public async Task<IActionResult> Create([FromBody] CreateScriptCommand command)
     {
-        return await Mediator.Send(command);
+        var scriptId = await Mediator.Send(command);
+        return CreatedResponse(scriptId);
     }
     
     [HttpPost("{id}/run")]
-    public async Task<ActionResult<string>> Run(Guid id)
+    public async Task<IActionResult> Run(Guid id)
     {
         var result = await Mediator.Send(new RunScriptCommand(id));
-        return Ok(new { Output = result });
+        return OkResponse(new { Output = result });
     }
 }

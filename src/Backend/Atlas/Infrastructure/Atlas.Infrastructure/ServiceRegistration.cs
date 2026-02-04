@@ -15,6 +15,7 @@ public static class ServiceRegistration
         public void AddInfrastructureServices(IConfiguration configuration)
         {
             services.AddHttpContextAccessor();
+            services.AddDataProtection();
             services.AddHttpClient("GitHub");
             services.AddHttpClient("OpenAI", client =>
             {
@@ -44,6 +45,8 @@ public static class ServiceRegistration
             services.AddTransient<INotionService, NotionService>();
             services.AddTransient<IGmailService, GmailService>();
             services.AddTransient<IMigrationBuilderService, MigrationBuilderService>();
+            services.AddTransient<ISystemMonitorService, SystemMonitorService>();
+            services.AddHttpClient<IAiAdvisorService, AiAdvisorService>(); 
         }
     }
 }

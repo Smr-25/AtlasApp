@@ -1,4 +1,6 @@
+using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Interfaces;
+using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,8 +14,9 @@ public class RunScriptCommandHandler(IApplicationDbContext applicationDbContext,
         var script = await applicationDbContext.Scripts.FirstOrDefaultAsync(x => x.Id == request.Id,
             cancellationToken: cancellationToken);
 
-        if (script == null) return "Script not found!";
+        if (script == null)
+            throw new NotFoundException(nameof(Script), request.Id);
 
-        return await runner.ExecuteAsync(script.Command, script.Arguments, script.WorkingDirectory!, cancellationToken);
+        return await runner.ExecuteAsync(script.Command, script.Arguments, script.WorkingDirectory ?? string.Empty, cancellationToken);
     }
 }

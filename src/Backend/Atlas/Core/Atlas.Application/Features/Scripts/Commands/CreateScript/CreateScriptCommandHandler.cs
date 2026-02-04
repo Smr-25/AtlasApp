@@ -1,3 +1,4 @@
+using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
@@ -9,11 +10,7 @@ public class CreateScriptCommandHandler(IApplicationDbContext applicationDbConte
 {
     public async Task<Guid> Handle(CreateScriptCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUserService.UserId;
-        
-        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId))
-            throw new UnauthorizedAccessException("User is not authenticated or user ID is invalid.");
-        
+        var userId = currentUserService.GetRequiredUserId();
         
         var script = Script.Create(
             request.Name,
@@ -22,8 +19,9 @@ public class CreateScriptCommandHandler(IApplicationDbContext applicationDbConte
             request.WorkingDirectory,
             request.Icon,
             request.Color,
-            parsedUserId
+            userId
         );
+        
         await applicationDbContext.Scripts.AddAsync(script, cancellationToken);
         await applicationDbContext.SaveChangesAsync(cancellationToken);
         return script.Id;
