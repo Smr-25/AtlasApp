@@ -69,7 +69,7 @@ public class Integration : BaseEntity
         SetModified();
     }
 
-    public void UpdateTokens(
+    private void UpdateTokens(
         string encryptedAccessToken,
         string? refreshToken = null,
         DateTimeOffset? expiresAt = null)
@@ -132,7 +132,7 @@ public class Integration : BaseEntity
         SetModified();
     }
 
-    public bool IsTokenExpired(int bufferMinutes = 5)
+    private bool IsTokenExpired(int bufferMinutes = 5)
     {
         if (!TokenExpiresAt.HasValue)
             return false;

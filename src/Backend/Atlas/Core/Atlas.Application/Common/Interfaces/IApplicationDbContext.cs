@@ -18,5 +18,8 @@ public interface IApplicationDbContext
     DbSet<Script> Scripts { get; }
     DbSet<FocusSession> FocusSessions { get; }
     DbSet<ProjectProfile> ProjectProfiles { get; }
+    DbSet<DesignAsset> DesignAssets { get; }
+    DbSet<DesignPalette> DesignPalettes { get; }
+    DbSet<PaletteColor> PaletteColors { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

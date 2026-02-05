@@ -104,8 +104,7 @@ public class Persona : BaseEntity, IAggregateRoot
 
     public void AddIntegration(Integration integration)
     {
-        if (integration == null)
-            throw new ArgumentNullException(nameof(integration));
+        ArgumentNullException.ThrowIfNull(integration);
 
         if (_integrations.Any(i => i.Provider == integration.Provider &&
                                    i.Name == integration.Name &&

@@ -21,6 +21,8 @@ public static class ServiceRegistration
             {
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {configuration.GetSection("ThirdPartyServices:AiSettings:ApiKey").Value}");
             });
+            services.AddHttpClient<IAiAdvisorService, AiAdvisorService>(); 
+            
             services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
             services.Configure<SmsSettings>(configuration.GetSection(SmsSettings.SectionName));
             services.Configure<TelegramSettings>(configuration.GetSection(TelegramSettings.SectionName));
@@ -39,6 +41,7 @@ public static class ServiceRegistration
             services.AddScoped<IAiService, OpenAiService>();
             services.AddScoped<IGreetingService, GreetingService>();
             services.AddScoped<IActivityService, ActivityService>();
+            
             services.AddSingleton<IDockerService, DockerService>();
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IScriptRunnerService, ScriptRunnerService>();
@@ -46,7 +49,7 @@ public static class ServiceRegistration
             services.AddTransient<IGmailService, GmailService>();
             services.AddTransient<IMigrationBuilderService, MigrationBuilderService>();
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
-            services.AddHttpClient<IAiAdvisorService, AiAdvisorService>(); 
+            services.AddTransient<IImageProcessingService, ImageProcessingService>();
         }
     }
 }

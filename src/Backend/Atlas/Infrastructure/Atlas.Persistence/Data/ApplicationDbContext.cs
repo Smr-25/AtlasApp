@@ -24,6 +24,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Script> Scripts { get; set; }
     public DbSet<FocusSession> FocusSessions { get; set; }
     public DbSet<ProjectProfile> ProjectProfiles { get; set; }
+    public DbSet<DesignAsset> DesignAssets { get; set; }
+    public DbSet<DesignPalette> DesignPalettes { get; set; }
+    public DbSet<PaletteColor> PaletteColors { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
