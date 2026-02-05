@@ -55,14 +55,14 @@ public class LoginCommandHandler(
         }
 
         user.ResetFailedLoginAttempts();
-        await userManager.UpdateAsync(user);
-
 
         var accessToken = jwtService.GenerateAccessToken(user);
         var refreshToken = jwtService.GenerateRefreshTokenResponse(user);
         user.SetRefreshToken(refreshToken.RefreshToken, refreshToken.RefreshTokenExpiresAt);
         user.UpdateLastLogin();
+        
         await userManager.UpdateAsync(user);
+        
         var response = new AuthResponseDto(
             AccessToken: accessToken.Token,
             RefreshToken: refreshToken.RefreshToken,

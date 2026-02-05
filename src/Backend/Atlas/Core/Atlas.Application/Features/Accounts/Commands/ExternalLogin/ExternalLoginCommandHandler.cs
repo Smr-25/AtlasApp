@@ -1,9 +1,8 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
+using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
-using Atlas.Application.Models;
-using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;

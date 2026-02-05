@@ -1,7 +1,6 @@
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Helpers;
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Services.Interfaces;
 using Atlas.Domain.Entities;
 using Atlas.Domain.Enums;
 using Microsoft.AspNetCore.Identity;

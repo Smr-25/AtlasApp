@@ -1,4 +1,4 @@
-namespace Atlas.Application.Services.Interfaces;
+namespace Atlas.Application.Common.Interfaces;
 
 public interface IEmailService
 {

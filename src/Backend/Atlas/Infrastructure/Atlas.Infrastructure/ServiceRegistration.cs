@@ -1,5 +1,4 @@
 using Atlas.Application.Common.Interfaces;
-using Atlas.Application.Services.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Infrastructure.Adapters;
 using Atlas.Infrastructure.Services;
@@ -48,7 +47,6 @@ public static class ServiceRegistration
             services.AddTransient<INotionService, NotionService>();
             services.AddTransient<IGmailService, GmailService>();
             services.AddTransient<IMigrationBuilderService, MigrationBuilderService>();
-            services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IImageProcessingService, ImageProcessingService>();
         }
     }

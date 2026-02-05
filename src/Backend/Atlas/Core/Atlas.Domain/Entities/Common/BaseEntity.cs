@@ -6,10 +6,10 @@ public abstract class BaseEntity
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
-    public Guid Id { get; protected set; } = Guid.NewGuid();
-    public DateTimeOffset CreatedAt { get; protected set; } = DateTimeOffset.UtcNow;
+    public Guid Id { get; protected init; } = Guid.NewGuid();
+    public DateTimeOffset CreatedAt { get; protected init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ModifiedAt { get; protected set; }
-    public bool IsDeleted { get; protected set; }
+    public bool IsDeleted { get; private set; }
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     protected void AddDomainEvent(IDomainEvent domainEvent)

@@ -1,5 +1,5 @@
 using Atlas.Application.Common.Helpers;
-using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;

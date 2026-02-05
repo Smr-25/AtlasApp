@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Atlas.Application.Models;
-using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Common.Interfaces;
+using Atlas.Application.Common.Models;
 using Atlas.Application.Settings;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Options;

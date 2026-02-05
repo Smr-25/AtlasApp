@@ -131,8 +131,7 @@ public class Persona : BaseEntity, IAggregateRoot
 
     public void AddWorkspace(Workspace workspace)
     {
-        if (workspace == null)
-            throw new ArgumentNullException(nameof(workspace));
+        ArgumentNullException.ThrowIfNull(workspace);
 
         if (_workspaces.Any(w => w.Name.Equals(workspace.Name, StringComparison.OrdinalIgnoreCase) &&
                                  !w.IsDeleted))

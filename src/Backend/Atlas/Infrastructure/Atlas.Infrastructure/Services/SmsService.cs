@@ -1,4 +1,4 @@
-using Atlas.Application.Services.Interfaces;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Settings;
 using Microsoft.Extensions.Options;
 using Twilio.Rest.Api.V2010.Account;

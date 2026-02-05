@@ -7,7 +7,7 @@ public enum IntegrationProvider
     GitLab = 2,
     Jira = 3,
     Figma = 4,
-    OpenAI = 5,
+    OpenAi = 5,
     JetBrains = 6,
     Docker = 7,
     HuggingFace = 8,

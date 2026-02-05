@@ -1,6 +1,6 @@
-using Atlas.Application.Models;
+using Atlas.Application.Common.Models;
 
-namespace Atlas.Application.Services.Interfaces;
+namespace Atlas.Application.Common.Interfaces;
 
 public interface IExternalAuthService
 {
