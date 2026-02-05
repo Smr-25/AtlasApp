@@ -2,6 +2,7 @@ using System.Net;
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Models;
+using Atlas.Domain.Exceptions;
 using Newtonsoft.Json;
 using ValidationException = Atlas.Application.Common.Exceptions.Common.ValidationException;
 
@@ -83,6 +84,19 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             AlreadyExistException alreadyExistEx => (
                 HttpStatusCode.Conflict,
                 ResponseModel<object>.Failure(alreadyExistEx.Message)
+            ),
+            
+            InvalidEntityStateException invalidStateEx => (
+                HttpStatusCode.BadRequest,
+                ResponseModel<object>.Failure(invalidStateEx.Message)
+            ),
+            EntityNotFoundException entityNotFoundEx => (
+                HttpStatusCode.NotFound,
+                ResponseModel<object>.Failure(entityNotFoundEx.Message)
+            ),
+            BusinessRuleViolationException businessRuleEx => (
+                HttpStatusCode.Conflict,
+                ResponseModel<object>.Failure(businessRuleEx.Message)
             ),
 
             _ => (

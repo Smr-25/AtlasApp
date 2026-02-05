@@ -149,6 +149,6 @@ public class Workspace : BaseEntity
 
         var hex = color[1..];
         return hex.Length is 3 or 6 or 8 &&
-               hex.All(c => char.IsAsciiHexDigit(c));
+               hex.All(char.IsAsciiHexDigit);
     }
 }
