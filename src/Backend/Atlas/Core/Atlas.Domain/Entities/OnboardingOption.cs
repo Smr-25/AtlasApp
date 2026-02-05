@@ -4,8 +4,19 @@ namespace Atlas.Domain.Entities;
 
 public class OnboardingOption : BaseEntity
 {
-    public string Text { get; set; } = string.Empty;
-    public string BioPart { get; set; } = string.Empty;
-    public Guid QuestionId { get; set; }
-    public OnboardingQuestion Question { get; set; } = null!;
+    public string Text { get; private set; } = string.Empty;
+    public string? RecommendedIntegration { get; private set; }
+    public string? RecommendedTemplate { get; private set; }    
+
+    public Guid QuestionId { get; private set; }
+    
+    public static OnboardingOption Create(string text, string? recommendedIntegration = null, string? recommendedTemplate = null)
+    {
+        return new OnboardingOption
+        {
+            Text = text,
+            RecommendedIntegration = recommendedIntegration,
+            RecommendedTemplate = recommendedTemplate
+        };
+    }
 }

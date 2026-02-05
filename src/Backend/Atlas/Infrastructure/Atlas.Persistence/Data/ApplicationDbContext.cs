@@ -10,15 +10,13 @@ namespace Atlas.Persistence.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<AppUser,IdentityRole<Guid>,Guid>(options), IApplicationDbContext
 {
-    public DbSet<AppUser> Users { get; set; } 
-    public DbSet<Persona> Personas { get; set; } 
+    public DbSet<AppUserProfile> UserProfiles { get; set; } 
     public DbSet<Integration> Integrations { get; set; } 
     public DbSet<Workspace> Workspaces { get; set; } = null!;
-    public DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; set; } = null!;
-    public DbSet<Profession> Professions { get; set; } 
-    public DbSet<Interest> Interests { get; set; }
+    public DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; set; } 
     public DbSet<OnboardingQuestion> OnboardingQuestions { get; set; }
     public DbSet<OnboardingOption> OnboardingOptions { get; set; }
+    public DbSet<UserOnboardingAnswer> UserOnboardingAnswers { get; set; }
     public DbSet<UserActivity> UserActivities { get; set; }
     public DbSet<Snippet> Snippets { get; set; }
     public DbSet<Script> Scripts { get; set; }

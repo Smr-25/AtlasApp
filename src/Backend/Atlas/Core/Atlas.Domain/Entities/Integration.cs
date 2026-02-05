@@ -15,7 +15,6 @@ public class Integration : BaseEntity
     public bool IsActive { get; private set; }
     public DateTimeOffset? LastUsedAt { get; private set; }
     public string? Metadata { get; private set; }
-    public Persona Persona { get; private set; } = null!;
 
     private Integration()
     {

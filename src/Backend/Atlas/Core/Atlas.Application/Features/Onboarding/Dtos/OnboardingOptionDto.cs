@@ -1,3 +1,3 @@
-namespace Atlas.Application.Features.Accounts.Dtos;
+namespace Atlas.Application.Features.Onboarding.Dtos;
 
 public record OnboardingOptionDto(Guid Id, string Text);
