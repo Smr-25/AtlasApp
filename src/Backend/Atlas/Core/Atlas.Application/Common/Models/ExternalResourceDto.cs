@@ -5,5 +5,6 @@ public record ExternalResourceDto(
     string Name,        
     string? Description,
     string? Url,        
-    string Type         
+    string Type,
+    Dictionary<string, string> Metadata
 );

@@ -79,4 +79,10 @@ public class Integration : BaseEntity
             Status = IntegrationStatus.PendingSetup
         };
     }
+
+    public void UpdateMetadata(string metadataJson)
+    {
+        MetadataJson = metadataJson;
+        SetModified();
+    }
 }

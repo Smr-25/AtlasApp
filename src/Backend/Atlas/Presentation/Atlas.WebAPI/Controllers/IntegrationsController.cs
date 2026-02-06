@@ -1,5 +1,7 @@
 using Atlas.Application.Features.Integrations.Commands.ConnectIntegration;
 using Atlas.Application.Features.Integrations.Commands.DeleteIntegration;
+using Atlas.Application.Features.Integrations.Commands.ReconnectIntegration;
+using Atlas.Application.Features.Integrations.Commands.ReportFailure;
 using Atlas.Application.Features.Integrations.Commands.UpdateIntegration;
 using Atlas.Application.Features.Integrations.Dtos;
 using Atlas.Application.Features.Integrations.Queries.GetIntegrationById;
@@ -44,6 +46,22 @@ public class IntegrationsController : ApiControllerBase
     public async Task<IActionResult> Disconnect(Guid id)
     {
         await Mediator.Send(new DeleteIntegrationCommand(id));
+        return NoContent();
+    }
+    
+    [HttpPost("{id}/reconnect")]
+    public async Task<IActionResult> Reconnect(Guid id, ReconnectIntegrationCommand command)
+    {
+        if (id != command.IntegrationId) return BadRequest();
+        
+        await Mediator.Send(command);
+        return NoContent();
+    }
+    
+    [HttpPost("{id}/mark-expired")]
+    public async Task<IActionResult> MarkExpired(Guid id)
+    {
+        await Mediator.Send(new MarkIntegrationExpiredCommand(id));
         return NoContent();
     }
 }

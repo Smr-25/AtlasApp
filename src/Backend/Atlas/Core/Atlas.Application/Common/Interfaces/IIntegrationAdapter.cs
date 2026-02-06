@@ -6,6 +6,6 @@ namespace Atlas.Application.Common.Interfaces;
 public interface IIntegrationAdapter
 {
     IntegrationProvider Provider { get; }
-    
-    Task<List<ExternalResourceDto>> GetResourcesAsync(string accessToken, CancellationToken cancellationToken);
+    Task<List<ExternalResourceDto>> SearchResourcesAsync(string accessToken, string query, CancellationToken cancellationToken);
+    Task<ExternalResourceDto> GetResourceDetailsAsync(string accessToken, string resourceId, CancellationToken cancellationToken);
 }

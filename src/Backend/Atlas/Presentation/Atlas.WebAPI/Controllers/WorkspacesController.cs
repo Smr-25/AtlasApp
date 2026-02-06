@@ -1,5 +1,6 @@
 using Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
 using Atlas.Application.Features.Workspaces.Commands.DeleteWorkspace;
+using Atlas.Application.Features.Workspaces.Commands.SetDefault;
 using Atlas.Application.Features.Workspaces.Commands.ToggleIntegration;
 using Atlas.Application.Features.Workspaces.Commands.UpdateWorkspace;
 using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceById;
@@ -51,10 +52,15 @@ public class WorkspacesController : ApiControllerBase
     [HttpPost("{id}/integrations/toggle")]
     public async Task<IActionResult> ToggleIntegration(Guid id, [FromBody] ToggleIntegrationDto dto)
     {
-        // Route-dan gələn ID-ni command-a ötürürük
         var command = new ToggleWorkspaceIntegrationCommand(id, dto.IntegrationId, dto.Enable);
-        
         await Mediator.Send(command);
+        return NoContent();
+    }
+    
+    [HttpPatch("{id}/set-default")]
+    public async Task<IActionResult> SetDefault(Guid id)
+    {
+        await Mediator.Send(new SetDefaultWorkspaceCommand(id));
         return NoContent();
     }
 }
