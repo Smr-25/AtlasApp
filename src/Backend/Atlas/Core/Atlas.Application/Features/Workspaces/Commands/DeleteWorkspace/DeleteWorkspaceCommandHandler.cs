@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Workspaces.Commands.DeleteWorkspace;
 
-public class DeleteWorkspaceHandler(
+public class DeleteWorkspaceCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUserService) : IRequestHandler<DeleteWorkspaceCommand>
 {
@@ -26,3 +26,4 @@ public class DeleteWorkspaceHandler(
         await context.SaveChangesAsync(cancellationToken);
     }
 }
+

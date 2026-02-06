@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Integrations.Commands.DeleteIntegration;
 
-public class DeleteIntegrationHandler(
+public class DeleteIntegrationCommandHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService) : IRequestHandler<DeleteIntegrationCommand>
 {

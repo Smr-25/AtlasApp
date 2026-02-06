@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Integrations.Queries.GetIntegrations;
 
-public class GetIntegrationsHandler(
+public class GetIntegrationsQueryHandler(
     IApplicationDbContext context, 
     IMapper mapper,
     ICurrentUserService currentUserService) 
@@ -24,3 +24,4 @@ public class GetIntegrationsHandler(
             .ToListAsync(cancellationToken);
     }
 }
+

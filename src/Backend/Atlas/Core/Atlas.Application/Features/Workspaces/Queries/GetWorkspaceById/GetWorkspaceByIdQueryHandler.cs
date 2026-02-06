@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Workspaces.Queries.GetWorkspaceById;
 
-public class GetWorkspaceByIdHandler(
+public class GetWorkspaceByIdQueryHandler(
     IApplicationDbContext context,
     IMapper mapper,
     ICurrentUserService currentUserService) : IRequestHandler<GetWorkspaceByIdQuery, WorkspaceDto>

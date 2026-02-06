@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Workspaces.Queries.GetWorkspaces;
 
-public class GetWorkspacesHandler(
+public class GetWorkspacesQueryHandler(
     IApplicationDbContext context, 
     IMapper mapper,
     ICurrentUserService currentUserService) : IRequestHandler<GetWorkspacesQuery, List<WorkspaceDto>>
@@ -26,3 +26,4 @@ public class GetWorkspacesHandler(
             .ToListAsync(cancellationToken);
     }
 }
+

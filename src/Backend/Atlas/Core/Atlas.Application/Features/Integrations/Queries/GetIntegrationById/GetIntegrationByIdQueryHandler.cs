@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Integrations.Queries.GetIntegrationById;
 
-public class GetIntegrationByIdHandler(
+public class GetIntegrationByIdQueryHandler(
     IApplicationDbContext context,
     IMapper mapper,
     ICurrentUserService currentUserService) : IRequestHandler<GetIntegrationByIdQuery, IntegrationDto>

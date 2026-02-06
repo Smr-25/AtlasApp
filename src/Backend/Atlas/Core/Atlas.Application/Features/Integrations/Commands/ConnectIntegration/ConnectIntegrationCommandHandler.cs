@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Atlas.Application.Features.Integrations.Commands.ConnectIntegration;
 
-public class ConnectIntegrationHandler(
+public class ConnectIntegrationCommandHandler(
     IApplicationDbContext context, 
     IEncryptionService encryptionService, 
     IMapper mapper,
@@ -37,3 +37,4 @@ public class ConnectIntegrationHandler(
         return mapper.Map<IntegrationDto>(integration);
     }
 }
+

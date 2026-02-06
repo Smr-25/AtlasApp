@@ -1,3 +1,4 @@
+using Atlas.Domain.Entities; 
 using MediatR;
 
 namespace Atlas.Application.Features.Projects.Commands.AddMigration;

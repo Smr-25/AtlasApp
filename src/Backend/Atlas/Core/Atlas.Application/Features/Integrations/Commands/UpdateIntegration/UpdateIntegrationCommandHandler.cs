@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Integrations.Commands.UpdateIntegration;
 
-public class UpdateIntegrationHandler(
+public class UpdateIntegrationCommandHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService) : IRequestHandler<UpdateIntegrationCommand>
 {
@@ -23,3 +23,4 @@ public class UpdateIntegrationHandler(
         await applicationDbContext.SaveChangesAsync(cancellationToken);
     }
 }
+

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Workspaces.Commands.UpdateWorkspace;
 
-public class UpdateWorkspaceHandler(
+public class UpdateWorkspaceCommandHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService) : IRequestHandler<UpdateWorkspaceCommand>
 {
@@ -23,3 +23,4 @@ public class UpdateWorkspaceHandler(
         await applicationDbContext.SaveChangesAsync(cancellationToken);
     }
 }
+

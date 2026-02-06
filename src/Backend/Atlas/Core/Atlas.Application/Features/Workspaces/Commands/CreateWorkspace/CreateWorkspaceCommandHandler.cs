@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
 
-public class CreateWorkspaceHandler(
+public class CreateWorkspaceCommandHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService) : IRequestHandler<CreateWorkspaceCommand, Guid>
 {
@@ -21,3 +21,4 @@ public class CreateWorkspaceHandler(
         return workspace.Id;
     }
 }
+

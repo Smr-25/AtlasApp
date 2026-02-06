@@ -20,7 +20,7 @@ public class ProjectsController : ApiControllerBase
     {
         return await Mediator.Send(new AddMigrationCommand(id, name));
     }
-    
+
     [HttpPost("{id}/database-update")]
     public async Task<ActionResult<string>> UpdateDatabase(Guid id, [FromBody] string? targetMigration)
     {
