@@ -1,27 +1,22 @@
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Features.Onboarding.Dtos;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Onboarding.Queries.GetQuestions;
 
-public class GetOnboardingQuestionsQueryHandler(IApplicationDbContext applicationDbContext) 
+public class GetOnboardingQuestionsQueryHandler(IApplicationDbContext applicationDbContext, IMapper mapper)
     : IRequestHandler<GetOnboardingQuestionsQuery, List<OnboardingQuestionDto>>
 {
-    public async Task<List<OnboardingQuestionDto>> Handle(GetOnboardingQuestionsQuery request, CancellationToken cancellationToken)
+    public async Task<List<OnboardingQuestionDto>> Handle(GetOnboardingQuestionsQuery request,
+        CancellationToken cancellationToken)
     {
-        var questions = await applicationDbContext.OnboardingQuestions
-            .Include(q => q.Options)
+        return await applicationDbContext.OnboardingQuestions
             .Where(q => q.TargetProfession == null || q.TargetProfession == request.Profession)
             .OrderBy(q => q.Order)
-            .AsNoTracking()
+            .ProjectTo<OnboardingQuestionDto>(mapper.ConfigurationProvider) 
             .ToListAsync(cancellationToken);
-
-        return questions.Select(q => new OnboardingQuestionDto(
-            q.Id,
-            q.Text,
-            q.IsMultiSelect,
-            q.Options.Select(o => new OnboardingOptionDto(o.Id, o.Text)).ToList()
-        )).ToList();
     }
 }

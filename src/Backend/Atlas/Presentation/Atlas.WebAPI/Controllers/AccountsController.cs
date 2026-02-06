@@ -1,6 +1,5 @@
 using Atlas.Application.Features.Accounts.Commands.AddPhoneNumber;
 using Atlas.Application.Features.Accounts.Commands.ChangePassword;
-using Atlas.Application.Features.Accounts.Commands.CompleteOnboarding;
 using Atlas.Application.Features.Accounts.Commands.DeleteAccount;
 using Atlas.Application.Features.Accounts.Commands.ExternalLogin;
 using Atlas.Application.Features.Accounts.Commands.ForgotPassword;
@@ -125,7 +124,7 @@ public class AccountsController : ApiControllerBase
     #endregion
     
     #region Profile Endpoints (Authorized)
-    
+
     [Authorize]
     [HttpGet("profile")]
     [EnableRateLimiting("api")]
@@ -191,10 +190,5 @@ public class AccountsController : ApiControllerBase
     
     #endregion
     
-    [HttpPost("onboarding")]
-    public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingCommand command)
-    {
-        await Mediator.Send(command);
-        return OkResponse("Profil uğurla yaradıldı!");
-    }
+   
 }

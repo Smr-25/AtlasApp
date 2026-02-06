@@ -9,7 +9,8 @@ public class AppUserProfile : BaseEntity, IAggregateRoot
 {
     public string JobTitle { get; private set; } = string.Empty; 
     public string? Bio { get; private set; }
-    public UserProfession Profession { get; private set; }  
+    public UserProfession Profession { get; private set; }
+    public string ThemeColor { get; private set; } = "#007AFF";
 
     private readonly List<Integration> _integrations = [];
     private readonly List<Workspace> _workspaces = [];
@@ -44,10 +45,9 @@ public class AppUserProfile : BaseEntity, IAggregateRoot
         _integrations.Add(integration);
         SetModified();
     }
-    
-    public void AddWorkspace(Workspace workspace)
+    public void SetTheme(string hexColor)
     {
-        _workspaces.Add(workspace);
-        SetModified();
+        ThemeColor = hexColor;
+        SetModified(); 
     }
 }
