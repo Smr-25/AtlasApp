@@ -19,6 +19,8 @@ public class GetWorkspaceByIdHandler(
         var userId = currentUserService.GetRequiredUserId();
 
         var workspace = await context.Workspaces
+            .Include(w => w.WorkspaceIntegrations)
+            .ThenInclude(wi => wi.Integration)
             .Where(w => w.Id == request.WorkspaceId && w.UserProfileId == userId && !w.IsDeleted)
             .ProjectTo<WorkspaceDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(cancellationToken);

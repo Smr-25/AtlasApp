@@ -21,7 +21,9 @@ public class MapProfile : Profile
             .ForMember(d => d.Options, opt => opt.MapFrom(s => s.Options));
         CreateMap<OnboardingOption, OnboardingOptionDto>();
 
-        CreateMap<Workspace, WorkspaceDto>();
+        CreateMap<Workspace, WorkspaceDto>()
+            .ForMember(d => d.ActiveIntegrations, opt => opt.MapFrom(s => s.WorkspaceIntegrations.Where(wi => wi.Enabled).Select(wi => wi.Integration)));
         CreateMap<Integration, IntegrationDto>();
+        
     }
 }

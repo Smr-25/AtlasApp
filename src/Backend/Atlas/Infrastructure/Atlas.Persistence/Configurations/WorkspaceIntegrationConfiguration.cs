@@ -30,7 +30,7 @@ public class WorkspaceIntegrationConfiguration : IEntityTypeConfiguration<Worksp
         builder.Property(wi => wi.IntegrationId)
             .IsRequired();
         
-        builder.Property(wi => wi.Config)
+        builder.Property(wi => wi.SettingsJson)
             .HasColumnType("jsonb");
         
         builder.HasIndex(wi => wi.WorkspaceId)

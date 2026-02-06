@@ -21,6 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Features\Dashboard\Queries\" />
       <Folder Include="Features\Profiles\Commands\" />
     </ItemGroup>
 

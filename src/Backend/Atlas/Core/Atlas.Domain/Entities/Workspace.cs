@@ -10,6 +10,10 @@ public partial class Workspace : BaseEntity
 
     public Guid UserProfileId { get; private set; } 
     
+    private readonly List<WorkspaceIntegration> _workspaceIntegrations = [];
+    public IReadOnlyCollection<WorkspaceIntegration> WorkspaceIntegrations => _workspaceIntegrations.AsReadOnly();
+
+    
     private Workspace() { }
 
     public static Workspace Create(string name, Guid userProfileId, bool isDefault = false)

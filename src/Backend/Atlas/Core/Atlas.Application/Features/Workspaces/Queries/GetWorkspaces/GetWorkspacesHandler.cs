@@ -17,7 +17,8 @@ public class GetWorkspacesHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
         
-        return await context.Workspaces
+        return await context.Workspaces.Include(w => w.WorkspaceIntegrations)
+            .ThenInclude(wi => wi.Integration)
             .Where(w => w.UserProfileId == userId && !w.IsDeleted)
             .OrderByDescending(w => w.IsDefault) 
             .ThenBy(w => w.Name)

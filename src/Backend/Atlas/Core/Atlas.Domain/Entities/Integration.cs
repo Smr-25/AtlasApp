@@ -68,4 +68,15 @@ public class Integration : BaseEntity
         SetDelete();
         SetModified();
     }
+
+    public static Integration CreatePlaceholder(Guid userId, IntegrationProvider provider, string name)
+    {
+        return new Integration
+        {
+            UserProfileId = userId,
+            Name = name,
+            Provider = provider,
+            Status = IntegrationStatus.PendingSetup
+        };
+    }
 }
