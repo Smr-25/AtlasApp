@@ -2,7 +2,7 @@ using Atlas.Domain.Entities.Common;
 
 namespace Atlas.Domain.Entities;
 
-public class Workspace : BaseEntity
+public partial class Workspace : BaseEntity
 {
     public string Name { get; private set; } = null!; 
     public string? Description { get; private set; }
@@ -20,5 +20,23 @@ public class Workspace : BaseEntity
             UserProfileId = userProfileId,
             IsDefault = isDefault
         };
+    }
+    
+    public void UpdateDetails(string name, string? description)
+    {
+        Name = name;
+        Description = description;
+        SetModified();
+    }
+
+    public void SetDefault(bool isDefault)
+    {
+        IsDefault = isDefault;
+        SetModified();
+    }
+    
+    public void Delete()
+    { 
+        SetDelete();
     }
 }

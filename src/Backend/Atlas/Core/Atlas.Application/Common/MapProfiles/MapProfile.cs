@@ -1,4 +1,5 @@
 using Atlas.Application.Features.Accounts.Dtos;
+using Atlas.Application.Features.Integrations.Dtos;
 using Atlas.Application.Features.Onboarding.Dtos;
 using Atlas.Application.Features.Profiles.Dtos;
 using Atlas.Application.Features.Snippets.Dtos;
@@ -21,5 +22,6 @@ public class MapProfile : Profile
         CreateMap<OnboardingOption, OnboardingOptionDto>();
 
         CreateMap<Workspace, WorkspaceDto>();
+        CreateMap<Integration, IntegrationDto>();
     }
 }

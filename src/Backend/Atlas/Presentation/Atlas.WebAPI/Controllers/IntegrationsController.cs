@@ -1,6 +1,9 @@
-using Atlas.Application.Features.Integrations.Commands.AddIntegration;
-using Atlas.Application.Features.Integrations.Queries.GetIntegrationResources;
-using Atlas.Application.Features.Integrations.Queries.GetIntegrationsByPersona;
+using Atlas.Application.Features.Integrations.Commands.ConnectIntegration;
+using Atlas.Application.Features.Integrations.Commands.DeleteIntegration;
+using Atlas.Application.Features.Integrations.Commands.UpdateIntegration;
+using Atlas.Application.Features.Integrations.Dtos;
+using Atlas.Application.Features.Integrations.Queries.GetIntegrationById;
+using Atlas.Application.Features.Integrations.Queries.GetIntegrations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,24 +12,38 @@ namespace Atlas.WebAPI.Controllers;
 [Authorize]
 public class IntegrationsController : ApiControllerBase
 {
+    [HttpGet]
+    public async Task<ActionResult<List<IntegrationDto>>> GetAll()
+    {
+        return Ok(await Mediator.Send(new GetIntegrationsQuery()));
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<IntegrationDto>> GetById(Guid id)
+    {
+        return Ok(await Mediator.Send(new GetIntegrationByIdQuery(id)));
+    }
+
     [HttpPost]
-    public async Task<IActionResult> AddIntegration([FromBody] AddIntegrationCommand command)
+    public async Task<ActionResult<IntegrationDto>> Connect(ConnectIntegrationCommand command)
     {
         var result = await Mediator.Send(command);
-        return OkResponse(new { IntegrationId = result });
+        return Ok(result);
     }
     
-    [HttpGet("persona/{personaId}")]
-    public async Task<IActionResult> GetByPersona(Guid personaId)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(Guid id, UpdateIntegrationCommand command)
     {
-        var result = await Mediator.Send(new GetIntegrationsByPersonaQuery(personaId));
-        return OkResponse(result);
+        if (id != command.IntegrationId) return BadRequest();
+        
+        await Mediator.Send(command);
+        return NoContent();
     }
-    
-    [HttpGet("{id}/resources")]
-    public async Task<IActionResult> GetResources(Guid id)
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Disconnect(Guid id)
     {
-        var result = await Mediator.Send(new GetIntegrationResourcesQuery(id));
-        return OkResponse(result);
+        await Mediator.Send(new DeleteIntegrationCommand(id));
+        return NoContent();
     }
 }

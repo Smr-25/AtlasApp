@@ -45,6 +45,7 @@ public class AppUserProfile : BaseEntity, IAggregateRoot
         _integrations.Add(integration);
         SetModified();
     }
+    
     public void SetTheme(string hexColor)
     {
         ThemeColor = hexColor;

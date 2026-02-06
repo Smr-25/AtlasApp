@@ -1,56 +1,49 @@
-using Atlas.Application.Features.Workspaces.Commands.ChatWithWorkspace;
 using Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
-using Atlas.Application.Features.Workspaces.Commands.LinkIntegration;
-using Atlas.Application.Features.Workspaces.Commands.UpdateLinkConfig;
-using Atlas.Application.Features.Workspaces.Queries.GetWorkspacesByPersona;
-using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceTools;
+using Atlas.Application.Features.Workspaces.Commands.DeleteWorkspace;
+using Atlas.Application.Features.Workspaces.Commands.UpdateWorkspace;
+using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceById;
+using Atlas.Application.Features.Workspaces.Queries.GetWorkspaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Atlas.Application.Features.Workspaces.Dtos;
 
 namespace Atlas.WebAPI.Controllers;
 
 [Authorize]
 public class WorkspacesController : ApiControllerBase
 {
-    [HttpGet("bypersona/{personaId}")]
-    public async Task<IActionResult> GetByPersona(Guid personaId)
+    [HttpGet]
+    public async Task<ActionResult<List<WorkspaceDto>>> GetAll()
     {
-        var result = await Mediator.Send(new GetWorkspacesByPersonaQuery(personaId));
-        return OkResponse(result);
+        return Ok(await Mediator.Send(new GetWorkspacesQuery()));
     }
-    
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<WorkspaceDto>> GetById(Guid id)
+    {
+        return Ok(await Mediator.Send(new GetWorkspaceByIdQuery(id)));
+    }
+
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateWorkspaceCommand command)
+    public async Task<ActionResult<Guid>> Create(CreateWorkspaceCommand command)
     {
-        var workspaceId = await Mediator.Send(command);
-        return CreatedResponse(workspaceId);
+        var id = await Mediator.Send(command);
+        return CreatedAtAction(nameof(GetById), new { id }, id);
     }
-    
-    [HttpPost("link-tool")]
-    public async Task<IActionResult> LinkTool([FromBody] LinkIntegrationCommand command)
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(Guid id, UpdateWorkspaceCommand command)
     {
+        if (id != command.WorkspaceId) return BadRequest();
+        
         await Mediator.Send(command);
-        return OkResponse("Integration linked successfully.");
+        return NoContent();
     }
-    
-    [HttpGet("{id}/tools")]
-    public async Task<IActionResult> GetTools(Guid id)
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var result = await Mediator.Send(new GetWorkspaceToolsQuery(id));
-        return OkResponse(result);
-    }
-    
-    [HttpPut("link-config")]
-    public async Task<IActionResult> UpdateLinkConfig([FromBody] UpdateLinkConfigCommand command)
-    {
-        await Mediator.Send(command);
-        return OkResponse("Configuration updated.");
-    }
-    
-    [HttpPost("chat")]
-    public async Task<IActionResult> Chat([FromBody] ChatWithWorkspaceCommand command)
-    {
-        var response = await Mediator.Send(command);
-        return OkResponse(new { Response = response });
+        await Mediator.Send(new DeleteWorkspaceCommand(id));
+        return NoContent();
     }
 }

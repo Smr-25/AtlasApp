@@ -24,7 +24,7 @@ public class IntegrationConfiguration : IEntityTypeConfiguration<Integration>
             .IsRequired()
             .HasDefaultValue(false);
 
-        builder.Property(i => i.PersonaId)
+        builder.Property(i => i.UserProfileId)
             .IsRequired();
 
         builder.Property(i => i.Provider)
@@ -36,40 +36,41 @@ public class IntegrationConfiguration : IEntityTypeConfiguration<Integration>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(i => i.Status)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
         builder.Property(i => i.EncryptedAccessToken)
+            .IsRequired()
             .HasMaxLength(2000);
 
-        builder.Property(i => i.RefreshToken)
+        builder.Property(i => i.EncryptedRefreshToken)
             .HasMaxLength(2000);
 
         builder.Property(i => i.TokenExpiresAt);
 
-        builder.Property(i => i.IsActive)
-            .IsRequired()
-            .HasDefaultValue(true);
-
-        builder.Property(i => i.LastUsedAt);
-
-        builder.Property(i => i.Metadata)
+        builder.Property(i => i.MetadataJson)
             .HasColumnType("jsonb");
 
-        builder.HasIndex(i => i.PersonaId)
-            .HasDatabaseName("IX_Integrations_PersonaId");
+        builder.HasIndex(i => i.UserProfileId)
+            .HasDatabaseName("IX_Integrations_UserProfileId");
 
-        builder.HasIndex(i => new { i.PersonaId, i.Provider })
-            .HasDatabaseName("IX_Integrations_PersonaId_Provider");
+        builder.HasIndex(i => new { i.UserProfileId, i.Provider })
+            .HasDatabaseName("IX_Integrations_UserProfileId_Provider");
 
-        builder.HasIndex(i => new { i.PersonaId, i.Provider, i.Name })
-            .HasDatabaseName("IX_Integrations_PersonaId_Provider_Name")
+        builder.HasIndex(i => new { i.UserProfileId, i.Provider, i.Name })
+            .HasDatabaseName("IX_Integrations_UserProfileId_Provider_Name")
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false"); 
 
-        builder.HasIndex(i => i.IsActive)
-            .HasDatabaseName("IX_Integrations_IsActive")
-            .HasFilter("\"IsActive\" = true");
+        builder.HasIndex(i => i.Status)
+            .HasDatabaseName("IX_Integrations_Status")
+            .HasFilter("\"Status\" = 'Active'");
 
         builder.HasQueryFilter(i => !i.IsDeleted);
 
         builder.Ignore(i => i.DomainEvents);
+        builder.Ignore(i => i.WorkspaceConnections);
     }
 }
