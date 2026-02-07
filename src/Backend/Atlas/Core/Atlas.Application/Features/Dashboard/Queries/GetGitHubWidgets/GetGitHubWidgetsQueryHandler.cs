@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Dashboard.Queries.GetGitHubWidgets;
 
-public class GetGitHubWidgetsHandler(
+public class GetGitHubWidgetsQueryHandler(
     IApplicationDbContext applicationDbContext,
     IEncryptionService encryptionService,
     IGitHubAdapter gitHubAdapter

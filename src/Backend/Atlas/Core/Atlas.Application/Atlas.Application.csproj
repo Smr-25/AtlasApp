@@ -22,7 +22,6 @@
 
     <ItemGroup>
       <Folder Include="Features\Profiles\Commands\" />
-      <Folder Include="Features\Projects\Queries\ScanProjects\" />
     </ItemGroup>
 
 
