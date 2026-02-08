@@ -8,31 +8,23 @@ using Atlas.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Atlas.Infrastructure.Adapters;
-public class GitHubAdapter : IGitIntegrationAdapter
+public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubAdapter> logger)
+    : IGitIntegrationAdapter
 {
     private const string GitHubApiBaseUrl = "https://api.github.com";
     private const string UserAgent = "Atlas-App";
-    
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<GitHubAdapter> _logger;
-
-    public GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubAdapter> logger)
-    {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-    }
 
     public IntegrationProvider Provider => IntegrationProvider.GitHub;
 
     public Task<List<ExternalResourceDto>> SearchResourcesAsync(string accessToken, string query, CancellationToken ct)
     {
-        _logger.LogWarning("SearchResourcesAsync not yet implemented for GitHub");
+        logger.LogWarning("SearchResourcesAsync not yet implemented for GitHub");
         return Task.FromResult(new List<ExternalResourceDto>());
     }
 
     public Task<ExternalResourceDto> GetResourceDetailsAsync(string accessToken, string resourceId, CancellationToken ct)
     {
-        _logger.LogWarning("GetResourceDetailsAsync not yet implemented for GitHub");
+        logger.LogWarning("GetResourceDetailsAsync not yet implemented for GitHub");
         return Task.FromResult<ExternalResourceDto>(null!);
     }
 
@@ -62,7 +54,7 @@ public class GitHubAdapter : IGitIntegrationAdapter
             
             if (response?.WorkflowRuns is null or { Count: 0 })
             {
-                _logger.LogDebug("No workflow runs found for {Owner}/{Repo}", owner, repo);
+                logger.LogDebug("No workflow runs found for {Owner}/{Repo}", owner, repo);
                 return [];
             }
 
@@ -70,7 +62,7 @@ public class GitHubAdapter : IGitIntegrationAdapter
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Failed to fetch pipelines for {Owner}/{Repo}", owner, repo);
+            logger.LogError(ex, "Failed to fetch pipelines for {Owner}/{Repo}", owner, repo);
             return [];
         }
     }
@@ -87,7 +79,7 @@ public class GitHubAdapter : IGitIntegrationAdapter
         var response = await client.PostAsJsonAsync(url, new { @event = "APPROVE" }, ct);
         
         response.EnsureSuccessStatusCode();
-        _logger.LogInformation("Approved PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
+        logger.LogInformation("Approved PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
     }
 
     public async Task MergePullRequestAsync(string accessToken, string owner, string repo, string prNumber, CancellationToken ct)
@@ -102,7 +94,7 @@ public class GitHubAdapter : IGitIntegrationAdapter
         var response = await client.PutAsJsonAsync(url, new { merge_method = "squash" }, ct);
         
         response.EnsureSuccessStatusCode();
-        _logger.LogInformation("Merged PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
+        logger.LogInformation("Merged PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
     }
 
     public async Task RetryPipelineAsync(string accessToken, string owner, string repo, string runId, CancellationToken ct)
@@ -117,14 +109,14 @@ public class GitHubAdapter : IGitIntegrationAdapter
         var response = await client.PostAsync(url, null, ct);
         
         response.EnsureSuccessStatusCode();
-        _logger.LogInformation("Retried workflow run {RunId} in {Owner}/{Repo}", runId, owner, repo);
+        logger.LogInformation("Retried workflow run {RunId} in {Owner}/{Repo}", runId, owner, repo);
     }
 
     #region Private Methods
 
     private HttpClient CreateAuthenticatedClient(string accessToken)
     {
-        var client = _httpClientFactory.CreateClient("GitHub");
+        var client = httpClientFactory.CreateClient("GitHub");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
@@ -147,7 +139,7 @@ public class GitHubAdapter : IGitIntegrationAdapter
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Failed to fetch issues from GitHub: {Url}", url);
+            logger.LogError(ex, "Failed to fetch issues from GitHub: {Url}", url);
             return [];
         }
     }
@@ -220,11 +212,11 @@ public class GitHubAdapter : IGitIntegrationAdapter
 
     #region GitHub API Response DTOs
 
-    private sealed record GitHubSearchIssueResponse(
+    private record GitHubSearchIssueResponse(
         [property: JsonPropertyName("items")] List<GitHubIssueItem>? Items
     );
 
-    private sealed record GitHubIssueItem(
+    private record GitHubIssueItem(
         [property: JsonPropertyName("number")] int Number,
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("state")] string State,
@@ -244,15 +236,15 @@ public class GitHubAdapter : IGitIntegrationAdapter
         [property: JsonPropertyName("avatar_url")] string? AvatarUrl
     );
 
-    private sealed record GitHubBranchRef(
+    private record GitHubBranchRef(
         [property: JsonPropertyName("ref")] string? Ref
     );
 
-    private sealed record GitHubWorkflowResponse(
+    private record GitHubWorkflowResponse(
         [property: JsonPropertyName("workflow_runs")] List<GitHubRun>? WorkflowRuns
     );
 
-    private sealed record GitHubRun(
+    private record GitHubRun(
         [property: JsonPropertyName("id")] long Id,
         [property: JsonPropertyName("status")] string Status,
         [property: JsonPropertyName("conclusion")] string? Conclusion,
@@ -263,7 +255,7 @@ public class GitHubAdapter : IGitIntegrationAdapter
         [property: JsonPropertyName("head_commit")] GitHubCommit? HeadCommit
     );
 
-    private sealed record GitHubCommit(
+    private record GitHubCommit(
         [property: JsonPropertyName("message")] string? Message
     );
 
