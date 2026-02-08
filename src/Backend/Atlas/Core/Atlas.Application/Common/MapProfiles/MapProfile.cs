@@ -1,5 +1,4 @@
 using Atlas.Application.Features.Accounts.Dtos;
-using Atlas.Application.Features.Integrations.Dtos;
 using Atlas.Application.Features.Onboarding.Dtos;
 using Atlas.Application.Features.Profiles.Dtos;
 using Atlas.Application.Features.Snippets.Dtos;
@@ -14,6 +13,7 @@ public class MapProfile : Profile
     public MapProfile()
     {
         CreateMap<AppUser, AccountDto>();
+        
         CreateMap<AppUserProfile, UserProfileDetailDto>()
             .ForMember(d => d.Profession, opt => opt.MapFrom(s => s.Profession.ToString()));
         
@@ -22,8 +22,7 @@ public class MapProfile : Profile
         CreateMap<OnboardingOption, OnboardingOptionDto>();
 
         CreateMap<Workspace, WorkspaceDto>()
-            .ForMember(d => d.ActiveIntegrations, opt => opt.MapFrom(s => s.WorkspaceIntegrations.Where(wi => wi.Enabled).Select(wi => wi.Integration)));
-        CreateMap<Integration, IntegrationDto>();
-        
+            .ForMember(d => d.ActiveIntegrations, opt => opt.MapFrom(s => 
+                s.WorkspaceIntegrations.Where(wi => wi.Enabled).Select(wi => wi.Integration)));
     }
 }
