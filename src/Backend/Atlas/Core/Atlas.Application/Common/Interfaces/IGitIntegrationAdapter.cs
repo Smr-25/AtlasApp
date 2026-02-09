@@ -11,4 +11,6 @@ public interface IGitIntegrationAdapter : IIntegrationAdapter
     Task ApprovePullRequestAsync(string accessToken, string owner, string repo, string prNumber, CancellationToken ct);
     Task MergePullRequestAsync(string accessToken, string owner, string repo, string prNumber, CancellationToken ct); 
     Task RetryPipelineAsync(string accessToken, string owner, string repo, string runId, CancellationToken ct);
+    Task CreateBranchAsync(string accessToken, string owner, string repo, string baseBranch, string newBranchName, CancellationToken ct);
+    
 }

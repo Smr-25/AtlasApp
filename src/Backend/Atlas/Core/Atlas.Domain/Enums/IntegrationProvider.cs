@@ -3,9 +3,7 @@ namespace Atlas.Domain.Enums;
 public enum IntegrationProvider
 {
     GitHub = 1,
-    GitLab = 2,
-    Bitbucket = 3,
-    Jira = 10,
+    Jira = 2,
     Trello = 11,
     Notion = 12,
     Figma = 20,

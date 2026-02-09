@@ -16,6 +16,7 @@ public static class ServiceRegistration
             services.AddHttpContextAccessor();
             services.AddDataProtection();
             services.AddHttpClient("GitHub");
+            services.AddHttpClient("Jira");
             services.AddHttpClient("OpenAI", client =>
             {
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {configuration.GetSection("ThirdPartyServices:AiSettings:ApiKey").Value}");
@@ -42,6 +43,7 @@ public static class ServiceRegistration
             services.AddScoped<IActivityService, ActivityService>();
             
             services.AddTransient<IGitIntegrationAdapter, GitHubAdapter>();
+            services.AddTransient<IJiraAdapter, JiraAdapter>();
             services.AddSingleton<IDockerAdapter, DockerAdapter>();
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IScriptRunnerService, ScriptRunnerService>();

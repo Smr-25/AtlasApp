@@ -112,6 +112,54 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
         logger.LogInformation("Retried workflow run {RunId} in {Owner}/{Repo}", runId, owner, repo);
     }
 
+    public async Task CreateBranchAsync(string accessToken, string owner, string repo, string baseBranch, string newBranchName,
+        CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(repo);
+        ArgumentException.ThrowIfNullOrWhiteSpace(baseBranch);
+        ArgumentException.ThrowIfNullOrWhiteSpace(newBranchName);
+
+        using var client = CreateAuthenticatedClient(accessToken);
+
+        var getRefUrl = $"{GitHubApiBaseUrl}/repos/{owner}/{repo}/git/ref/heads/{baseBranch}";
+        
+        GitHubRefResponse? baseRef;
+        try
+        {
+            baseRef = await client.GetFromJsonAsync<GitHubRefResponse>(getRefUrl, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Base branch '{BaseBranch}' not found in {Owner}/{Repo}", baseBranch, owner, repo);
+            throw new InvalidOperationException($"Base branch '{baseBranch}' not found in repo '{repo}'.", ex);
+        }
+
+        if (string.IsNullOrEmpty(baseRef?.Object.Sha))
+        {
+            throw new InvalidOperationException("Could not retrieve SHA from base branch.");
+        }
+
+        var createRefUrl = $"{GitHubApiBaseUrl}/repos/{owner}/{repo}/git/refs";
+        
+        var body = new
+        {
+            @ref = $"refs/heads/{newBranchName}",
+            sha = baseRef.Object.Sha
+        };
+
+        var response = await client.PostAsJsonAsync(createRefUrl, body, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            logger.LogError("Failed to create branch '{NewBranchName}': {Error}", newBranchName, error);
+            throw new InvalidOperationException($"Failed to create branch: {error}");
+        }
+        
+        logger.LogInformation("Created branch '{NewBranchName}' from '{BaseBranch}' in {Owner}/{Repo}", newBranchName, baseBranch, owner, repo);
+    }
+
     #region Private Methods
 
     private HttpClient CreateAuthenticatedClient(string accessToken)
@@ -257,6 +305,15 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
 
     private record GitHubCommit(
         [property: JsonPropertyName("message")] string? Message
+    );
+
+    private record GitHubRefResponse(
+        [property: JsonPropertyName("ref")] string Ref,
+        [property: JsonPropertyName("object")] GitHubRefObject Object
+    );
+
+    private record GitHubRefObject(
+        [property: JsonPropertyName("sha")] string Sha
     );
 
     #endregion
