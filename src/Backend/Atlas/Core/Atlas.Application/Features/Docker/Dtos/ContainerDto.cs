@@ -6,5 +6,6 @@ public record ContainerDto(
     string Image,
     string State,
     string Status,
-    string PortMapping
+    string Ports,
+    bool IsRunning
 );

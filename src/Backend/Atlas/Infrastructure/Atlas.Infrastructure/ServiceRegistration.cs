@@ -42,7 +42,7 @@ public static class ServiceRegistration
             services.AddScoped<IActivityService, ActivityService>();
             
             services.AddTransient<IGitIntegrationAdapter, GitHubAdapter>();
-            services.AddSingleton<IDockerService, DockerService>();
+            services.AddSingleton<IDockerAdapter, DockerAdapter>();
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IScriptRunnerService, ScriptRunnerService>();
             services.AddTransient<INotionService, NotionService>();

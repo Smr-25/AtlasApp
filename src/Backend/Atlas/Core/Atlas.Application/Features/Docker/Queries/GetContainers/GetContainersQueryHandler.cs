@@ -4,11 +4,11 @@ using MediatR;
 
 namespace Atlas.Application.Features.Docker.Queries.GetContainers;
 
-public class GetContainersQueryHandler(IDockerService dockerService)
+public class GetContainersQueryHandler(IDockerAdapter dockerAdapter) 
     : IRequestHandler<GetContainersQuery, List<ContainerDto>>
 {
-    public async Task<List<ContainerDto>> Handle(GetContainersQuery request, CancellationToken cancellationToken)
+    public async Task<List<ContainerDto>> Handle(GetContainersQuery request, CancellationToken ct)
     {
-        return await dockerService.GetContainersAsync(cancellationToken);
+        return await dockerAdapter.GetContainersAsync(ct);
     }
 }

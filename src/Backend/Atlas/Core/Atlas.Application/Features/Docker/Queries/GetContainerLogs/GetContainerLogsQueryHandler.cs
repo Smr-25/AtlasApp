@@ -3,10 +3,11 @@ using MediatR;
 
 namespace Atlas.Application.Features.Docker.Queries.GetContainerLogs;
 
-public class GetContainerLogsQueryHandler(IDockerService dockerService) : IRequestHandler<GetContainerLogsQuery, string>
+public class GetContainerLogsQueryHandler(IDockerAdapter dockerAdapter) 
+    : IRequestHandler<GetContainerLogsQuery, string>
 {
-    public async Task<string> Handle(GetContainerLogsQuery request, CancellationToken cancellationToken)
+    public async Task<string> Handle(GetContainerLogsQuery request, CancellationToken ct)
     {
-        return await dockerService.GetLogsAsync(request.ContainerId, 100, cancellationToken);
+        return await dockerAdapter.GetContainerLogsAsync(request.ContainerId, request.TailCount, ct);
     }
 }
