@@ -27,19 +27,4 @@ public class GitController : ApiControllerBase
         await Mediator.Send(command);
         return NoContent();
     }
-
-    [HttpPost("retry-pipeline")]
-    public async Task<IActionResult> RetryPipeline([FromBody] RetryPipelineCommand command)
-    {
-        await Mediator.Send(command);
-        return NoContent();
-    }
-
-    [HttpPost("create-branch")]
-    public async Task<IActionResult> CreateBranch([FromBody] CreateBranchCommand command)
-    {
-        await Mediator.Send(command);
-        return NoContent();
-            ]
-    }
 }
