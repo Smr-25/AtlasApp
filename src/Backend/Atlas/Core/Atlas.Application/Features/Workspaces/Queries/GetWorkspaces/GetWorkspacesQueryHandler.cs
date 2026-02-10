@@ -5,25 +5,31 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Atlas.Application.Features.Workspaces.Queries.GetWorkspaces;
 
 public class GetWorkspacesQueryHandler(
     IApplicationDbContext context, 
     IMapper mapper,
-    ICurrentUserService currentUserService) : IRequestHandler<GetWorkspacesQuery, List<WorkspaceDto>>
+    ICurrentUserService currentUserService,
+    ILogger<GetWorkspacesQueryHandler> logger) : IRequestHandler<GetWorkspacesQuery, List<WorkspaceDto>>
 {
     public async Task<List<WorkspaceDto>> Handle(GetWorkspacesQuery request, CancellationToken cancellationToken)
     {
         var userId = currentUserService.GetRequiredUserId();
+        logger.LogDebug("Fetching workspaces for user {UserId}", userId);
         
-        return await context.Workspaces.Include(w => w.WorkspaceIntegrations)
+        var workspaces = await context.Workspaces.Include(w => w.WorkspaceIntegrations)
             .ThenInclude(wi => wi.Integration)
             .Where(w => w.UserProfileId == userId && !w.IsDeleted)
             .OrderByDescending(w => w.IsDefault) 
             .ThenBy(w => w.Name)
             .ProjectTo<WorkspaceDto>(mapper.ConfigurationProvider)
             .ToListAsync(cancellationToken);
+        
+        logger.LogDebug("Retrieved {Count} workspaces for user {UserId}", workspaces.Count, userId);
+        return workspaces;
     }
 }
 

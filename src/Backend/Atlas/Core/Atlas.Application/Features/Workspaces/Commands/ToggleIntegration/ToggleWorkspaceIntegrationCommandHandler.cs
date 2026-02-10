@@ -4,17 +4,21 @@ using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Atlas.Application.Features.Workspaces.Commands.ToggleIntegration;
 
-public class ToggleWorkspaceIntegrationHandler(
+public class ToggleWorkspaceIntegrationCommandHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    ILogger<ToggleWorkspaceIntegrationCommandHandler> logger)
     : IRequestHandler<ToggleWorkspaceIntegrationCommand>
 {
     public async Task Handle(ToggleWorkspaceIntegrationCommand request, CancellationToken cancellationToken)
     {
         var userId = currentUserService.GetRequiredUserId();
+        logger.LogInformation("Toggling integration {IntegrationId} for workspace {WorkspaceId}, Enable: {Enable}", 
+            request.IntegrationId, request.WorkspaceId, request.Enable);
 
         var workspace = await applicationDbContext.Workspaces
             .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && w.UserProfileId == userId, cancellationToken);
@@ -39,6 +43,7 @@ public class ToggleWorkspaceIntegrationHandler(
                     IntegrationId = request.IntegrationId
                 };
                 await applicationDbContext.WorkspaceIntegrations.AddAsync(link, cancellationToken);
+                logger.LogDebug("Created new workspace-integration link");
             }
         }
         else
@@ -46,9 +51,11 @@ public class ToggleWorkspaceIntegrationHandler(
             if (link != null)
             {
                 applicationDbContext.WorkspaceIntegrations.Remove(link);
+                logger.LogDebug("Removed workspace-integration link");
             }
         }
 
         await applicationDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Successfully toggled integration for workspace");
     }
 }
