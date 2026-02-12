@@ -21,6 +21,13 @@ public static class ServiceRegistration
             {
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {configuration.GetSection("ThirdPartyServices:AiSettings:ApiKey").Value}");
             });
+            
+            services.AddHttpClient("AtlasClient", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+                client.DefaultRequestHeaders.Add("User-Agent", "Atlas-SuperApp/1.0");
+            });
+            
             services.AddHttpClient<IAiAdvisorService, AiAdvisorService>(); 
             
             services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
@@ -51,6 +58,8 @@ public static class ServiceRegistration
             services.AddTransient<IGmailService, GmailService>();
             services.AddTransient<IMigrationBuilderService, MigrationBuilderService>();
             services.AddTransient<IImageProcessingService, ImageProcessingService>();
+            services.AddTransient<ISystemToolAdapter,SystemToolAdapter>();
+            services.AddTransient<INetworkToolAdapter, NetworkToolAdapter>();
         }
     }
 }
