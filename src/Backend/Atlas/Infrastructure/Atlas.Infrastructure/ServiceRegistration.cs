@@ -60,6 +60,7 @@ public static class ServiceRegistration
             services.AddTransient<IImageProcessingService, ImageProcessingService>();
             services.AddTransient<ISystemToolAdapter,SystemToolAdapter>();
             services.AddTransient<INetworkToolAdapter, NetworkToolAdapter>();
+            services.AddTransient<IJsonToolService, JsonToolService>();
         }
     }
 }
