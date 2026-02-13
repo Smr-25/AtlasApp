@@ -10,6 +10,6 @@ public class NetworkToolsController : ApiControllerBase
     public async Task<IActionResult> SendRequest([FromBody] SendHttpRequestQuery query)
     {
         var result = await Mediator.Send(query);
-        return Ok(result);
+        return OkResponse(result);
     }
 }

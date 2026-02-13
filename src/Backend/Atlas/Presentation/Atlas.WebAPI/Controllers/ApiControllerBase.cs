@@ -40,41 +40,27 @@ public abstract class ApiControllerBase : ControllerBase
 
     #region Error Responses
 
-    /// <summary>
-    /// Returns 400 Bad Request with error message.
-    /// </summary>
     protected IActionResult BadRequestResponse(string message)
     {
         return BadRequest(ResponseModel<object>.Failure(message));
     }
 
-    /// <summary>
-    /// Returns 400 Bad Request with multiple error messages.
-    /// </summary>
     protected IActionResult BadRequestResponse(IEnumerable<string> errors)
     {
         return BadRequest(ResponseModel<object>.Failure(errors));
     }
 
-    /// <summary>
-    /// Returns 404 Not Found with error message.
-    /// </summary>
     protected IActionResult NotFoundResponse(string message)
     {
         return NotFound(ResponseModel<object>.Failure(message));
     }
 
-    /// <summary>
-    /// Returns 401 Unauthorized with error message.
-    /// </summary>
+  
     protected IActionResult UnauthorizedResponse(string message = "Unauthorized")
     {
         return Unauthorized(ResponseModel<object>.Failure(message));
     }
 
-    /// <summary>
-    /// Returns 403 Forbidden with error message.
-    /// </summary>
     protected IActionResult ForbiddenResponse(string message = "Forbidden")
     {
         return StatusCode(403, ResponseModel<object>.Failure(message));
