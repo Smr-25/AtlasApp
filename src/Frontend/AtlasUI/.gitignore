@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Eklenen kurallar (lokal/ci/derleme/cache) ---
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
+# Vite / bundler cache and build outputs
+.vite
+.cache
+.parcel-cache
+build
+out
+
+# Test coverage and test caches
+coverage
+.nyc_output
+.vitest
+
+# Linter / tooling caches
+.eslintcache
+
+# OS / misc
+Thumbs.db
+.sass-cache
+
+# Paket yöneticisi kilit dosyalarını genelde izlemek istersiniz (commit). Eğer kilit dosyalarını takip etmek istemiyorsanız burada ekleyin.
+# Örnek (genelde önerilmez):
+# package-lock.json
+
+# Eğer IDE'ye ait başka local ayarlarınız varsa, onları da ekleyin
+# .idea/

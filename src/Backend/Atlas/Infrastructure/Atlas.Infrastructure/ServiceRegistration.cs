@@ -2,6 +2,7 @@ using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Infrastructure.Adapters;
 using Atlas.Infrastructure.Services;
+using Hardware.Info;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,6 +53,11 @@ public static class ServiceRegistration
             services.AddTransient<IGitIntegrationAdapter, GitHubAdapter>();
             services.AddTransient<IJiraAdapter, JiraAdapter>();
             services.AddSingleton<IDockerAdapter, DockerAdapter>();
+            services.AddSingleton<IHardwareInfo>(_ =>
+            {
+                var hardwareInfo = new HardwareInfo();
+                return hardwareInfo;
+            });
             services.AddTransient<ISystemMonitorService, SystemMonitorService>();
             services.AddTransient<IScriptRunnerService, ScriptRunnerService>();
             services.AddTransient<INotionService, NotionService>();
@@ -61,6 +67,7 @@ public static class ServiceRegistration
             services.AddTransient<ISystemToolAdapter,SystemToolAdapter>();
             services.AddTransient<INetworkToolAdapter, NetworkToolAdapter>();
             services.AddTransient<IJsonToolService, JsonToolService>();
+            services.AddTransient<ISecurityToolAdapter, SecurityToolAdapter>();
         }
     }
 }

@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 222 22% 8%;
+    --foreground: 210 20% 92%;
+
+    --card: 222 20% 11%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 222 20% 11%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 22% 8%;
+
+    --secondary: 222 18% 16%;
+    --secondary-foreground: 210 20% 85%;
+
+    --muted: 222 15% 14%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 222 22% 8%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 20% 92%;
+
+    --border: 222 15% 18%;
+    --input: 222 15% 18%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 222 22% 6%;
+    --sidebar-foreground: 210 15% 70%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 20% 14%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 222 15% 15%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Custom tokens */
+    --success: 152 69% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(230 80% 55%));
+    --gradient-surface: linear-gradient(180deg, hsl(222 20% 11%), hsl(222 22% 8%));
+    --gradient-glow: radial-gradient(ellipse at top, hsl(217 91% 60% / 0.08), transparent 60%);
+
+    --shadow-sm: 0 1px 2px hsl(222 22% 4% / 0.5);
+    --shadow-md: 0 4px 12px hsl(222 22% 4% / 0.5);
+    --shadow-lg: 0 8px 30px hsl(222 22% 4% / 0.6);
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.15);
+  }
+
+  /* No light mode - always dark */
+  .dark {
+    --background: 222 22% 8%;
+    --foreground: 210 20% 92%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+
+  .glass-hover {
+    @apply hover:bg-card/90 hover:border-border transition-all duration-200;
+  }
+
+  .glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .atlas-logo {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+}
