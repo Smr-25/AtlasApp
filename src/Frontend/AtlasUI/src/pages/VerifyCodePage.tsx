@@ -62,7 +62,6 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
   const handleResend = (method?: string) => {
     setShowPhoneResendChoice(false);
     startCooldown();
-    // API call by user
   };
 
   const title = type === 'email' ? 'Email təsdiqləmə' : 'Telefon təsdiqləmə';

@@ -18,7 +18,6 @@ const mockWorkspaces: Workspace[] = [
   { id: '4', name: 'Mobile Apps', description: 'iOS, Android, Flutter', color: 'hsl(280 70% 55%)', items: 3, lastActive: '3 saat əvvəl' },
 ];
 
-// Widget-style card sizes
 type WidgetSize = 'small' | 'medium' | 'large';
 
 interface WidgetCardProps {
@@ -38,12 +37,10 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ workspace, size, onResize }) =>
 
   return (
     <div className={`${sizeClasses[size]} glass rounded-2xl p-5 group relative hover:border-primary/30 transition-all duration-300 cursor-pointer`}>
-      {/* Drag handle */}
       <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 
-      {/* Resize menu */}
       <div className="absolute top-3 right-3">
         <button
           onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
@@ -66,7 +63,6 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ workspace, size, onResize }) =>
         )}
       </div>
 
-      {/* Color indicator */}
       <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: `${workspace.color}20` }}>
         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: workspace.color }} />
       </div>
