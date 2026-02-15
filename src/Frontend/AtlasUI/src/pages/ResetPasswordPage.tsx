@@ -1,8 +1,31 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
+
+function parseApiError(result: any, response?: Response) {
+  if (!result) return response?.statusText || 'An unknown error occurred.';
+  // support both `errors` and `Errors` from backend
+  const errs = result.errors ?? result.Errors ?? null;
+  if (Array.isArray(errs) && errs.length > 0) return (errs as string[]).join('\n');
+  if (errs && typeof errs === 'object') {
+    try {
+      const parts: string[] = [];
+      for (const key of Object.keys(errs)) {
+        const v = errs[key];
+        if (Array.isArray(v)) parts.push(`${key}: ${v.join(', ')}`);
+        else parts.push(`${key}: ${String(v)}`);
+      }
+      if (parts.length) return parts.join('\n');
+    } catch (e) {
+    }
+  }
+  if (result.message) return String(result.message);
+  if (result.error) return String(result.error);
+  if (response) return `${response.status} ${response.statusText}`;
+  return 'An unexpected server error occurred.';
+}
 
 const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,13 +36,17 @@ const ResetPasswordPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [showCode, setShowCode] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleCodeChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
-    const newCode = [...code];
-    newCode[index] = value.slice(-1);
-    setCode(newCode);
+    const newCodeArr = [...code];
+    newCodeArr[index] = value.slice(-1);
+    setCode(newCodeArr);
     if (value && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
@@ -27,21 +54,92 @@ const ResetPasswordPage: React.FC = () => {
     if (e.key === 'Backspace' && !code[index] && index > 0) inputRefs.current[index - 1]?.focus();
   };
 
-  const handleVerifyCode = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStep('password');
+  const validatePassword = (pwd: string) => {
+    if (!pwd) return 'Password is required.';
+    if (pwd.length < 8) return 'Password must be at least 8 characters long.';
+    if (!/[A-Z]/.test(pwd)) return 'Password must contain at least one uppercase letter.';
+    if (!/[a-z]/.test(pwd)) return 'Password must contain at least one lowercase letter.';
+    if (!/[0-9]/.test(pwd)) return 'Password must contain at least one digit.';
+    if (!/[^a-zA-Z0-9]/.test(pwd)) return 'Password must contain at least one special character.';
+    return null;
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/login');
+    setError(null);
+    setSuccess(null);
+    const verificationCode = code.join('');
+    if (verificationCode.length !== 6) {
+      setError('Verification code must be 6 digits.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:5075/api/Accounts/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: state?.email ?? '', verificationCode }),
+      });
+      let result: any = null;
+      try { result = await res.json(); } catch (err) { }
+      if (!res.ok) {
+        setError(parseApiError(result, res));
+        return;
+      }
+      if (result?.isSuccess) {
+        setSuccess('Code verified. You can now set a new password.');
+        setStep('password');
+      } else {
+        setError(parseApiError(result, res));
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    const pwdErr = validatePassword(newPassword);
+    if (pwdErr) { setError(pwdErr); return; }
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:5075/api/Accounts/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: state?.email ?? '',
+          verificationCode: code.join(''),
+          newPassword,
+          confirmPassword,
+        }),
+      });
+      let result: any = null;
+      try { result = await res.json(); } catch (err) { }
+      if (!res.ok) {
+        setError(parseApiError(result, res));
+        return;
+      }
+      if (result?.isSuccess) {
+        setSuccess('Password reset successful. You can now sign in.');
+        setTimeout(() => navigate('/login'), 1500);
+      } else {
+        setError(parseApiError(result, res));
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResend = () => {
     setResendCooldown(60);
-    const timer = setInterval(() => {
-      setResendCooldown(prev => { if (prev <= 1) { clearInterval(timer); return 0; } return prev - 1; });
-    }, 1000);
+    const timer = setInterval(() => { setResendCooldown(prev => { if (prev <= 1) { clearInterval(timer); return 0; } return prev - 1; }); }, 1000);
   };
 
   return (
@@ -57,46 +155,57 @@ const ResetPasswordPage: React.FC = () => {
           {step === 'code' ? (
             <>
               <div className="text-center">
-                <h2 className="text-xl font-semibold text-foreground">Təsdiq kodu</h2>
-                <p className="text-sm text-muted-foreground mt-1">{state?.email} ünvanına göndərilən kodu daxil edin</p>
+                <h2 className="text-xl font-semibold text-foreground">Verification code</h2>
+                <p className="text-sm text-muted-foreground mt-1">Enter the code sent to {state?.email || 'your email'}</p>
               </div>
               <form onSubmit={handleVerifyCode} className="space-y-6">
-                <div className="flex justify-center gap-3">
-                  {code.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={el => { inputRefs.current[i] = el; }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(i, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(i, e)}
-                      className="w-12 h-14 rounded-lg bg-secondary border border-border text-center text-lg font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
-                    />
-                  ))}
+                <div className="relative">
+                  <div className="flex justify-center gap-3">
+                    {code.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={el => { inputRefs.current[i] = el; }}
+                        type={showCode ? 'text' : 'password'}
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleCodeChange(i, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(i, e)}
+                        className="w-12 h-14 rounded-lg bg-secondary border border-border text-center text-lg font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                      />
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => setShowCode(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showCode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-                <button type="submit" className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90" style={{ background: 'var(--gradient-primary)' }}>
-                  Təsdiqlə
+                {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
+                {success && <p className="text-sm text-primary">{success}</p>}
+                <button type="submit" disabled={loading} className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90" style={{ background: 'var(--gradient-primary)' }}>
+                  {loading ? 'Verifying...' : 'Verify'}
                 </button>
               </form>
               <div className="text-center">
                 <button onClick={handleResend} disabled={resendCooldown > 0} className="text-sm text-primary hover:underline disabled:text-muted-foreground">
-                  {resendCooldown > 0 ? `Yenidən göndər (${resendCooldown}s)` : 'Kodu yenidən göndər'}
+                  {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend code'}
                 </button>
               </div>
             </>
           ) : (
             <>
               <div className="text-center">
-                <h2 className="text-xl font-semibold text-foreground">Yeni şifrə</h2>
-                <p className="text-sm text-muted-foreground mt-1">Yeni şifrənizi daxil edin</p>
+                <h2 className="text-xl font-semibold text-foreground">New password</h2>
+                <p className="text-sm text-muted-foreground mt-1">Enter your new password</p>
               </div>
               <form onSubmit={handleResetPassword} className="space-y-4">
-                <AuthInput label="Yeni şifrə" icon={Lock} type="password" placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                <AuthInput label="Şifrəni təsdiqlə" icon={Lock} type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
-                <button type="submit" className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90" style={{ background: 'var(--gradient-primary)' }}>
-                  Şifrəni yenilə
+                <AuthInput label="New password" icon={Lock} type="password" placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                <AuthInput label="Confirm password" icon={Lock} type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+
+                {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
+                {success && <p className="text-sm text-primary">{success}</p>}
+
+                <button type="submit" disabled={loading} className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90" style={{ background: 'var(--gradient-primary)' }}>
+                  {loading ? 'Resetting...' : 'Reset password'}
                 </button>
               </form>
             </>

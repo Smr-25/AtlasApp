@@ -15,10 +15,10 @@ function parseApiError(result: any, response?: Response) {
 
     if (k.includes('email')) {
       if (/already|exist|taken|in use/i.test(joined))
-        return 'This email is already registered. If it\'s yours, try logging in or reset your password; otherwise use a different email.';
+        return "This email is already registered. If it's yours, try logging in or reset your password; otherwise use a different email.";
       return joined;
     }
-    if (k.includes('user') || k.includes('username') || k.includes('username')) {
+    if (k.includes('user') || k.includes('username')) {
       if (/already|exist|taken|in use/i.test(joined))
         return 'This username is already taken. Please choose a different username.';
       return joined;
@@ -352,7 +352,10 @@ const RegisterPage: React.FC = () => {
                         : 'bg-secondary border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    📱 SMS
+                    <span className="inline-flex items-center gap-2 justify-center">
+                      <Phone className="w-4 h-4" />
+                      SMS
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -363,7 +366,13 @@ const RegisterPage: React.FC = () => {
                         : 'bg-secondary border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    ✈️ Telegram
+                    <span className="inline-flex items-center gap-2 justify-center">
+                      {/* Telegram SVG icon */}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-4 h-4" aria-hidden>
+                        <path fill="currentColor" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.8 83.9l-20.7 97.5c-1.6 6.9-5.9 8.6-11.9 5.4l-33-24.3-15.9 15.3c-1.8 1.8-3.3 3.3-6.7 3.3l2.4-34.4 62.6-56.3c2.7-2.4-.6-3.7-4.2-1.3L70.5 124l-33.9-10.6c-7.3-2.3-7.4-7.3 1.5-10.8L173 69.2c6.5-2.2 12.2 1.5 11.8 14.7z" />
+                      </svg>
+                      Telegram
+                    </span>
                   </button>
                 </div>
               </div>
@@ -376,6 +385,7 @@ const RegisterPage: React.FC = () => {
               placeholder="••••••••"
               value={form.password}
               onChange={(e) => update('password', e.target.value)}
+              error={fieldErrors.password}
             />
             <AuthInput
               label="Confirm password"
@@ -384,6 +394,7 @@ const RegisterPage: React.FC = () => {
               placeholder="••••••••"
               value={form.confirmPassword}
               onChange={(e) => update('confirmPassword', e.target.value)}
+              error={fieldErrors.confirmPassword}
             />
 
             {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}

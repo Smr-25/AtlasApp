@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AtlasLogo from '@/components/AtlasLogo';
+import { Mail, Phone, Eye, EyeOff } from 'lucide-react';
 
 interface VerifyCodePageProps {
   type: 'email' | 'phone';
@@ -13,6 +14,10 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [showPhoneResendChoice, setShowPhoneResendChoice] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showCode, setShowCode] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (index: number, value: string) => {
@@ -40,10 +45,67 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
     inputRefs.current[Math.min(pasted.length, 5)]?.focus();
   };
 
-  const handleVerify = (e: React.FormEvent) => {
+  function parseApiError(result: any, response?: Response) {
+    if (!result) return response?.statusText || 'An unknown error occurred.';
+    const errs = result.errors ?? result.Errors ?? null;
+    if (Array.isArray(errs) && errs.length > 0) return errs.join('\n');
+    if (errs && typeof errs === 'object') {
+      try {
+        const parts: string[] = [];
+        for (const key of Object.keys(errs)) {
+          const v = errs[key];
+          if (Array.isArray(v)) parts.push(`${key}: ${v.join(', ')}`);
+          else parts.push(`${key}: ${String(v)}`);
+        }
+        if (parts.length) return parts.join('\n');
+      } catch (e) {
+      }
+    }
+    if (result.message) return String(result.message);
+    if (result.error) return String(result.error);
+    if (response) return `${response.status} ${response.statusText}`;
+    return 'An unexpected server error occurred.';
+  }
+
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (type === 'email' && state?.phone) {
-      navigate('/verify-phone', { state });
+    setError(null);
+    setSuccessMessage(null);
+    const verificationCode = code.join('');
+    if (verificationCode.length !== 6) {
+      setError('Verification code must be 6 digits.');
+      return;
+    }
+
+    if (type === 'email') {
+      if (!state?.email) {
+        setError('Email is missing.');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetch('http://localhost:5075/api/Accounts/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: state.email, verificationCode }),
+        });
+        let result: any = null;
+        try { result = await res.json(); } catch (err) { }
+        if (!res.ok) {
+          setError(parseApiError(result, res));
+          return;
+        }
+        if (result?.isSuccess) {
+          setSuccessMessage('Email verified successfully.');
+          navigate('/dashboard');
+        } else {
+          setError(parseApiError(result, res));
+        }
+      } catch (err: any) {
+        setError(err?.message || 'Network error. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     } else {
       navigate('/dashboard');
     }
@@ -59,15 +121,46 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
     }, 1000);
   };
 
-  const handleResend = (method?: string) => {
+  const handleResend = async () => {
     setShowPhoneResendChoice(false);
+    setError(null);
+    setSuccessMessage(null);
     startCooldown();
+    if (type === 'email') {
+      if (!state?.email) {
+        setError('Email is missing.');
+        return;
+      }
+      try {
+        const res = await fetch('http://localhost:5075/api/Accounts/resend-email-verification-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: state.email }),
+        });
+        let result: any = null;
+        try { result = await res.json(); } catch (err) { }
+        if (!res.ok) {
+          setError(parseApiError(result, res));
+          return;
+        }
+        if (result?.isSuccess) {
+          setSuccessMessage('Verification code resent. Check your email.');
+        } else {
+          setError(parseApiError(result, res));
+        }
+      } catch (err: any) {
+        setError(err?.message || 'Network error. Please try again.');
+      }
+    } else {
+      startCooldown();
+      setSuccessMessage('Verification code resent.');
+    }
   };
 
-  const title = type === 'email' ? 'Email təsdiqləmə' : 'Telefon təsdiqləmə';
+  const title = type === 'email' ? 'Email verification' : 'Phone verification';
   const desc = type === 'email'
-    ? `${state?.email || 'email'} ünvanına göndərilən kodu daxil edin`
-    : `${state?.phone || 'telefon'} nömrəsinə göndərilən kodu daxil edin`;
+    ? `Enter the code sent to ${state?.email || 'your email'}`
+    : `Enter the code sent to ${state?.phone || 'your phone'}`;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
@@ -81,35 +174,44 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
         <div className="glass rounded-2xl p-8 space-y-6">
           <div className="text-center">
             <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <span className="text-3xl">{type === 'email' ? '📧' : '📱'}</span>
+              <span className="text-3xl">{type === 'email' ? <Mail className="w-6 h-6" /> : <Phone className="w-6 h-6" />}</span>
             </div>
             <h2 className="text-xl font-semibold text-foreground">{title}</h2>
             <p className="text-sm text-muted-foreground mt-1">{desc}</p>
           </div>
 
           <form onSubmit={handleVerify} className="space-y-6">
-            <div className="flex justify-center gap-3" onPaste={handlePaste}>
-              {code.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={el => { inputRefs.current[i] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="w-12 h-14 rounded-lg bg-secondary border border-border text-center text-lg font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
-                />
-              ))}
+            <div className="relative">
+              <div className="flex justify-center gap-3" onPaste={handlePaste}>
+                {code.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={el => { inputRefs.current[i] = el; }}
+                    type={showCode ? 'text' : 'password'}
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(i, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(i, e)}
+                    className="w-12 h-14 rounded-lg bg-secondary border border-border text-center text-lg font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+                  />
+                ))}
+              </div>
+              <button type="button" onClick={() => setShowCode(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                {showCode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
+
+            {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
+            {successMessage && <p className="text-sm text-primary">{successMessage}</p>}
 
             <button
               type="submit"
+              disabled={loading}
               className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
               style={{ background: 'var(--gradient-primary)' }}
             >
-              Təsdiqlə
+              {loading ? 'Verifying...' : 'Verify'}
             </button>
           </form>
 
@@ -120,21 +222,30 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
                 disabled={resendCooldown > 0}
                 className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
               >
-                {resendCooldown > 0 ? `Yenidən göndər (${resendCooldown}s)` : 'Kodu yenidən göndər'}
+                {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend code'}
               </button>
             ) : type === 'phone' && showPhoneResendChoice ? (
               <div className="flex gap-3 justify-center animate-fade-in">
                 <button
-                  onClick={() => handleResend('sms')}
+                  onClick={() => handleResend()}
                   className="px-4 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground hover:bg-muted transition-all"
                 >
-                  📱 SMS ilə
+                  <span className="inline-flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    SMS
+                  </span>
                 </button>
                 <button
-                  onClick={() => handleResend('telegram')}
+                  onClick={() => handleResend()}
                   className="px-4 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground hover:bg-muted transition-all"
                 >
-                  ✈️ Telegram ilə
+                  <span className="inline-flex items-center gap-2">
+                    {/* Telegram SVG icon */}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-4 h-4" aria-hidden>
+                      <path fill="currentColor" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.8 83.9l-20.7 97.5c-1.6 6.9-5.9 8.6-11.9 5.4l-33-24.3-15.9 15.3c-1.8 1.8-3.3 3.3-6.7 3.3l2.4-34.4 62.6-56.3c2.7-2.4-.6-3.7-4.2-1.3L70.5 124l-33.9-10.6c-7.3-2.3-7.4-7.3 1.5-10.8L173 69.2c6.5-2.2 12.2 1.5 11.8 14.7z" />
+                    </svg>
+                    Telegram
+                  </span>
                 </button>
               </div>
             ) : (
@@ -143,7 +254,7 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
                 disabled={resendCooldown > 0}
                 className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
               >
-                {resendCooldown > 0 ? `Yenidən göndər (${resendCooldown}s)` : 'Kodu yenidən göndər'}
+                {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend code'}
               </button>
             )}
           </div>

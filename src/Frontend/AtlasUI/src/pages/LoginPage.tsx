@@ -9,15 +9,17 @@ import OAuthButton from '@/components/auth/OAuthButton';
 function parseApiError(result: any, response?: Response) {
   if (!result) return response?.statusText || 'An unknown error occurred.';
 
-  if (Array.isArray(result.errors) && result.errors.length > 0) {
-    return result.errors.join('\n');
+  const errs = result.errors ?? result.Errors ?? null;
+
+  if (Array.isArray(errs) && errs.length > 0) {
+    return (errs as string[]).join('\n');
   }
 
-  if (result.errors && typeof result.errors === 'object') {
+  if (errs && typeof errs === 'object') {
     try {
       const parts: string[] = [];
-      for (const key of Object.keys(result.errors)) {
-        const v = result.errors[key];
+      for (const key of Object.keys(errs)) {
+        const v = errs[key];
         if (Array.isArray(v)) parts.push(`${key}: ${v.join(', ')}`);
         else parts.push(`${key}: ${String(v)}`);
       }
@@ -43,13 +45,14 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const validateInput = () => {
-    if (!emailOrUsername) return 'Email or username is required.';
+
+    if (!emailOrUsername) return 'Email or Username is required.';
     if (!password) return 'Password is required.';
 
 
     if (emailOrUsername.includes('@')) {
       const emailRe = /\S+@\S+\.\S+/;
-      if (!emailRe.test(emailOrUsername)) return 'Please enter a valid email address.';
+      if (!emailRe.test(emailOrUsername)) return 'A valid email is required.';
     }
 
     return null;
@@ -127,7 +130,6 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Glow effect */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-30" style={{ background: 'var(--gradient-glow)' }} />
 
       <div className="w-full max-w-md mx-4 animate-fade-in">
