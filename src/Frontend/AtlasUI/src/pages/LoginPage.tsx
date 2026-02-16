@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
 import OAuthButton from '@/components/auth/OAuthButton';
@@ -24,13 +24,13 @@ function parseApiError(result: any, response?: Response) {
         else parts.push(`${key}: ${String(v)}`);
       }
       if (parts.length) return parts.join('\n');
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 
   if (result.message) return String(result.message);
   if (result.error) return String(result.error);
+
+  if (result.success === false && typeof result.data === 'string') return String(result.data);
 
   if (response) return `${response.status} ${response.statusText}`;
 
@@ -43,12 +43,11 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateInput = () => {
-
     if (!emailOrUsername) return 'Email or Username is required.';
     if (!password) return 'Password is required.';
-
 
     if (emailOrUsername.includes('@')) {
       const emailRe = /\S+@\S+\.\S+/;
@@ -77,7 +76,7 @@ const LoginPage: React.FC = () => {
     } as Record<string, unknown>;
 
     try {
-      const res = await fetch('http://localhost:5075/api/Accounts/login', {
+      const res = await fetch('http://localhost:5075/api/accounts/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +88,6 @@ const LoginPage: React.FC = () => {
       try {
         result = await res.json();
       } catch (jsonErr) {
-
         if (!res.ok) {
           setError(`${res.status} ${res.statusText}`);
           setLoading(false);
@@ -104,17 +102,18 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      if (result && result.isSuccess) {
-        const data = result.data as any;
+      const successFlag = result?.success ?? result?.isSuccess ?? false;
+      const data = result?.data ?? result?.Data ?? null;
 
-        if (data?.accessToken) localStorage.setItem('accessToken', data.accessToken);
-        if (data?.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-        if (data?.accessTokenExpiration) localStorage.setItem('accessTokenExpiration', data.accessTokenExpiration);
-        if (data?.refreshTokenExpiration) localStorage.setItem('refreshTokenExpiration', data.refreshTokenExpiration);
-        if (data?.userId) localStorage.setItem('userId', data.userId);
-        if (data?.userName) localStorage.setItem('userName', data.userName);
-        if (data?.email) localStorage.setItem('email', data.email);
-        if (data?.fullName) localStorage.setItem('fullName', data.fullName);
+      if (successFlag && data) {
+        if (data?.accessToken) localStorage.setItem('atlas_access_token', data.accessToken);
+        if (data?.refreshToken) localStorage.setItem('atlas_refresh_token', data.refreshToken);
+        if (data?.accessTokenExpiration) localStorage.setItem('atlas_access_token_exp', data.accessTokenExpiration);
+        if (data?.refreshTokenExpiration) localStorage.setItem('atlas_refresh_token_exp', data.refreshTokenExpiration);
+        if (data?.userId) localStorage.setItem('atlas_user_id', data.userId);
+        if (data?.userName) localStorage.setItem('atlas_user_name', data.userName);
+        if (data?.email) localStorage.setItem('atlas_user_email', data.email);
+        if (data?.fullName) localStorage.setItem('atlas_user_fullname', data.fullName);
 
         navigate('/dashboard');
       } else {
@@ -155,10 +154,15 @@ const LoginPage: React.FC = () => {
             <AuthInput
               label="Password"
               icon={Lock}
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              suffix={
+                <button type="button" onClick={() => setShowPassword(s => !s)} className="p-1 text-muted-foreground">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
             />
 
             <div className="flex justify-end">

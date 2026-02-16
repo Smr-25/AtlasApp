@@ -1,31 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, Phone, AtSign } from 'lucide-react';
+import { User, Mail, Lock, Phone, AtSign, Eye, EyeOff } from 'lucide-react';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
 import OAuthButton from '@/components/auth/OAuthButton';
 
 function parseApiError(result: any, response?: Response) {
   if (!result) return response?.statusText || 'An unknown error occurred.';
-
-  const friendlyForField = (key: string, msgs: string[] | string) => {
-    const k = key.toLowerCase();
-    const arr = Array.isArray(msgs) ? msgs : [String(msgs)];
-    const joined = arr.join('\n');
-
-    if (k.includes('email')) {
-      if (/already|exist|taken|in use/i.test(joined))
-        return "This email is already registered. If it's yours, try logging in or reset your password; otherwise use a different email.";
-      return joined;
-    }
-    if (k.includes('user') || k.includes('username')) {
-      if (/already|exist|taken|in use/i.test(joined))
-        return 'This username is already taken. Please choose a different username.';
-      return joined;
-    }
-
-    return joined;
-  };
 
   if (Array.isArray(result.errors) && result.errors.length > 0) {
     return result.errors.join('\n');
@@ -36,12 +17,11 @@ function parseApiError(result: any, response?: Response) {
       const parts: string[] = [];
       for (const key of Object.keys(result.errors)) {
         const v = result.errors[key];
-        const friendly = friendlyForField(key, v);
-        parts.push(friendly);
+        const arr = Array.isArray(v) ? v : [String(v)];
+        parts.push(arr.join('\n'));
       }
       if (parts.length) return parts.join('\n');
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   if (result.message) return String(result.message);
@@ -66,6 +46,8 @@ const RegisterPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const update = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -194,6 +176,12 @@ const RegisterPage: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
+    const clientFieldErrors = validateFields();
+    if (Object.keys(clientFieldErrors).length) {
+      setFieldErrors(clientFieldErrors);
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
@@ -207,13 +195,6 @@ const RegisterPage: React.FC = () => {
     } as any;
 
     try {
-      const clientFieldErrors = validateFields();
-      if (Object.keys(clientFieldErrors).length) {
-        setFieldErrors(clientFieldErrors);
-        setLoading(false);
-        return;
-      }
-
       const res = await fetch('http://localhost:5075/api/Accounts/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -367,7 +348,6 @@ const RegisterPage: React.FC = () => {
                     }`}
                   >
                     <span className="inline-flex items-center gap-2 justify-center">
-                      {/* Telegram SVG icon */}
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-4 h-4" aria-hidden>
                         <path fill="currentColor" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.8 83.9l-20.7 97.5c-1.6 6.9-5.9 8.6-11.9 5.4l-33-24.3-15.9 15.3c-1.8 1.8-3.3 3.3-6.7 3.3l2.4-34.4 62.6-56.3c2.7-2.4-.6-3.7-4.2-1.3L70.5 124l-33.9-10.6c-7.3-2.3-7.4-7.3 1.5-10.8L173 69.2c6.5-2.2 12.2 1.5 11.8 14.7z" />
                       </svg>
@@ -381,20 +361,30 @@ const RegisterPage: React.FC = () => {
             <AuthInput
               label="Password"
               icon={Lock}
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               value={form.password}
               onChange={(e) => update('password', e.target.value)}
               error={fieldErrors.password}
+              suffix={
+                <button type="button" onClick={() => setShowPassword(s => !s)} className="p-1 text-muted-foreground">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
             />
             <AuthInput
               label="Confirm password"
               icon={Lock}
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               placeholder="••••••••"
               value={form.confirmPassword}
               onChange={(e) => update('confirmPassword', e.target.value)}
               error={fieldErrors.confirmPassword}
+              suffix={
+                <button type="button" onClick={() => setShowConfirmPassword(s => !s)} className="p-1 text-muted-foreground">
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
             />
 
             {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
