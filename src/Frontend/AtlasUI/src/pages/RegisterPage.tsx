@@ -49,6 +49,12 @@ const RegisterPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [telegramBotLink, setTelegramBotLink] = useState<string | null>(null);
+  const [registrationSuccessInfo, setRegistrationSuccessInfo] = useState<any | null>(null);
+
+  const [phoneResendCooldown, setPhoneResendCooldown] = useState(0);
+  const [phoneResendLoading, setPhoneResendLoading] = useState(false);
+  const [phoneResendMessage, setPhoneResendMessage] = useState<string | null>(null);
 
   const update = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -82,7 +88,43 @@ const RegisterPage: React.FC = () => {
 
     if (!result) return { fields, globalMsg };
 
+    // If backend returns a single error string (no fieldErrors / errorCodes), parse it
+    if (result.error && typeof result.error === 'string') {
+      const errStr = String(result.error);
+      const low = errStr.toLowerCase();
+      if (/email/.test(low) && /already|exist|taken|in use/.test(low)) {
+        fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
+        return { fields, globalMsg };
+      }
+      if (/(user|username)/.test(low) && /already|exist|taken|in use/.test(low)) {
+        fields.userName = 'This username is already taken. Please choose a different username.';
+        return { fields, globalMsg };
+      }
+      // fallback: return the error as global message
+      return { fields, globalMsg: errStr };
+    }
 
+    // If backend provides explicit fieldErrors object, prefer it
+    if (result.fieldErrors && typeof result.fieldErrors === 'object') {
+      for (const key of Object.keys(result.fieldErrors)) {
+        const v = result.fieldErrors[key];
+        fields[key] = Array.isArray(v) ? v.join(', ') : String(v);
+      }
+      return { fields, globalMsg };
+    }
+
+    // If backend provides errorCodes, produce friendly messages when possible
+    if (Array.isArray(result.errorCodes) && result.errorCodes.length) {
+      for (const code of result.errorCodes) {
+        const c = String(code).toUpperCase();
+        if (c === 'EMAIL_REQUIRED' || c === 'INVALID_EMAIL') fields.email = 'A valid email is required.';
+        if (c === 'USERNAME_TAKEN' || c === 'USERNAME_EXISTS') fields.userName = 'This username is already taken. Please choose a different username.';
+        if (c === 'EMAIL_EXISTS' || c === 'EMAIL_TAKEN') fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
+      }
+      if (Object.keys(fields).length) return { fields, globalMsg };
+    }
+
+    // Special handling for 409 Conflict (unique constraint) where backend may return generic messages
     if (response?.status === 409) {
       const msgs: string[] = [];
       if (result.errors && typeof result.errors === 'object') {
@@ -205,6 +247,8 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    setTelegramBotLink(null);
+    setRegistrationSuccessInfo(null);
 
     const clientFieldErrors = validateFields();
     if (Object.keys(clientFieldErrors).length) {
@@ -245,20 +289,83 @@ const RegisterPage: React.FC = () => {
         return;
       }
 
-      if (result?.isSuccess) {
-        setSuccessMessage('Registration successful. Please verify your email or login.');
-        navigate('/verify-email', { state: { email: form.email, phone: form.phone, contactMethod } });
+      // Normalize success detection and payload
+      const topSuccess = result?.success ?? result?.isSuccess ?? false;
+      const data = result?.data ?? null;
+      let registerSucceeded = false;
+      if (topSuccess) {
+        if (data === true) registerSucceeded = true;
+        else if (data && typeof data === 'object' && data.success === true) registerSucceeded = true;
+        else if (data && typeof data === 'object' && (data.requiresEmailVerification || data.requiresPhoneVerification || data.telegramBotLink)) registerSucceeded = true;
+        else registerSucceeded = true; // fallback
+      }
+
+      if (registerSucceeded) {
+        // If backend provided telegramBotLink (phone channel = telegram), show it
+        if (data && typeof data === 'object' && data.telegramBotLink) {
+          setTelegramBotLink(String(data.telegramBotLink));
+          setRegistrationSuccessInfo(data);
+          setSuccessMessage('Registration successful. Please complete verification via Telegram.');
+          // keep user on page and show link UI
+        } else {
+          // For SMS or normal flows, navigate to verification page
+          setSuccessMessage('Registration successful. Please verify your email or phone.');
+          // Pass email and phone to verify page
+          if (contactMethod === 'sms') {
+            navigate('/verify-phone', { state: { phone: form.phone } });
+          } else {
+            navigate('/verify-email', { state: { email: form.email } });
+          }
+        }
       } else {
+        // Not successful at application level
         const mapped = mapApiErrorsToFields(result, res);
         if (Object.keys(mapped.fields).length) setFieldErrors(mapped.fields);
         if (mapped.globalMsg) setError(mapped.globalMsg);
-        else if (!Object.keys(mapped.fields).length) setError(parseApiError(result, res));
+        else setError(parseApiError(result, res));
       }
+
     } catch (err: any) {
       setError(err?.message || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const startPhoneResendCooldown = () => {
+    setPhoneResendCooldown(60);
+    const t = setInterval(() => {
+      setPhoneResendCooldown(prev => {
+        if (prev <= 1) { clearInterval(t); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleResendPhoneFromRegister = async () => {
+    setPhoneResendMessage(null);
+    setPhoneResendLoading(true);
+    const phone = form.phone?.trim();
+    if (!phone) { setPhoneResendMessage('Phone number is missing.'); setPhoneResendLoading(false); return; }
+    const phoneRe = /^\+\d{1,3}\d{4,14}(?:x.+)?$/;
+    if (!phoneRe.test(phone)) { setPhoneResendMessage('Phone number must be in valid international format.'); setPhoneResendLoading(false); return; }
+    try {
+      startPhoneResendCooldown();
+      const res = await fetch('http://localhost:5075/api/accounts/resend-phone-verification-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: phone, channel: 2 })
+      });
+      let result: any = null;
+      try { result = await res.json(); } catch (e) {}
+      if (!res.ok) {
+        setPhoneResendMessage(parseApiError(result, res));
+      } else {
+        const successFlag = result?.success ?? result?.isSuccess ?? false;
+        if (successFlag) setPhoneResendMessage('Verification code resent via Telegram. Check your Telegram.');
+        else setPhoneResendMessage(parseApiError(result, res));
+      }
+    } catch (err: any) {
+      setPhoneResendMessage(err?.message || 'Network error.');
+    } finally { setPhoneResendLoading(false); }
   };
 
   return (
@@ -452,6 +559,40 @@ const RegisterPage: React.FC = () => {
             </Link>
           </p>
         </div>
+
+        {/* Render Telegram link block when available */}
+        {telegramBotLink && registrationSuccessInfo?.telegramBotLink && (
+          <div className="mt-6 p-4 rounded-lg bg-primary/10 text-primary text-sm">
+            <p className="font-medium">Almost done!</p>
+            <p className="mt-1">Please complete your registration by chatting with our Telegram bot.</p>
+            <a
+              href={telegramBotLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-center px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200"
+            >
+              Open Telegram Bot
+            </a>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/verify-phone', { state: { phone: form.phone } })}
+                className="px-3 py-2 rounded-md bg-secondary"
+              >
+                I received the code
+              </button>
+              <button
+                type="button"
+                onClick={handleResendPhoneFromRegister}
+                disabled={phoneResendCooldown > 0 || phoneResendLoading}
+                className="px-3 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-60"
+              >
+                {phoneResendCooldown > 0 ? `Resend (${phoneResendCooldown}s)` : (phoneResendLoading ? 'Resending...' : 'Resend code')}
+              </button>
+            </div>
+            {phoneResendMessage && <p className="mt-2 text-sm text-muted-foreground">{phoneResendMessage}</p>}
+          </div>
+        )}
       </div>
     </div>
   );

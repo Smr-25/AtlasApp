@@ -43,6 +43,8 @@ const ResetPasswordPage: React.FC = () => {
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [emailLocal, setEmailLocal] = useState(state?.email ?? '');
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [resetTokenExpiresAt, setResetTokenExpiresAt] = useState<string | null>(null);
 
   const handleCodeChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -71,8 +73,8 @@ const ResetPasswordPage: React.FC = () => {
     setError(null);
     setSuccess(null);
     const verificationCode = code.join('');
-    if (verificationCode.length !== 6) {
-      setError('Verification code is required.');
+    if (!/^[0-9]{6}$/.test(verificationCode)) {
+      setError('Verification code must be 6 digits.');
       return;
     }
     setLoading(true);
@@ -83,7 +85,7 @@ const ResetPasswordPage: React.FC = () => {
         setLoading(false);
         return;
       }
-      const res = await fetch('http://localhost:5075/api/accounts/reset-password', {
+      const res = await fetch('http://localhost:5075/api/accounts/verify-reset-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailToUse, verificationCode }),
@@ -91,16 +93,26 @@ const ResetPasswordPage: React.FC = () => {
       let result: any = null;
       try { result = await res.json(); } catch (err) { }
       if (!res.ok) {
+        // support backend returning 400/422 with validation codes or messages
         setError(parseApiError(result, res));
         setLoading(false);
         return;
       }
-      const successFlag = result?.success ?? result?.isSuccess ?? false;
-      if (successFlag) {
+      const successFlag = result?.success ?? result?.isSuccess ?? result?.isSuccess ?? false;
+      const data = result?.data ?? null;
+      if (successFlag && data?.resetToken) {
+        setResetToken(String(data.resetToken));
+        setResetTokenExpiresAt(data.expiresAt ?? null);
         setSuccess('Code verified. You can now set a new password.');
         setStep('password');
       } else {
-        setError(parseApiError(result, res));
+        // if backend returns success true but no token, still step to password (fallback)
+        if (successFlag) {
+          setStep('password');
+          setSuccess('Code verified. You can now set a new password.');
+        } else {
+          setError(parseApiError(result, res));
+        }
       }
     } catch (err: any) {
       setError(err?.message || 'Network error. Please try again.');
@@ -124,12 +136,17 @@ const ResetPasswordPage: React.FC = () => {
         setLoading(false);
         return;
       }
+      if (!resetToken) {
+        setError('Reset token missing. Please verify your code first.');
+        setLoading(false);
+        return;
+      }
       const res = await fetch('http://localhost:5075/api/accounts/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: emailToUse,
-          verificationCode: code.join(''),
+          resetToken,
           newPassword,
           confirmPassword,
         }),
