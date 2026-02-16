@@ -36,7 +36,7 @@ const ForgotPasswordPage: React.FC = () => {
   const validateEmail = (v: string) => {
     if (!v || v.trim() === '') return 'Email is required.';
     const emailRe = /\S+@\S+\.\S+/;
-    if (!emailRe.test(v.trim())) return 'Please enter a valid email address.';
+    if (!emailRe.test(v.trim())) return 'A valid email address is required.';
     return null;
   };
 
@@ -51,7 +51,7 @@ const ForgotPasswordPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5075/api/Accounts/forgot-password', {
+      const res = await fetch('http://localhost:5075/api/accounts/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -60,9 +60,11 @@ const ForgotPasswordPage: React.FC = () => {
       try { result = await res.json(); } catch (err) { }
       if (!res.ok) {
         setError(parseApiError(result, res));
+        setLoading(false);
         return;
       }
-      if (result?.isSuccess) {
+      const successFlag = result?.success ?? result?.isSuccess ?? false;
+      if (successFlag) {
         setSuccess('Verification code sent. Check your email.');
         navigate('/reset-password', { state: { email } });
       } else {

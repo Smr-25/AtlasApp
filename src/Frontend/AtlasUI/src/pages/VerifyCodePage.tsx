@@ -58,58 +58,13 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
           else parts.push(`${key}: ${String(v)}`);
         }
         if (parts.length) return parts.join('\n');
-      } catch (e) {
-      }
+      } catch (e) {}
     }
     if (result.message) return String(result.message);
     if (result.error) return String(result.error);
     if (response) return `${response.status} ${response.statusText}`;
     return 'An unexpected server error occurred.';
   }
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
-    const verificationCode = code.join('');
-    if (verificationCode.length !== 6) {
-      setError('Verification code must be 6 digits.');
-      return;
-    }
-
-    if (type === 'email') {
-      if (!state?.email) {
-        setError('Email is missing.');
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await fetch('http://localhost:5075/api/Accounts/verify-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: state.email, verificationCode }),
-        });
-        let result: any = null;
-        try { result = await res.json(); } catch (err) { }
-        if (!res.ok) {
-          setError(parseApiError(result, res));
-          return;
-        }
-        if (result?.isSuccess) {
-          setSuccessMessage('Email verified successfully.');
-          navigate('/dashboard');
-        } else {
-          setError(parseApiError(result, res));
-        }
-      } catch (err: any) {
-        setError(err?.message || 'Network error. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      navigate('/dashboard');
-    }
-  };
 
   const startCooldown = () => {
     setResendCooldown(60);
@@ -121,39 +76,135 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
     }, 1000);
   };
 
-  const handleResend = async () => {
-    setShowPhoneResendChoice(false);
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
     setSuccessMessage(null);
-    startCooldown();
+    const verificationCode = code.join('');
+    if (!/^\d{6}$/.test(verificationCode)) {
+      if (verificationCode.length !== 6) setError('Verification code must be 6 digits.');
+      else setError('Verification code must contain only digits.');
+      return;
+    }
+
     if (type === 'email') {
       if (!state?.email) {
-        setError('Email is missing.');
+        setError('Email is required.');
         return;
       }
+      const emailRe = /\S+@\S+\.\S+/;
+      if (!emailRe.test(state.email)) {
+        setError('A valid email address is required.');
+        return;
+      }
+
+      setLoading(true);
       try {
-        const res = await fetch('http://localhost:5075/api/Accounts/resend-email-verification-code', {
+        const res = await fetch('http://localhost:5075/api/accounts/verify-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: state.email }),
+          body: JSON.stringify({ email: state.email, verificationCode }),
         });
         let result: any = null;
-        try { result = await res.json(); } catch (err) { }
+        try { result = await res.json(); } catch (err) {}
         if (!res.ok) {
           setError(parseApiError(result, res));
           return;
         }
-        if (result?.isSuccess) {
-          setSuccessMessage('Verification code resent. Check your email.');
+        const successFlag = result?.success ?? result?.isSuccess ?? false;
+        if (successFlag) {
+          setSuccessMessage('Email verified successfully.');
+          navigate('/dashboard');
         } else {
           setError(parseApiError(result, res));
         }
       } catch (err: any) {
         setError(err?.message || 'Network error. Please try again.');
+      } finally {
+        setLoading(false);
       }
     } else {
-      startCooldown();
-      setSuccessMessage('Verification code resent.');
+      if (!state?.phone) { setError('Phone number is required.'); return; }
+      const phoneRe = /^\+\d{1,3}\d{4,14}(?:x.+)?$/;
+      if (!phoneRe.test(state.phone)) {
+        setError('Phone number must be in valid international format (e.g., +994501234567).');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await fetch('http://localhost:5075/api/accounts/verify-phone', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: state.phone, verificationCode }),
+        });
+        let result: any = null;
+        try { result = await res.json(); } catch (err) {}
+        if (!res.ok) {
+          setError(parseApiError(result, res));
+          return;
+        }
+        const successFlag = result?.success ?? result?.isSuccess ?? false;
+        if (successFlag) {
+          setSuccessMessage('Phone verified successfully.');
+          navigate('/dashboard');
+        } else {
+          setError(parseApiError(result, res));
+        }
+      } catch (err: any) {
+        setError(err?.message || 'Network error. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleResend = async (channel?: number) => {
+    setShowPhoneResendChoice(false);
+    setError(null);
+    setSuccessMessage(null);
+    startCooldown();
+
+    if (type === 'email') {
+      if (!state?.email) { setError('Email is required.'); return; }
+      const emailRe = /\S+@\S+\.\S+/;
+      if (!emailRe.test(state.email)) { setError('A valid email address is required.'); return; }
+      try {
+        const res = await fetch('http://localhost:5075/api/accounts/resend-email-verification-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: state.email }),
+        });
+        let result: any = null;
+        try { result = await res.json(); } catch (err) {}
+        if (!res.ok) { setError(parseApiError(result, res)); return; }
+        const successFlag = result?.success ?? result?.isSuccess ?? false;
+        if (successFlag) setSuccessMessage('Verification code resent. Check your email.');
+        else setError(parseApiError(result, res));
+      } catch (err: any) {
+        setError(err?.message || 'Network error. Please try again.');
+      }
+    } else {
+      if (!state?.phone) { setError('Phone number is required.'); return; }
+      const phoneRe = /^\+\d{1,3}\d{4,14}(?:x.+)?$/;
+      if (!phoneRe.test(state.phone)) { setError('Phone number must be in valid international format (e.g., +994501234567).'); return; }
+      const payload: any = { phoneNumber: state.phone };
+      if (channel) payload.channel = channel;
+      try {
+        const res = await fetch('http://localhost:5075/api/accounts/resend-phone-verification-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        let result: any = null;
+        try { result = await res.json(); } catch (err) {}
+        if (!res.ok) { setError(parseApiError(result, res)); return; }
+        const successFlag = result?.success ?? result?.isSuccess ?? false;
+        if (successFlag) setSuccessMessage('Verification code resent.');
+        else setError(parseApiError(result, res));
+      } catch (err: any) {
+        setError(err?.message || 'Network error. Please try again.');
+      }
     }
   };
 
@@ -227,7 +278,7 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
             ) : type === 'phone' && showPhoneResendChoice ? (
               <div className="flex gap-3 justify-center animate-fade-in">
                 <button
-                  onClick={() => handleResend()}
+                  onClick={() => handleResend(1)}
                   className="px-4 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground hover:bg-muted transition-all"
                 >
                   <span className="inline-flex items-center gap-2">
@@ -236,11 +287,10 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
                   </span>
                 </button>
                 <button
-                  onClick={() => handleResend()}
+                  onClick={() => handleResend(2)}
                   className="px-4 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground hover:bg-muted transition-all"
                 >
                   <span className="inline-flex items-center gap-2">
-                    {/* Telegram SVG icon */}
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-4 h-4" aria-hidden>
                       <path fill="currentColor" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.8 83.9l-20.7 97.5c-1.6 6.9-5.9 8.6-11.9 5.4l-33-24.3-15.9 15.3c-1.8 1.8-3.3 3.3-6.7 3.3l2.4-34.4 62.6-56.3c2.7-2.4-.6-3.7-4.2-1.3L70.5 124l-33.9-10.6c-7.3-2.3-7.4-7.3 1.5-10.8L173 69.2c6.5-2.2 12.2 1.5 11.8 14.7z" />
                     </svg>

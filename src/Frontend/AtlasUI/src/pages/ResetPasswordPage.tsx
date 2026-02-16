@@ -6,7 +6,6 @@ import AuthInput from '@/components/auth/AuthInput';
 
 function parseApiError(result: any, response?: Response) {
   if (!result) return response?.statusText || 'An unknown error occurred.';
-  // support both `errors` and `Errors` from backend
   const errs = result.errors ?? result.Errors ?? null;
   if (Array.isArray(errs) && errs.length > 0) return (errs as string[]).join('\n');
   if (errs && typeof errs === 'object') {
@@ -18,8 +17,7 @@ function parseApiError(result: any, response?: Response) {
         else parts.push(`${key}: ${String(v)}`);
       }
       if (parts.length) return parts.join('\n');
-    } catch (e) {
-    }
+    } catch (e) {}
   }
   if (result.message) return String(result.message);
   if (result.error) return String(result.error);
@@ -40,6 +38,8 @@ const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showCode, setShowCode] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleCodeChange = (index: number, value: string) => {
@@ -70,12 +70,12 @@ const ResetPasswordPage: React.FC = () => {
     setSuccess(null);
     const verificationCode = code.join('');
     if (verificationCode.length !== 6) {
-      setError('Verification code must be 6 digits.');
+      setError('Verification code is required.');
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5075/api/Accounts/reset-password', {
+      const res = await fetch('http://localhost:5075/api/accounts/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: state?.email ?? '', verificationCode }),
@@ -84,9 +84,11 @@ const ResetPasswordPage: React.FC = () => {
       try { result = await res.json(); } catch (err) { }
       if (!res.ok) {
         setError(parseApiError(result, res));
+        setLoading(false);
         return;
       }
-      if (result?.isSuccess) {
+      const successFlag = result?.success ?? result?.isSuccess ?? false;
+      if (successFlag) {
         setSuccess('Code verified. You can now set a new password.');
         setStep('password');
       } else {
@@ -108,7 +110,7 @@ const ResetPasswordPage: React.FC = () => {
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5075/api/Accounts/reset-password', {
+      const res = await fetch('http://localhost:5075/api/accounts/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,9 +124,11 @@ const ResetPasswordPage: React.FC = () => {
       try { result = await res.json(); } catch (err) { }
       if (!res.ok) {
         setError(parseApiError(result, res));
+        setLoading(false);
         return;
       }
-      if (result?.isSuccess) {
+      const successFlag = result?.success ?? result?.isSuccess ?? false;
+      if (successFlag) {
         setSuccess('Password reset successful. You can now sign in.');
         setTimeout(() => navigate('/login'), 1500);
       } else {
@@ -137,7 +141,7 @@ const ResetPasswordPage: React.FC = () => {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setResendCooldown(60);
     const timer = setInterval(() => { setResendCooldown(prev => { if (prev <= 1) { clearInterval(timer); return 0; } return prev - 1; }); }, 1000);
   };
@@ -198,8 +202,16 @@ const ResetPasswordPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground mt-1">Enter your new password</p>
               </div>
               <form onSubmit={handleResetPassword} className="space-y-4">
-                <AuthInput label="New password" icon={Lock} type="password" placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                <AuthInput label="Confirm password" icon={Lock} type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                <AuthInput label="New password" icon={Lock} type={showNewPassword ? 'text' : 'password'} placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} suffix={
+                  <button type="button" onClick={() => setShowNewPassword(s => !s)} className="p-1 text-muted-foreground">
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                } />
+                <AuthInput label="Confirm password" icon={Lock} type={showConfirmNewPassword ? 'text' : 'password'} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffix={
+                  <button type="button" onClick={() => setShowConfirmNewPassword(s => !s)} className="p-1 text-muted-foreground">
+                    {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                } />
 
                 {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
                 {success && <p className="text-sm text-primary">{success}</p>}
