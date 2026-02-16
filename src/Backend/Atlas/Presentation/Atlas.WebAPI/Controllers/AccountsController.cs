@@ -16,6 +16,7 @@ using Atlas.Application.Features.Accounts.Commands.SetTelegramChatId;
 using Atlas.Application.Features.Accounts.Commands.UpdateProfile;
 using Atlas.Application.Features.Accounts.Commands.VerifyEmail;
 using Atlas.Application.Features.Accounts.Commands.VerifyPhone;
+using Atlas.Application.Features.Accounts.Commands.VerifyResetCode;
 using Atlas.Application.Features.Accounts.Queries.GetProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -62,6 +63,14 @@ public class AccountsController : ApiControllerBase
     [HttpPost("forgot-password")]
     [EnableRateLimiting("password-reset")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return OkResponse(result);
+    }
+
+    [HttpPost("verify-reset-code")]
+    [EnableRateLimiting("verification")]
+    public async Task<IActionResult> VerifyResetCode([FromBody] VerifyResetCodeCommand command)
     {
         var result = await Mediator.Send(command);
         return OkResponse(result);

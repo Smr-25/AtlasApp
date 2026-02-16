@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
+import ClosedEye from "@/components/icons/ClosedEye";
 
 function parseApiError(result: any, response?: Response) {
   if (!result) return response?.statusText || 'An unknown error occurred.';
@@ -41,6 +42,7 @@ const ResetPasswordPage: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [emailLocal, setEmailLocal] = useState(state?.email ?? '');
 
   const handleCodeChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -75,10 +77,16 @@ const ResetPasswordPage: React.FC = () => {
     }
     setLoading(true);
     try {
+      const emailToUse = (state?.email ?? emailLocal).trim();
+      if (!emailToUse) {
+        setError('Email is missing. Enter your email above or go to Forgot Password.');
+        setLoading(false);
+        return;
+      }
       const res = await fetch('http://localhost:5075/api/accounts/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: state?.email ?? '', verificationCode }),
+        body: JSON.stringify({ email: emailToUse, verificationCode }),
       });
       let result: any = null;
       try { result = await res.json(); } catch (err) { }
@@ -110,11 +118,17 @@ const ResetPasswordPage: React.FC = () => {
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
+      const emailToUse = (state?.email ?? emailLocal).trim();
+      if (!emailToUse) {
+        setError('Email is missing. Enter your email above or go to Forgot Password.');
+        setLoading(false);
+        return;
+      }
       const res = await fetch('http://localhost:5075/api/accounts/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: state?.email ?? '',
+          email: emailToUse,
           verificationCode: code.join(''),
           newPassword,
           confirmPassword,
@@ -144,6 +158,42 @@ const ResetPasswordPage: React.FC = () => {
   const handleResend = async () => {
     setResendCooldown(60);
     const timer = setInterval(() => { setResendCooldown(prev => { if (prev <= 1) { clearInterval(timer); return 0; } return prev - 1; }); }, 1000);
+
+    setError(null);
+    setSuccess(null);
+
+    const email = (state?.email ?? emailLocal).trim();
+     if (!email) {
+       setError('Email is missing.');
+       return;
+     }
+     const emailRe = /\S+@\S+\.\S+/;
+     if (!emailRe.test(email)) {
+       setError('A valid email is required.');
+       return;
+     }
+
+    try {
+      const res = await fetch('http://localhost:5075/api/accounts/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      let result: any = null;
+      try { result = await res.json(); } catch (err) {}
+      if (!res.ok) {
+        setError(parseApiError(result, res));
+        return;
+      }
+      const successFlag = result?.success ?? result?.isSuccess ?? false;
+      if (successFlag) {
+        setSuccess('Verification code resent. Check your email.');
+      } else {
+        setError(parseApiError(result, res));
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Network error. Please try again.');
+    }
   };
 
   return (
@@ -160,8 +210,13 @@ const ResetPasswordPage: React.FC = () => {
             <>
               <div className="text-center">
                 <h2 className="text-xl font-semibold text-foreground">Verification code</h2>
-                <p className="text-sm text-muted-foreground mt-1">Enter the code sent to {state?.email || 'your email'}</p>
+                <p className="text-sm text-muted-foreground mt-1">Enter the code sent to {state?.email || emailLocal || 'your email'}</p>
               </div>
+              {!state?.email && (
+                <div>
+                  <AuthInput label="Email" type="email" placeholder="email@example.com" value={emailLocal} onChange={e => setEmailLocal(e.target.value)} />
+                </div>
+              )}
               <form onSubmit={handleVerifyCode} className="space-y-6">
                 <div className="relative">
                   <div className="flex justify-center gap-3">
@@ -193,6 +248,9 @@ const ResetPasswordPage: React.FC = () => {
                 <button onClick={handleResend} disabled={resendCooldown > 0} className="text-sm text-primary hover:underline disabled:text-muted-foreground">
                   {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend code'}
                 </button>
+                <div className="mt-2">
+                 <a href="/forgot-password" className="text-xs text-muted-foreground hover:underline">Back to Forgot Password</a>
+               </div>
               </div>
             </>
           ) : (
@@ -204,12 +262,12 @@ const ResetPasswordPage: React.FC = () => {
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <AuthInput label="New password" icon={Lock} type={showNewPassword ? 'text' : 'password'} placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} suffix={
                   <button type="button" onClick={() => setShowNewPassword(s => !s)} className="p-1 text-muted-foreground">
-                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showNewPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 } />
                 <AuthInput label="Confirm password" icon={Lock} type={showConfirmNewPassword ? 'text' : 'password'} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffix={
                   <button type="button" onClick={() => setShowConfirmNewPassword(s => !s)} className="p-1 text-muted-foreground">
-                    {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showConfirmNewPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 } />
 

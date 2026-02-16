@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Eye } from 'lucide-react';
+import ClosedEye from '@/components/icons/ClosedEye';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
 import OAuthButton from '@/components/auth/OAuthButton';
@@ -160,7 +161,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               suffix={
                 <button type="button" onClick={() => setShowPassword(s => !s)} className="p-1 text-muted-foreground">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               }
             />

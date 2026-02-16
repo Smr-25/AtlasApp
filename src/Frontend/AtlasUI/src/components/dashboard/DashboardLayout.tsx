@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Puzzle, Settings, HelpCircle, LogOut, Bell, Search } from 'lucide-react';
+import { LayoutDashboard, Puzzle, Settings, HelpCircle, LogOut, Bell, Search, User } from 'lucide-react';
 import AtlasLogo from '@/components/AtlasLogo';
 
 interface DashboardLayoutProps {
@@ -9,6 +9,7 @@ interface DashboardLayoutProps {
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/profile', icon: User, label: 'Profil' },
   { to: '/dashboard/integrations', icon: Puzzle, label: 'İnteqrasiyalar' },
 ];
 

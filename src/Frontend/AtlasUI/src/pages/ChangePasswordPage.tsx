@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
 import { putJson, logout } from '@/lib/api';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, Lock } from 'lucide-react';
+import ClosedEye from '@/components/icons/ClosedEye';
 
 const ChangePasswordPage: React.FC = () => {
   const nav = useNavigate();
@@ -57,9 +58,9 @@ const ChangePasswordPage: React.FC = () => {
 
         <div className="glass rounded-2xl p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <AuthInput label="Current password" icon={Lock} type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} suffix={<button type="button" onClick={() => setShowCurrent(s => !s)} className="p-1 text-muted-foreground">{showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>} />
-            <AuthInput label="New password" icon={Lock} type={showNew ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} suffix={<button type="button" onClick={() => setShowNew(s => !s)} className="p-1 text-muted-foreground">{showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>} />
-            <AuthInput label="Confirm password" icon={Lock} type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffix={<button type="button" onClick={() => setShowConfirm(s => !s)} className="p-1 text-muted-foreground">{showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>} />
+            <AuthInput label="Current password" icon={Lock} type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} suffix={<button type="button" onClick={() => setShowCurrent(s => !s)} className="p-1 text-muted-foreground">{showCurrent ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>} />
+            <AuthInput label="New password" icon={Lock} type={showNew ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} suffix={<button type="button" onClick={() => setShowNew(s => !s)} className="p-1 text-muted-foreground">{showNew ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>} />
+            <AuthInput label="Confirm password" icon={Lock} type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} suffix={<button type="button" onClick={() => setShowConfirm(s => !s)} className="p-1 text-muted-foreground">{showConfirm ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>} />
 
             {error && <p className="text-sm text-destructive">{error}</p>}
             {success && <p className="text-sm text-primary">{success}</p>}

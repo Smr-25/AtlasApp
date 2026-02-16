@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, Phone, AtSign, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, AtSign, Eye } from 'lucide-react';
+import ClosedEye from '@/components/icons/ClosedEye';
 import AtlasLogo from '@/components/AtlasLogo';
 import AuthInput from '@/components/auth/AuthInput';
 import OAuthButton from '@/components/auth/OAuthButton';
@@ -80,6 +81,35 @@ const RegisterPage: React.FC = () => {
     let globalMsg: string | null = null;
 
     if (!result) return { fields, globalMsg };
+
+
+    if (response?.status === 409) {
+      const msgs: string[] = [];
+      if (result.errors && typeof result.errors === 'object') {
+        for (const k of Object.keys(result.errors)) {
+          const v = result.errors[k];
+          if (Array.isArray(v)) msgs.push(...v.map(String));
+          else msgs.push(String(v));
+        }
+      } else if (Array.isArray(result.errors) && result.errors.length) {
+        msgs.push(...result.errors.map(String));
+      } else if (result.message) {
+        msgs.push(String(result.message));
+      } else if (result.error) {
+        msgs.push(String(result.error));
+      }
+
+      const joined = msgs.join('\n');
+      if (/email/i.test(joined)) {
+        fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
+      }
+      if (/user|username/i.test(joined)) {
+        fields.userName = 'This username is already taken. Please choose a different username.';
+      }
+      if (Object.keys(fields).length) return { fields, globalMsg };
+      // fallback to put full message as global
+      if (joined) return { fields, globalMsg: joined };
+    }
 
     if (result.errors && typeof result.errors === 'object') {
       for (const key of Object.keys(result.errors)) {
@@ -368,7 +398,7 @@ const RegisterPage: React.FC = () => {
               error={fieldErrors.password}
               suffix={
                 <button type="button" onClick={() => setShowPassword(s => !s)} className="p-1 text-muted-foreground">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               }
             />
@@ -382,7 +412,7 @@ const RegisterPage: React.FC = () => {
               error={fieldErrors.confirmPassword}
               suffix={
                 <button type="button" onClick={() => setShowConfirmPassword(s => !s)} className="p-1 text-muted-foreground">
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               }
             />

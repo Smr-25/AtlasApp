@@ -14,19 +14,16 @@ public class ResetPasswordCommandHandler(UserManager<AppUser> userManager)
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null)
             throw new NotFoundException("User", request.Email);
-        
-        if (user.ResetPasswordCode != request.VerificationCode ||
-            user.ResetPasswordExpiresAt < DateTime.UtcNow)
-            throw new InvalidOrExpiredCodeException("Password Reset");
-        
-        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
-        var result = await userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
-        if (!result.Succeeded)
-            throw new IdentityException(result.Errors.Select(e => e.Description));
 
-        user.ResetPasswordCode = null;
-        user.ResetPasswordExpiresAt = null;
-        await userManager.UpdateAsync(user);
+        var result = await userManager.ResetPasswordAsync(user, request.ResetToken, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            if (errors.Any(e => e.Contains("Invalid token")))
+                throw new InvalidOrExpiredCodeException("Reset Token");
+            
+            throw new IdentityException(errors);
+        }
 
         return true;
     }
