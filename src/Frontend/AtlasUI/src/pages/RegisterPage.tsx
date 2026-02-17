@@ -314,7 +314,8 @@ const RegisterPage: React.FC = () => {
           if (contactMethod === 'sms') {
             navigate('/verify-phone', { state: { phone: form.phone } });
           } else {
-            navigate('/verify-email', { state: { email: form.email } });
+            // navigate to onboarding after registration so user can complete onboarding
+            navigate('/onboarding', { state: { email: form.email, phone: form.phone } });
           }
         }
       } else {
