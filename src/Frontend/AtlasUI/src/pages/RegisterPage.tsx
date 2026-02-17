@@ -303,20 +303,11 @@ const RegisterPage: React.FC = () => {
       if (registerSucceeded) {
         // If backend provided telegramBotLink (phone channel = telegram), show it
         if (data && typeof data === 'object' && data.telegramBotLink) {
-          setTelegramBotLink(String(data.telegramBotLink));
-          setRegistrationSuccessInfo(data);
-          setSuccessMessage('Registration successful. Please complete verification via Telegram.');
-          // keep user on page and show link UI
+          // redirect user to email verification but pass telegram link and phone so next steps can continue
+          navigate('/verify-email', { state: { email: form.email, phone: form.phone, telegramBotLink: data.telegramBotLink } });
         } else {
-          // For SMS or normal flows, navigate to verification page
-          setSuccessMessage('Registration successful. Please verify your email or phone.');
-          // Pass email and phone to verify page
-          if (contactMethod === 'sms') {
-            navigate('/verify-phone', { state: { phone: form.phone } });
-          } else {
-            // navigate to onboarding after registration so user can complete onboarding
-            navigate('/onboarding', { state: { email: form.email, phone: form.phone } });
-          }
+          // For all flows, we require email verification first. Pass phone so after email verification frontend can route to phone verification.
+          navigate('/verify-email', { state: { email: form.email, phone: form.phone } });
         }
       } else {
         // Not successful at application level

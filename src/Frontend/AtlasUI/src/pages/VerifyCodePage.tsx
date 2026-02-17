@@ -114,7 +114,11 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
         const successFlag = result?.success ?? result?.isSuccess ?? false;
         if (successFlag) {
           setSuccessMessage('Email verified successfully.');
-          navigate('/dashboard');
+          if (state?.phone) {
+            navigate('/verify-phone', { state: { phone: state.phone, telegramBotLink: (state as any).telegramBotLink } });
+          } else {
+            navigate('/onboarding');
+          }
         } else {
           setError(parseApiError(result, res));
         }
@@ -147,7 +151,7 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
         const successFlag = result?.success ?? result?.isSuccess ?? false;
         if (successFlag) {
           setSuccessMessage('Phone verified successfully.');
-          navigate('/dashboard');
+          navigate('/onboarding');
         } else {
           setError(parseApiError(result, res));
         }
@@ -213,6 +217,8 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
     ? `Enter the code sent to ${state?.email || 'your email'}`
     : `Enter the code sent to ${state?.phone || 'your phone'}`;
 
+  const telegramBotLink = (state as any)?.telegramBotLink ?? null;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-30" style={{ background: 'var(--gradient-glow)' }} />
@@ -223,6 +229,15 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
         </div>
 
         <div className="glass rounded-2xl p-8 space-y-6">
+
+          {telegramBotLink && type === 'email' && (
+            <div className="p-3 rounded-md bg-primary/10 text-primary">
+              <p className="font-medium">Telegram verification</p>
+              <p className="text-sm mt-1">We sent a link for Telegram verification. Open the bot and send /start to link your chat.</p>
+              <a href={telegramBotLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm px-3 py-2 rounded-md bg-primary text-primary-foreground">Open Telegram Bot</a>
+            </div>
+          )}
+
           <div className="text-center">
             <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
               <span className="text-3xl">{type === 'email' ? <Mail className="w-6 h-6" /> : <Phone className="w-6 h-6" />}</span>
