@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, GripVertical, ExternalLink, MoreHorizontal } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 interface Workspace {
@@ -111,46 +112,60 @@ const DashboardPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">İş sahələrinizi idarə edin və monitorinq edin</p>
-          </div>
-          <button className="flex items-center gap-2 h-10 px-4 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90 active:scale-[0.98]" style={{ background: 'var(--gradient-primary)' }}>
-            <Plus className="h-4 w-4" />
-            Yeni Workspace
-          </button>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { label: 'Ümumi Workspace', value: '4', change: '+2 bu ay' },
-            { label: 'Aktiv Layihələr', value: '28', change: '+5 bu həftə' },
-            { label: 'İnteqrasiyalar', value: '12', change: '3 yeni' },
-            { label: 'Komanda üzvləri', value: '8', change: '+1 bu ay' },
-          ].map((stat, i) => (
-            <div key={i} className="glass rounded-xl p-4">
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-              <p className="text-xs text-primary mt-1">{stat.change}</p>
+      <div className="min-h-screen p-6 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-sm text-muted-foreground mt-1">İş sahələrinizi idarə edin və monitorinq edin</p>
             </div>
-          ))}
-        </div>
+            <Link to="/workspaces" className="flex items-center gap-2 h-10 px-4 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90 active:scale-[0.98]" style={{ background: 'var(--gradient-primary)' }}>
+              <Plus className="h-4 w-4" />
+              Yeni Workspace
+            </Link>
+          </div>
 
-        {/* Workspaces grid - macOS widget style */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">İş sahələri</h2>
-          <div className="grid grid-cols-3 auto-rows-[140px] gap-4">
-            {mockWorkspaces.map(ws => (
-              <WidgetCard
-                key={ws.id}
-                workspace={ws}
-                size={widgetSizes[ws.id] || 'small'}
-                onResize={handleResize}
-              />
+          {/* Quick Links */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <Link to="/workspaces" className="block p-4 rounded-lg border border-border bg-secondary hover:shadow-md">
+              <div className="text-lg font-semibold">Workspaces</div>
+              <div className="text-sm text-muted-foreground">Manage workspaces and integrations</div>
+            </Link>
+            <Link to="/dashboard/integrations" className="block p-4 rounded-lg border border-border bg-secondary hover:shadow-md">
+              <div className="text-lg font-semibold">Integrations</div>
+              <div className="text-sm text-muted-foreground">Configure global integrations</div>
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: 'Ümumi Workspace', value: '4', change: '+2 bu ay' },
+              { label: 'Aktiv Layihələr', value: '28', change: '+5 bu həftə' },
+              { label: 'İnteqrasiyalar', value: '12', change: '3 yeni' },
+              { label: 'Komanda üzvləri', value: '8', change: '+1 bu ay' },
+            ].map((stat, i) => (
+              <div key={i} className="glass rounded-xl p-4">
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
+                <p className="text-xs text-primary mt-1">{stat.change}</p>
+              </div>
             ))}
+          </div>
+
+          {/* Workspaces grid - macOS widget style */}
+          <div>
+            <h2 className="text-lg font-semibold text-foreground mb-4">İş sahələri</h2>
+            <div className="grid grid-cols-3 auto-rows-[140px] gap-4">
+              {mockWorkspaces.map(ws => (
+                <WidgetCard
+                  key={ws.id}
+                  workspace={ws}
+                  size={widgetSizes[ws.id] || 'small'}
+                  onResize={handleResize}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
