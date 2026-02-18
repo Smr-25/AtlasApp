@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import ProfilePage from "./pages/ProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import WorkspacesPage from "./pages/WorkspacesPage";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/dashboard/integrations" element={<IntegrationsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
+          <Route path="/workspaces" element={<WorkspacesPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

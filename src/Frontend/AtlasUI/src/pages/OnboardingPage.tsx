@@ -158,19 +158,22 @@ const OnboardingPage: React.FC = () => {
   const goToPrevQuestion = () => setQuestionIndex(i => Math.max(0, i - 1));
   const goToNextQuestion = () => setQuestionIndex(i => Math.min(questions.length - 1, i + 1));
 
-  const answeredCount = () => {
-    let cnt = 0;
-    if (professionQuestion && answers[professionQuestion.id] && answers[professionQuestion.id].length) cnt++;
-    for (const q of questions) if ((answers[q.id] ?? []).length) cnt++;
-    return cnt;
-  };
-
-  const totalCount = () => (professionQuestion ? 1 + questions.length : questions.length);
-
   const progressPct = () => {
-    const total = totalCount();
-    if (!total) return 0;
-    return Math.round((answeredCount() / total) * 100);
+    // Make progress empty on the initial profession selection step
+    // Progress is based on completed units: profession (once moved to questions) + answered questions
+    const totalUnits = 1 + questions.length + 1; // profession + questions + review
+    if (currentStep === 1) return 0;
+
+    // Count completed: profession counts as 1 once we've advanced to questions
+    const professionCompleted = 1;
+    // Count how many questions have at least one selected option
+    const answeredQuestions = questions.reduce((acc, q) => acc + ((answers[q.id] && answers[q.id].length) ? 1 : 0), 0);
+
+    // If on review (step 3), treat as fully complete
+    if (currentStep === 3) return 100;
+
+    const completedUnits = professionCompleted + answeredQuestions;
+    return Math.round((completedUnits / totalUnits) * 100);
   };
 
   const validateRequired = (): string[] => {
@@ -221,7 +224,9 @@ const OnboardingPage: React.FC = () => {
       await postJson('/api/onboarding/complete', payload);
       window.location.href = '/dashboard';
     } catch (err: any) {
-      const msg = err?.data ? parseApiError(err.data, err?.status ? { status: err.status, statusText: '' } as any : undefined) : (err?.message || 'Failed to complete onboarding.');
+      // ApiError may carry details in .details or .data depending on where it was thrown
+      const details = err?.details ?? err?.data ?? null;
+      const msg = details ? parseApiError(details, err?.status ? { status: err.status, statusText: '' } as any : undefined) : (err?.message || 'Failed to complete onboarding.');
       setError(msg);
     }
   };
@@ -308,17 +313,30 @@ const OnboardingPage: React.FC = () => {
                                   className={`px-3 py-2 rounded-sm border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${selected ? 'bg-transparent text-primary border-2 border-primary' : 'bg-secondary'}`}>
                                   {opt.text}
                                 </button>
-                               );
-                             })()}
+                              );
+                            })}
                           </div>
 
                           <div className="flex justify-between">
                             <div>
-                              <button type="button" onClick={handleBack} className="px-4 py-2 rounded-lg bg-secondary mr-2">Back</button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Single Back behaviour: if we're in questions and not at the first question, go to previous question
+                                  if (currentStep === 2) {
+                                    if (questionIndex > 0) goToPrevQuestion();
+                                    else handleBack();
+                                  } else {
+                                    handleBack();
+                                  }
+                                }}
+                                className="px-4 py-2 rounded-lg bg-secondary mr-2"
+                              >
+                                Back
+                              </button>
                               <button type="button" onClick={() => { window.location.href = '/dashboard'; }} className="px-4 py-2 rounded-lg bg-secondary">Skip</button>
                             </div>
                             <div className="flex gap-2">
-                              <button type="button" onClick={goToPrevQuestion} disabled={questionIndex === 0} className={`px-4 py-2 rounded-lg ${questionIndex === 0 ? 'bg-muted text-muted-foreground' : 'bg-secondary'}`}>Prev</button>
                               {questionIndex < total - 1 ? (
                                 <button type="button" onClick={goToNextQuestion} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">Next</button>
                               ) : (

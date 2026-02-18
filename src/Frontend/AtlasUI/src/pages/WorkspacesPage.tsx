@@ -12,7 +12,7 @@ type WorkspaceDto = {
   integrations?: Array<{ id: string; name: string; enabled: boolean; logoUrl?: string | null }>;
 };
 
-const WorkspacesPage: React.FC = () => {
+export default function WorkspacesPage(): JSX.Element {
   const [workspaces, setWorkspaces] = useState<WorkspaceDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -85,7 +85,4 @@ const WorkspacesPage: React.FC = () => {
       <CreateWorkspaceModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={handleCreated} />
     </div>
   );
-};
-
-export default WorkspacesPage;
-
+}

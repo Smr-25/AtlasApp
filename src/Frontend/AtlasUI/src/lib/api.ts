@@ -129,48 +129,48 @@ export async function apiFetch(input: string, init: RequestInit = {}, retry = tr
 
 export async function postJson<T = any>(path: string, body: any): Promise<T> {
   const res = await apiFetch(path.startsWith('/') ? path : `/${path}`, { method: 'POST', body: JSON.stringify(body) });
-  let json: BackendResponse<T> | null = null;
+  let json: any | null = null;
   try { json = await res.json(); } catch (e) { throw new ApiError(res.statusText || 'Invalid JSON response', res.status); }
   if (!res.ok) {
-    const msg = json?.message ?? JSON.stringify(json?.errors ?? json?.Error ?? json);
+    const msg = json?.message ?? json?.Message ?? JSON.stringify(json?.errors ?? json?.Errors ?? json?.Error ?? json);
     throw new ApiError(msg || res.statusText, res.status, json);
   }
-  const successFlag = json?.success ?? json?.isSuccess ?? false;
+  const successFlag = json?.success ?? json?.isSuccess ?? json?.IsSuccess ?? false;
   if (!successFlag) {
-    const msg = json?.message ?? JSON.stringify(json?.errors ?? json?.Error ?? json);
+    const msg = json?.message ?? json?.Message ?? JSON.stringify(json?.errors ?? json?.Errors ?? json?.Error ?? json);
     throw new ApiError(msg || 'Request failed', res.status, json);
   }
-  return json!.data as T;
+  return (json?.data ?? json?.Data) as T;
 }
 
 export async function putJson<T = any>(path: string, body: any): Promise<T> {
   const res = await apiFetch(path.startsWith('/') ? path : `/${path}`, { method: 'PUT', body: JSON.stringify(body) });
-  let json: BackendResponse<T> | null = null;
+  let json: any | null = null;
   try { json = await res.json(); } catch (e) { throw new ApiError(res.statusText || 'Invalid JSON response', res.status); }
   if (!res.ok) {
-    const msg = json?.message ?? JSON.stringify(json?.errors ?? json?.Error ?? json);
+    const msg = json?.message ?? json?.Message ?? JSON.stringify(json?.errors ?? json?.Errors ?? json?.Error ?? json);
     throw new ApiError(msg || res.statusText, res.status, json);
   }
-  const successFlag = json?.success ?? json?.isSuccess ?? false;
+  const successFlag = json?.success ?? json?.isSuccess ?? json?.IsSuccess ?? false;
   if (!successFlag) {
-    const msg = json?.message ?? JSON.stringify(json?.errors ?? json?.Error ?? json);
+    const msg = json?.message ?? json?.Message ?? JSON.stringify(json?.errors ?? json?.Errors ?? json?.Error ?? json);
     throw new ApiError(msg || 'Request failed', res.status, json);
   }
-  return json!.data as T;
+  return (json?.data ?? json?.Data) as T;
 }
 
 export async function getJson<T = any>(path: string): Promise<T> {
   const res = await apiFetch(path.startsWith('/') ? path : `/${path}`, { method: 'GET' });
-  let json: BackendResponse<T> | null = null;
+  let json: any | null = null;
   try { json = await res.json(); } catch (e) { throw new ApiError(res.statusText || 'Invalid JSON response', res.status); }
   if (!res.ok) {
-    const msg = json?.message ?? JSON.stringify(json?.errors ?? json?.Error ?? json);
+    const msg = json?.message ?? json?.Message ?? JSON.stringify(json?.errors ?? json?.Errors ?? json?.Error ?? json);
     throw new ApiError(msg || res.statusText, res.status, json);
   }
-  const successFlag = json?.success ?? json?.isSuccess ?? false;
+  const successFlag = json?.success ?? json?.isSuccess ?? json?.IsSuccess ?? false;
   if (!successFlag) {
-    const msg = json?.message ?? JSON.stringify(json?.errors ?? json?.Error ?? json);
+    const msg = json?.message ?? json?.Message ?? JSON.stringify(json?.errors ?? json?.Errors ?? json?.Error ?? json);
     throw new ApiError(msg || 'Request failed', res.status, json);
   }
-  return json!.data as T;
+  return (json?.data ?? json?.Data) as T;
 }
