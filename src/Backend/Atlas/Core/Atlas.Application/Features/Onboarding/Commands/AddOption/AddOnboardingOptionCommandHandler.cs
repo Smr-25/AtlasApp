@@ -18,6 +18,7 @@ public class AddOnboardingOptionCommandHandler(IApplicationDbContext application
 
         var option = OnboardingOption.Create(
             request.Text, 
+            request.QuestionId,
             request.RecommendedIntegration, 
             request.RecommendedTemplate
         );

@@ -16,7 +16,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; set; } 
     public DbSet<OnboardingQuestion> OnboardingQuestions { get; set; }
     public DbSet<OnboardingOption> OnboardingOptions { get; set; }
-    public DbSet<UserOnboardingAnswer> UserOnboardingAnswers { get; set; }
+    public DbSet<OnboardingAnswer> OnboardingAnswers { get; set; }
     public DbSet<UserActivity> UserActivities { get; set; }
     public DbSet<Snippet> Snippets { get; set; }
     public DbSet<Script> Scripts { get; set; }

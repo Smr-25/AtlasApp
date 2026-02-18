@@ -3,6 +3,7 @@ using System;
 using Atlas.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Atlas.Persistence.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260218084459_mig_6")]
+    partial class mig_6
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -497,8 +500,8 @@ namespace Atlas.Persistence.Data.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Id = new Guid("64b9c897-e9a2-404e-9225-6ea443c7574f"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 2, 18, 8, 44, 58, 963, DateTimeKind.Unspecified).AddTicks(3140), new TimeSpan(0, 0, 0, 0, 0)),
                             IsDeleted = false,
                             IsMultiSelect = false,
                             Order = 1,
@@ -506,8 +509,8 @@ namespace Atlas.Persistence.Data.Migrations
                         },
                         new
                         {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Id = new Guid("e86212eb-e481-41d6-8b05-7bf9dd4a1cd6"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 2, 18, 8, 44, 58, 963, DateTimeKind.Unspecified).AddTicks(3630), new TimeSpan(0, 0, 0, 0, 0)),
                             IsDeleted = false,
                             IsMultiSelect = true,
                             Order = 2,
@@ -515,8 +518,8 @@ namespace Atlas.Persistence.Data.Migrations
                         },
                         new
                         {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Id = new Guid("3ff43c35-f411-408e-b46d-021e69e360f2"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 2, 18, 8, 44, 58, 963, DateTimeKind.Unspecified).AddTicks(3630), new TimeSpan(0, 0, 0, 0, 0)),
                             IsDeleted = false,
                             IsMultiSelect = true,
                             Order = 3,

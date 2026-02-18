@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Puzzle, Settings, HelpCircle, LogOut, Bell, Search, User } from 'lucide-react';
+import { LayoutDashboard, Puzzle, Settings, HelpCircle, Bell, Search, User } from 'lucide-react';
 import AtlasLogo from '@/components/AtlasLogo';
+import { getJson } from '@/lib/api';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,22 @@ const bottomItems = [
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+
+  const [profile, setProfile] = useState<{ fullName?: string | null; userName?: string | null; email?: string | null } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const data = await getJson('/api/accounts/profile');
+        if (mounted) setProfile(data);
+      } catch (err) {
+        // if unauthorized or failed, ignore here
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -73,9 +90,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <div className="p-3">
           <button
             onClick={() => navigate('/login')}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 w-full"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
           >
-            <LogOut className="h-4 w-4" />
             Çıxış
           </button>
         </div>
@@ -92,20 +108,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1"
             />
           </div>
+
           <div className="flex items-center gap-4">
             <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
               <Bell className="h-5 w-5 text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
             </button>
-            <div className="flex items-center gap-3">
+
+            <NavLink to="/profile" className="flex items-center gap-3 hover:bg-secondary rounded-lg px-2 py-1 transition-colors">
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
-                A
+                {profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'A'}
               </div>
-              <div className="text-sm">
-                <p className="font-medium text-foreground">Atlas User</p>
-                <p className="text-xs text-muted-foreground">admin@atlas.dev</p>
+
+              <div className="text-sm leading-tight">
+                <p className="font-medium text-foreground">{profile?.fullName ?? 'Atlas User'}</p>
+                <p className="text-xs text-muted-foreground">{profile?.userName ? `@${profile.userName}` : (profile?.email ?? '')}</p>
               </div>
-            </div>
+            </NavLink>
           </div>
         </header>
 

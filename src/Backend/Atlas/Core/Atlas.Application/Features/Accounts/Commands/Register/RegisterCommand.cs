@@ -1,3 +1,4 @@
+using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Enums;
 using MediatR;
 
@@ -11,4 +12,4 @@ public record RegisterCommand(
     string Password,
     string ConfirmPassword,
     UserVerificationChannel? PhoneVerificationChannel
-) : IRequest<bool>;
+) : IRequest<RegisterResponseDto>;

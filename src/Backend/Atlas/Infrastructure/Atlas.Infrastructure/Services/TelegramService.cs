@@ -17,9 +17,14 @@ public class TelegramService : ITelegramService
 
     public async Task<bool> SendVerificationCodeAsync(string chatId, string code)
     {
-        var message = $"Your verification code is: {code}";
-        await _botClient.SendMessage(chatId, message);
+        var message = $"🔐 Təsdiq kodunuz: *{code}*\n\nBu kod 10 dəqiqə ərzində etibarlıdır.";
+        await _botClient.SendMessage(chatId, message, parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
         return true;
     }
-    
+
+    public async Task<bool> SendMessageAsync(string chatId, string message)
+    {
+        await _botClient.SendMessage(chatId, message, parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
+        return true;
+    }
 }

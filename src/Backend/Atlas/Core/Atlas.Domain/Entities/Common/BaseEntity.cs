@@ -32,7 +32,7 @@ public abstract class BaseEntity
         ModifiedAt = DateTimeOffset.UtcNow;
     }
 
-    public virtual void SetDelete()
+    protected virtual void SetDelete()
     {
         IsDeleted = true;
         SetModified();
