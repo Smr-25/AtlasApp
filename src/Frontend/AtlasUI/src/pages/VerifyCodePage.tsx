@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AtlasLogo from '@/components/AtlasLogo';
-import { Mail, Phone, Eye, EyeOff } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
 
 interface VerifyCodePageProps {
   type: 'email' | 'phone';
@@ -17,7 +17,6 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showCode, setShowCode] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (index: number, value: string) => {
@@ -253,7 +252,7 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
                   <input
                     key={i}
                     ref={el => { inputRefs.current[i] = el; }}
-                    type={showCode ? 'text' : 'password'}
+                    type="text"
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}
@@ -263,9 +262,6 @@ const VerifyCodePage: React.FC<VerifyCodePageProps> = ({ type }) => {
                   />
                 ))}
               </div>
-              <button type="button" onClick={() => setShowCode(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
-                {showCode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
             </div>
 
             {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}

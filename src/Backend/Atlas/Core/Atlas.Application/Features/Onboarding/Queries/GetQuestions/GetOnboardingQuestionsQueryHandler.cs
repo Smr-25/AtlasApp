@@ -13,10 +13,12 @@ public class GetOnboardingQuestionsQueryHandler(IApplicationDbContext applicatio
     public async Task<List<OnboardingQuestionDto>> Handle(GetOnboardingQuestionsQuery request,
         CancellationToken cancellationToken)
     {
-        return await applicationDbContext.OnboardingQuestions
-            .Where(q => q.TargetProfession == null || q.TargetProfession == request.Profession)
+        var query = applicationDbContext.OnboardingQuestions.AsQueryable();
+
+        query = request.Profession.HasValue ? query.Where(q => q.TargetProfession == null || q.TargetProfession == request.Profession) : query.Where(q => q.TargetProfession == null);
+        return await query
             .OrderBy(q => q.Order)
-            .ProjectTo<OnboardingQuestionDto>(mapper.ConfigurationProvider) 
+            .ProjectTo<OnboardingQuestionDto>(mapper.ConfigurationProvider)
             .ToListAsync(cancellationToken);
     }
 }

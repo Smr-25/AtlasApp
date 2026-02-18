@@ -4,4 +4,4 @@ using MediatR;
 
 namespace Atlas.Application.Features.Onboarding.Queries.GetQuestions;
 
-public record GetOnboardingQuestionsQuery(UserProfession Profession) : IRequest<List<OnboardingQuestionDto>>;
+public record GetOnboardingQuestionsQuery(UserProfession? Profession = null) : IRequest<List<OnboardingQuestionDto>>;
