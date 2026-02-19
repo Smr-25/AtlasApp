@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -85,13 +85,50 @@
 }
 
 @layer utilities {
+  /* Liquid glass / frosted card styles used site-wide */
   .glass {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+    background: rgba(255,255,255,0.04);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.45);
   }
 
-  .glass-hover {
-    @apply hover:bg-card/90 hover:border-border transition-all duration-200;
+  /* stronger variant for main panels */
+  .glass-strong {
+    background: rgba(255,255,255,0.06);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    backdrop-filter: blur(14px) saturate(130%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
+
+  /* Neon/Phosphor border outline helper - only border glows (no fill) */
+  .border-glow {
+    position: relative;
+  }
+  .border-glow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(90deg, rgba(100,116,255,0.95), rgba(60,220,200,0.9));
+    -webkit-mask: linear-gradient(#fff,#fff) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    filter: blur(6px);
+    pointer-events: none;
+    opacity: 0.95;
+  }
+
+  /* Fallback when backdrop-filter not supported */
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .glass, .glass-strong { background: rgba(20,20,25,0.72); }
+  }
+
+  /* small utility to ensure panels have rounded inner content */
+  .glass .card-content { position: relative; z-index: 1; }
 
   .glow {
     box-shadow: var(--shadow-glow);

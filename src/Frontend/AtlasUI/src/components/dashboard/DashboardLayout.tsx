@@ -10,18 +10,17 @@ interface DashboardLayoutProps {
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/profile', icon: User, label: 'Profil' },
-  { to: '/dashboard/integrations', icon: Puzzle, label: 'İnteqrasiyalar' },
+  { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/dashboard/integrations', icon: Puzzle, label: 'Integrations' },
 ];
 
 const bottomItems = [
-  { to: '/dashboard/settings', icon: Settings, label: 'Parametrlər' },
-  { to: '/dashboard/help', icon: HelpCircle, label: 'Kömək' },
+  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
+  { to: '/dashboard/help', icon: HelpCircle, label: 'Help' },
 ];
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-
   const [profile, setProfile] = useState<{ fullName?: string | null; userName?: string | null; email?: string | null } | null>(null);
 
   useEffect(() => {
@@ -31,7 +30,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         const data = await getJson('/api/accounts/profile');
         if (mounted) setProfile(data);
       } catch (err) {
-        // if unauthorized or failed, ignore here
+        // ignore
       }
     };
     load();
@@ -40,8 +39,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 flex flex-col border-r border-border bg-card/50 shrink-0">
+      <aside className="w-64 flex flex-col border-r border-border glass-strong shrink-0">
         <div className="p-6">
           <AtlasLogo size="md" />
         </div>
@@ -54,11 +52,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               to={item.to}
               end={item.to === '/dashboard'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                }`
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`
               }
             >
               <item.icon className="h-4 w-4" />
@@ -67,17 +61,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           ))}
 
           <div className="pt-6">
-            <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ümumi</p>
+            <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">General</p>
             {bottomItems.map(item => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                  }`
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`
                 }
               >
                 <item.icon className="h-4 w-4" />
@@ -92,21 +82,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             onClick={() => navigate('/login')}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
           >
-            Çıxış
+            Logout
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 shrink-0 bg-card/30">
+        <header className="h-16 border-b border-border flex items-center justify-between px-6 shrink-0 glass-strong">
           <div className="flex items-center gap-3 bg-secondary rounded-lg px-3 py-2 w-72">
             <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              placeholder="Axtar... ⌘F"
-              className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1"
-            />
+            <input placeholder="Search... ⌘F" className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1" />
           </div>
 
           <div className="flex items-center gap-4">
@@ -119,7 +104,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
                 {profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'A'}
               </div>
-
               <div className="text-sm leading-tight">
                 <p className="font-medium text-foreground">{profile?.fullName ?? 'Atlas User'}</p>
                 <p className="text-xs text-muted-foreground">{profile?.userName ? `@${profile.userName}` : (profile?.email ?? '')}</p>
@@ -128,7 +112,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-auto p-6">
           {children}
         </main>
