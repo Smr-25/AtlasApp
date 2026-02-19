@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus, GripVertical, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -35,9 +35,34 @@ const sizeClasses: Record<WidgetSize, string> = {
 
 const WidgetCard: React.FC<WidgetCardProps> = ({ workspace, size, onResize }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const dragRef = useRef<HTMLDivElement | null>(null);
+  const startXRef = useRef<number | null>(null);
+  const startWidthRef = useRef<number | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    startXRef.current = e.clientX;
+    const el = dragRef.current?.parentElement as HTMLElement | null;
+    startWidthRef.current = el ? el.getBoundingClientRect().width : null;
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (startXRef.current == null || !startWidthRef.current) return;
+    const dx = e.clientX - startXRef.current;
+    const newW = Math.max(200, startWidthRef.current + dx);
+    // Map width to size categories
+    const newSize: WidgetSize = newW < 280 ? 'small' : newW < 520 ? 'medium' : 'large';
+    if (newSize !== size) onResize(workspace.id, newSize);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    startXRef.current = null;
+    startWidthRef.current = null;
+    try { (e.target as Element).releasePointerCapture(e.pointerId); } catch(e){}
+  };
 
   return (
-    <div className={`${sizeClasses[size]} glass rounded-2xl p-5 group relative hover:border-primary/30 transition-all duration-300 cursor-pointer`}>
+    <div className={`${sizeClasses[size]} glass rounded-2xl p-5 group relative hover:border-primary/30 transition-all duration-300`}>
       <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
@@ -49,51 +74,27 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ workspace, size, onResize }) =>
         >
           <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
         </button>
-        {showMenu && (
-          <div className="absolute right-0 top-8 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-[120px] animate-fade-in">
-            {(['small', 'medium', 'large'] as WidgetSize[]).map(s => (
-              <button
-                key={s}
-                onClick={(e) => { e.stopPropagation(); onResize(workspace.id, s); setShowMenu(false); }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors ${size === s ? 'text-primary' : 'text-foreground'}`}
-              >
-                {s === 'small' ? 'Kiçik' : s === 'medium' ? 'Orta' : 'Böyük'}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: `${workspace.color}20` }}>
-        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: workspace.color }} />
+        <div className="text-white font-semibold">{workspace.name[0]}</div>
       </div>
 
-      <h3 className="text-base font-semibold text-foreground mb-1">{workspace.name}</h3>
-      <p className="text-xs text-muted-foreground mb-4">{workspace.description}</p>
+      <div>
+        <div className="font-medium text-lg">{workspace.name}</div>
+        <div className="text-sm text-muted-foreground">{workspace.description}</div>
+      </div>
 
-      {size !== 'small' && (
-        <div className="space-y-3 mt-auto">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Elementlər</span>
-            <span className="text-foreground font-medium">{workspace.items}</span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Son aktivlik</span>
-            <span className="text-foreground font-medium">{workspace.lastActive}</span>
-          </div>
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
+            <ExternalLink className="h-3 w-3" />
+            Aç
+          </button>
         </div>
-      )}
+      </div>
 
-      {size === 'large' && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
-              <ExternalLink className="h-3 w-3" />
-              Aç
-            </button>
-          </div>
-        </div>
-      )}
+      <div ref={dragRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} className="absolute right-0 top-0 h-full w-2 cursor-ew-resize" />
     </div>
   );
 };
