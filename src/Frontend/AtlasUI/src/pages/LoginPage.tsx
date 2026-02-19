@@ -33,9 +33,9 @@ function parseApiError(result: any, response?: Response) {
 
   if (result.success === false && typeof result.data === 'string') return String(result.data);
 
-  if (response) return `${response.status} ${response.statusText}`;
+  if (typeof result.data === 'string') return result.data;
 
-  return 'An unexpected server error occurred.';
+  return response ? `${response.status} ${response.statusText}` : 'An unexpected server error occurred.';
 }
 
 const LoginPage: React.FC = () => {
@@ -89,32 +89,20 @@ const LoginPage: React.FC = () => {
       try {
         result = await res.json();
       } catch (jsonErr) {
-        if (!res.ok) {
-          setError(`${res.status} ${res.statusText}`);
-          setLoading(false);
-          return;
+        result = null;
+      }
+
+      if (res.ok && result) {
+        const data = result.data ?? result.Data ?? result;
+        if (data?.accessToken) {
+          localStorage.setItem('atlas_access_token', data.accessToken);
         }
-      }
-
-      if (!res.ok) {
-        const msg = parseApiError(result, res);
-        setError(msg);
-        setLoading(false);
-        return;
-      }
-
-      const successFlag = result?.success ?? result?.isSuccess ?? false;
-      const data = result?.data ?? result?.Data ?? null;
-
-      if (successFlag && data) {
-        if (data?.accessToken) localStorage.setItem('atlas_access_token', data.accessToken);
-        if (data?.refreshToken) localStorage.setItem('atlas_refresh_token', data.refreshToken);
-        if (data?.accessTokenExpiration) localStorage.setItem('atlas_access_token_exp', data.accessTokenExpiration);
-        if (data?.refreshTokenExpiration) localStorage.setItem('atlas_refresh_token_exp', data.refreshTokenExpiration);
-        if (data?.userId) localStorage.setItem('atlas_user_id', data.userId);
-        if (data?.userName) localStorage.setItem('atlas_user_name', data.userName);
+        if (data?.refreshToken) {
+          localStorage.setItem('atlas_refresh_token', data.refreshToken);
+        }
         if (data?.email) localStorage.setItem('atlas_user_email', data.email);
         if (data?.fullName) localStorage.setItem('atlas_user_fullname', data.fullName);
+        if (data?.userName) localStorage.setItem('atlas_user_username', data.userName);
 
         navigate('/dashboard');
       } else {

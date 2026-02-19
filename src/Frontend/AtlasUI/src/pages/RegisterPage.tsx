@@ -22,7 +22,7 @@ function parseApiError(result: any, response?: Response) {
         parts.push(arr.join('\n'));
       }
       if (parts.length) return parts.join('\n');
-    } catch (e) {}
+    } catch (e) { }
   }
 
   if (result.message) return String(result.message);
@@ -42,19 +42,12 @@ const RegisterPage: React.FC = () => {
     confirmPassword: '',
   });
   const [contactMethod, setContactMethod] = useState<'sms' | 'telegram' | null>(null);
-  const [showContactChoice, setShowContactChoice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [telegramBotLink, setTelegramBotLink] = useState<string | null>(null);
-  const [registrationSuccessInfo, setRegistrationSuccessInfo] = useState<any | null>(null);
-
-  const [phoneResendCooldown, setPhoneResendCooldown] = useState(0);
-  const [phoneResendLoading, setPhoneResendLoading] = useState(false);
-  const [phoneResendMessage, setPhoneResendMessage] = useState<string | null>(null);
 
   const update = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -64,9 +57,7 @@ const RegisterPage: React.FC = () => {
       delete copy[field];
       return copy;
     });
-
     if (field === 'phone') {
-      setShowContactChoice(value.length > 0);
       if (!value) setContactMethod(null);
     }
   };
@@ -85,26 +76,8 @@ const RegisterPage: React.FC = () => {
   const mapApiErrorsToFields = (result: any, response?: Response) => {
     const fields: Record<string, string> = {};
     let globalMsg: string | null = null;
-
     if (!result) return { fields, globalMsg };
 
-    // If backend returns a single error string (no fieldErrors / errorCodes), parse it
-    if (result.error && typeof result.error === 'string') {
-      const errStr = String(result.error);
-      const low = errStr.toLowerCase();
-      if (/email/.test(low) && /already|exist|taken|in use/.test(low)) {
-        fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
-        return { fields, globalMsg };
-      }
-      if (/(user|username)/.test(low) && /already|exist|taken|in use/.test(low)) {
-        fields.userName = 'This username is already taken. Please choose a different username.';
-        return { fields, globalMsg };
-      }
-      // fallback: return the error as global message
-      return { fields, globalMsg: errStr };
-    }
-
-    // If backend provides explicit fieldErrors object, prefer it
     if (result.fieldErrors && typeof result.fieldErrors === 'object') {
       for (const key of Object.keys(result.fieldErrors)) {
         const v = result.fieldErrors[key];
@@ -113,7 +86,6 @@ const RegisterPage: React.FC = () => {
       return { fields, globalMsg };
     }
 
-    // If backend provides errorCodes, produce friendly messages when possible
     if (Array.isArray(result.errorCodes) && result.errorCodes.length) {
       for (const code of result.errorCodes) {
         const c = String(code).toUpperCase();
@@ -121,10 +93,9 @@ const RegisterPage: React.FC = () => {
         if (c === 'USERNAME_TAKEN' || c === 'USERNAME_EXISTS') fields.userName = 'This username is already taken. Please choose a different username.';
         if (c === 'EMAIL_EXISTS' || c === 'EMAIL_TAKEN') fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
       }
-      if (Object.keys(fields).length) return { fields, globalMsg };
+      return { fields, globalMsg };
     }
 
-    // Special handling for 409 Conflict (unique constraint) where backend may return generic messages
     if (response?.status === 409) {
       const msgs: string[] = [];
       if (result.errors && typeof result.errors === 'object') {
@@ -142,33 +113,15 @@ const RegisterPage: React.FC = () => {
       }
 
       const joined = msgs.join('\n');
-      if (/email/i.test(joined)) {
-        fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
-      }
-      if (/user|username/i.test(joined)) {
-        fields.userName = 'This username is already taken. Please choose a different username.';
-      }
+      if (/email/i.test(joined)) fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
+      if (/user|username/i.test(joined)) fields.userName = 'This username is already taken. Please choose a different username.';
       if (Object.keys(fields).length) return { fields, globalMsg };
-      // fallback to put full message as global
-      if (joined) return { fields, globalMsg: joined };
     }
 
     if (result.errors && typeof result.errors === 'object') {
       for (const key of Object.keys(result.errors)) {
         const v = result.errors[key];
-        const msgs = Array.isArray(v) ? v.join(', ') : String(v);
-        const k = key.toLowerCase();
-        if (k.includes('email')) {
-          fields.email = /already|exist|taken|in use/i.test(msgs)
-            ? "This email is already registered. If it's yours, try logging in or reset your password."
-            : msgs;
-        } else if (k.includes('user') || k.includes('username')) {
-          fields.userName = /already|exist|taken|in use/i.test(msgs)
-            ? 'This username is already taken. Please choose a different username.'
-            : msgs;
-        } else {
-          fields[key] = msgs;
-        }
+        fields[key] = Array.isArray(v) ? v.join(', ') : String(v);
       }
       return { fields, globalMsg };
     }
@@ -177,15 +130,25 @@ const RegisterPage: React.FC = () => {
       const arr = result.errors as string[];
       for (const s of arr) {
         const low = s.toLowerCase();
-        if (low.includes('email')) fields.email = /already|exist|taken|in use/i.test(low)
-          ? "This email is already registered. If it's yours, try logging in or reset your password."
-          : s;
-        else if (low.includes('user') || low.includes('username')) fields.userName = /already|exist|taken|in use/i.test(low)
-          ? 'This username is already taken. Please choose a different username.'
-          : s;
+        if (low.includes('email')) fields.email = /already|exist|taken|in use/i.test(low) ? "This email is already registered. If it's yours, try logging in or reset your password." : s;
+        else if (low.includes('user') || low.includes('username')) fields.userName = /already|exist|taken|in use/i.test(low) ? 'This username is already taken. Please choose a different username.' : s;
         else globalMsg = globalMsg ? `${globalMsg}\n${s}` : s;
       }
       return { fields, globalMsg };
+    }
+
+    if (result.error && typeof result.error === 'string') {
+      const errStr = String(result.error);
+      const low = errStr.toLowerCase();
+      if (/email/.test(low) && /already|exist|taken|in use/.test(low)) {
+        fields.email = "This email is already registered. If it's yours, try logging in or reset your password.";
+        return { fields, globalMsg };
+      }
+      if (/(user|username)/.test(low) && /already|exist|taken|in use/.test(low)) {
+        fields.userName = 'This username is already taken. Please choose a different username.';
+        return { fields, globalMsg };
+      }
+      return { fields, globalMsg: errStr };
     }
 
     if (result.message) globalMsg = String(result.message);
@@ -218,27 +181,18 @@ const RegisterPage: React.FC = () => {
       errors.email = 'Email is required.';
     } else {
       const emailRe = /\S+@\S+\.\S+/;
-      if (!emailRe.test(form.email.trim())) {
-        errors.email = 'A valid email is required.';
-      }
+      if (!emailRe.test(form.email.trim())) errors.email = 'A valid email is required.';
     }
 
-    if (form.phone && form.phone.trim() !== '') {
+    if (form.phone) {
       const phoneRe = /^\+?[1-9]\d{1,14}$/;
-      if (!phoneRe.test(form.phone.trim())) {
-        errors.phone = 'A valid phone number is required.';
-      }
+      if (!phoneRe.test(form.phone)) errors.phone = 'A valid phone number is required.';
     }
 
-    if (!form.password) {
-      errors.password = 'Password is required.';
-    } else if (form.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters long.';
-    }
+    if (!form.password) errors.password = 'Password is required.';
+    else if (form.password.length < 6) errors.password = 'Password must be at least 6 characters long.';
 
-    if (form.confirmPassword !== form.password) {
-      errors.confirmPassword = 'Passwords do not match.';
-    }
+    if (form.confirmPassword !== form.password) errors.confirmPassword = 'Passwords do not match.';
 
     return errors;
   };
@@ -247,8 +201,6 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
-    setTelegramBotLink(null);
-    setRegistrationSuccessInfo(null);
 
     const clientFieldErrors = validateFields();
     if (Object.keys(clientFieldErrors).length) {
@@ -289,7 +241,6 @@ const RegisterPage: React.FC = () => {
         return;
       }
 
-      // Normalize success detection and payload
       const topSuccess = result?.success ?? result?.isSuccess ?? false;
       const data = result?.data ?? null;
       let registerSucceeded = false;
@@ -297,20 +248,16 @@ const RegisterPage: React.FC = () => {
         if (data === true) registerSucceeded = true;
         else if (data && typeof data === 'object' && data.success === true) registerSucceeded = true;
         else if (data && typeof data === 'object' && (data.requiresEmailVerification || data.requiresPhoneVerification || data.telegramBotLink)) registerSucceeded = true;
-        else registerSucceeded = true; // fallback
+        else registerSucceeded = true;
       }
 
       if (registerSucceeded) {
-        // If backend provided telegramBotLink (phone channel = telegram), show it
         if (data && typeof data === 'object' && data.telegramBotLink) {
-          // redirect user to email verification but pass telegram link and phone so next steps can continue
           navigate('/verify-email', { state: { email: form.email, phone: form.phone, telegramBotLink: data.telegramBotLink } });
         } else {
-          // For all flows, we require email verification first. Pass phone so after email verification frontend can route to phone verification.
           navigate('/verify-email', { state: { email: form.email, phone: form.phone } });
         }
       } else {
-        // Not successful at application level
         const mapped = mapApiErrorsToFields(result, res);
         if (Object.keys(mapped.fields).length) setFieldErrors(mapped.fields);
         if (mapped.globalMsg) setError(mapped.globalMsg);
@@ -324,56 +271,19 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  const startPhoneResendCooldown = () => {
-    setPhoneResendCooldown(60);
-    const t = setInterval(() => {
-      setPhoneResendCooldown(prev => {
-        if (prev <= 1) { clearInterval(t); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleResendPhoneFromRegister = async () => {
-    setPhoneResendMessage(null);
-    setPhoneResendLoading(true);
-    const phone = form.phone?.trim();
-    if (!phone) { setPhoneResendMessage('Phone number is missing.'); setPhoneResendLoading(false); return; }
-    const phoneRe = /^\+\d{1,3}\d{4,14}(?:x.+)?$/;
-    if (!phoneRe.test(phone)) { setPhoneResendMessage('Phone number must be in valid international format.'); setPhoneResendLoading(false); return; }
-    try {
-      startPhoneResendCooldown();
-      const res = await fetch('http://localhost:5075/api/accounts/resend-phone-verification-code', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: phone, channel: 2 })
-      });
-      let result: any = null;
-      try { result = await res.json(); } catch (e) {}
-      if (!res.ok) {
-        setPhoneResendMessage(parseApiError(result, res));
-      } else {
-        const successFlag = result?.success ?? result?.isSuccess ?? false;
-        if (successFlag) setPhoneResendMessage('Verification code resent via Telegram. Check your Telegram.');
-        else setPhoneResendMessage(parseApiError(result, res));
-      }
-    } catch (err: any) {
-      setPhoneResendMessage(err?.message || 'Network error.');
-    } finally { setPhoneResendLoading(false); }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-30" style={{ background: 'var(--gradient-glow)' }} />
 
       <div className="w-full max-w-md mx-4 animate-fade-in">
         <div className="text-center mb-8">
           <AtlasLogo size="lg" />
-          <p className="mt-3 text-muted-foreground text-sm">Command Center for Tech Professionals</p>
         </div>
 
         <div className="glass rounded-2xl p-8 space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Register</h2>
-            <p className="text-sm text-muted-foreground mt-1">Create a new account</p>
+            <h2 className="text-xl font-semibold text-foreground">Create account</h2>
+            <p className="text-sm text-muted-foreground mt-1">Sign up and get started with Atlas</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
@@ -410,6 +320,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
             )}
+
             <AuthInput
               label="Email"
               icon={Mail}
@@ -419,73 +330,20 @@ const RegisterPage: React.FC = () => {
               onChange={(e) => update('email', e.target.value)}
               error={fieldErrors.email}
             />
-            {fieldErrors.email && /already|registered|exist|in use/i.test(fieldErrors.email) && (
-              <div className="mt-2 text-sm">
-                <p className="text-xs text-muted-foreground">If this is your email:</p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/login', { state: { email: form.email } })}
-                    className="px-3 py-1 rounded-md bg-secondary text-sm hover:bg-secondary/80"
-                  >
-                    Go to login
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/forgot-password', { state: { email: form.email } })}
-                    className="px-3 py-1 rounded-md bg-secondary text-sm hover:bg-secondary/80"
-                  >
-                    Reset password
-                  </button>
-                </div>
-              </div>
-            )}
+
             <AuthInput
               label="Phone (optional)"
               icon={Phone}
-              type="tel"
-              placeholder="+1 555 555 5555"
+              placeholder="+994501234567"
               value={form.phone}
               onChange={(e) => update('phone', e.target.value)}
+              error={fieldErrors.phone}
             />
 
-            {showContactChoice && (
-              <div className="space-y-2 animate-fade-in">
-                <label className="text-sm font-medium text-muted-foreground">Contact method</label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setContactMethod('sms')}
-                    className={`flex-1 h-10 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                      contactMethod === 'sms'
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-secondary border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <span className="inline-flex items-center gap-2 justify-center">
-                      <Phone className="w-4 h-4" />
-                      SMS
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setContactMethod('telegram')}
-                    className={`flex-1 h-10 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                      contactMethod === 'telegram'
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-secondary border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <span className="inline-flex items-center gap-2 justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-4 h-4" aria-hidden>
-                        <path fill="currentColor" d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.8 83.9l-20.7 97.5c-1.6 6.9-5.9 8.6-11.9 5.4l-33-24.3-15.9 15.3c-1.8 1.8-3.3 3.3-6.7 3.3l2.4-34.4 62.6-56.3c2.7-2.4-.6-3.7-4.2-1.3L70.5 124l-33.9-10.6c-7.3-2.3-7.4-7.3 1.5-10.8L173 69.2c6.5-2.2 12.2 1.5 11.8 14.7z" />
-                      </svg>
-                      Telegram
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setContactMethod('sms')} className={`px-3 py-1 rounded-md ${contactMethod === 'sms' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>SMS</button>
+              <button type="button" onClick={() => setContactMethod('telegram')} className={`px-3 py-1 rounded-md ${contactMethod === 'telegram' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>Telegram</button>
+            </div>
 
             <AuthInput
               label="Password"
@@ -495,12 +353,9 @@ const RegisterPage: React.FC = () => {
               value={form.password}
               onChange={(e) => update('password', e.target.value)}
               error={fieldErrors.password}
-              suffix={
-                <button type="button" onClick={() => setShowPassword(s => !s)} className="p-1 text-muted-foreground">
-                  {showPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              }
+              suffix={<button type="button" onClick={() => setShowPassword(s => !s)} className="p-1 text-muted-foreground">{showPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>}
             />
+
             <AuthInput
               label="Confirm password"
               icon={Lock}
@@ -509,23 +364,14 @@ const RegisterPage: React.FC = () => {
               value={form.confirmPassword}
               onChange={(e) => update('confirmPassword', e.target.value)}
               error={fieldErrors.confirmPassword}
-              suffix={
-                <button type="button" onClick={() => setShowConfirmPassword(s => !s)} className="p-1 text-muted-foreground">
-                  {showConfirmPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              }
+              suffix={<button type="button" onClick={() => setShowConfirmPassword(s => !s)} className="p-1 text-muted-foreground">{showConfirmPassword ? <ClosedEye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>}
             />
 
             {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
             {successMessage && <p className="text-sm text-primary">{successMessage}</p>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
-              style={{ background: 'var(--gradient-primary)' }}
-            >
-              {loading ? 'Registering...' : 'Register'}
+            <button type="submit" disabled={loading} className="w-full h-11 rounded-lg font-medium text-sm text-primary-foreground transition-all duration-200 hover:opacity-90 active:scale-[0.98]" style={{ background: 'var(--gradient-primary)' }}>
+              {loading ? 'Creating account...' : 'Create account'}
             </button>
           </form>
 
@@ -551,40 +397,6 @@ const RegisterPage: React.FC = () => {
             </Link>
           </p>
         </div>
-
-        {/* Render Telegram link block when available */}
-        {telegramBotLink && registrationSuccessInfo?.telegramBotLink && (
-          <div className="mt-6 p-4 rounded-lg bg-primary/10 text-primary text-sm">
-            <p className="font-medium">Almost done!</p>
-            <p className="mt-1">Please complete your registration by chatting with our Telegram bot.</p>
-            <a
-              href={telegramBotLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-center px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200"
-            >
-              Open Telegram Bot
-            </a>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => navigate('/verify-phone', { state: { phone: form.phone } })}
-                className="px-3 py-2 rounded-md bg-secondary"
-              >
-                I received the code
-              </button>
-              <button
-                type="button"
-                onClick={handleResendPhoneFromRegister}
-                disabled={phoneResendCooldown > 0 || phoneResendLoading}
-                className="px-3 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-60"
-              >
-                {phoneResendCooldown > 0 ? `Resend (${phoneResendCooldown}s)` : (phoneResendLoading ? 'Resending...' : 'Resend code')}
-              </button>
-            </div>
-            {phoneResendMessage && <p className="mt-2 text-sm text-muted-foreground">{phoneResendMessage}</p>}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { postJson, apiFetch } from '@/lib/api';
 type OnboardingOptionDto = {
   id: string;
   text: string;
-  value?: number; // optional profession enum value provided by backend
+  value?: number;
   recommendedIntegration?: string | null;
 };
 
@@ -14,7 +14,7 @@ type OnboardingQuestionDto = {
   text: string;
   order?: number;
   isMultiSelect: boolean;
-  isRequired?: boolean; // optional required flag
+  isRequired?: boolean;
   targetProfession?: number | null;
   options: OnboardingOptionDto[];
 };
@@ -27,13 +27,11 @@ enum UserProfession {
   DataScientist = 4,
   CyberSecurity = 5,
   AiEngineer = 6,
-  ProductManager = 7
+  ProductManager = 7,
 }
 
 const mapOptionTextToProfession = (option: OnboardingOptionDto): UserProfession => {
-  // If backend provides a numeric value directly, prefer it
   if (typeof option.value === 'number') return option.value as UserProfession;
-
   const text = option?.text?.toLowerCase?.().trim() ?? '';
   if (text.includes('developer')) return UserProfession.Developer;
   if (text.includes('designer')) return UserProfession.Designer;
@@ -74,25 +72,20 @@ const OnboardingPage: React.FC = () => {
     const load = async () => {
       setLoadingProfession(true);
       try {
-        const pq = await (async (): Promise<OnboardingQuestionDto | null> => {
-          const res = await apiFetch('/api/onboarding/profession-question', { method: 'GET' });
-          const text = await res.text();
-          let json: any;
-          try { json = text ? JSON.parse(text) : null; } catch (e) { return null; }
-          // Accept multiple shapes:
-          if (json && (json.success !== undefined || json.isSuccess !== undefined)) return json.data as OnboardingQuestionDto;
-          if (json && json.data && json.data.id) return json.data as OnboardingQuestionDto;
-          if (json && json.id) return json as OnboardingQuestionDto;
-          return null;
-        })();
-        if (!pq) {
-          setError('Unexpected response from profession-question endpoint');
-        } else {
+        const res = await apiFetch('/api/onboarding/profession-question', { method: 'GET' });
+        const text = await res.text();
+        let json: any;
+        try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
+        let pq: OnboardingQuestionDto | null = null;
+        if (json && (json.success !== undefined || json.isSuccess !== undefined)) pq = json.data as OnboardingQuestionDto;
+        else if (json && json.data && json.data.id) pq = json.data as OnboardingQuestionDto;
+        else if (json && json.id) pq = json as OnboardingQuestionDto;
+        if (!pq) setError('Unexpected response from profession-question endpoint');
+        else {
           setProfessionQuestion(pq);
         }
       } catch (err: any) {
-        // if ApiError with payload
-        const msg = err?.data ? parseApiError(err.data, err?.status ? { status: err.status, statusText: '' } as any : undefined) : (err?.message || 'Failed to load profession question.');
+        const msg = err?.data ? (err.data.message ?? JSON.stringify(err.data)) : (err?.message || 'Failed to load profession question.');
         setError(msg);
       } finally {
         setLoadingProfession(false);
@@ -105,84 +98,59 @@ const OnboardingPage: React.FC = () => {
     setError(null);
     const prof = mapOptionTextToProfession(option);
     setSelectedProfession(prof);
-    if (professionQuestion) setAnswers(prev => ({ ...prev, [professionQuestion.id]: [option.id] }));
-    // Don't auto-advance here; wait for Next click to fetch questions and go to step 2
+    setAnswers(prev => ({ ...prev, [professionQuestion!.id]: [option.id] }));
   };
 
   const fetchQuestionsForProfession = async (prof: UserProfession) => {
     setLoading(true);
-    setError(null);
     try {
       const res = await apiFetch(`/api/onboarding/questions?profession=${prof}`, { method: 'GET' });
       const text = await res.text();
       let json: any;
       try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
-      let qs: OnboardingQuestionDto[] | null = null;
+      let qs: OnboardingQuestionDto[] = [];
       if (json && (json.success !== undefined || json.isSuccess !== undefined)) qs = json.data as OnboardingQuestionDto[];
-      else if (json && json.data && Array.isArray(json.data)) qs = json.data as OnboardingQuestionDto[];
       else if (Array.isArray(json)) qs = json as OnboardingQuestionDto[];
-      if (!qs) {
-        setError('Unexpected response from onboarding questions endpoint');
-        setQuestions([]);
-        return false;
-      }
-      const arr = (qs || []).filter(q => q.id !== professionQuestion?.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      setQuestions(arr);
+      else if (json && json.data && Array.isArray(json.data)) qs = json.data as OnboardingQuestionDto[];
+      qs = qs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      setQuestions(qs);
       setQuestionIndex(0);
       return true;
     } catch (err: any) {
-      const msg = err?.data ? parseApiError(err.data, err?.status ? { status: err.status, statusText: '' } as any : undefined) : (err?.message || 'Failed to load questions for selected profession.');
-      setError(msg);
+      setError(err?.message || 'Failed to load questions.');
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleOption = (questionId: string, optionId: string, isMulti: boolean) => {
+  const toggleAnswer = (questionId: string, optionId: string, isMulti: boolean) => {
     setAnswers(prev => {
-      const arr = prev[questionId] ? [...prev[questionId]] : [];
+      const cur = prev[questionId] ?? [];
       if (isMulti) {
-        const idx = arr.indexOf(optionId);
-        if (idx >= 0) arr.splice(idx, 1);
-        else arr.push(optionId);
-      } else {
-        if (arr.length === 1 && arr[0] === optionId) return { ...prev, [questionId]: [] };
-        return { ...prev, [questionId]: [optionId] };
+        if (cur.includes(optionId)) return { ...prev, [questionId]: cur.filter(i => i !== optionId) };
+        return { ...prev, [questionId]: [...cur, optionId] };
       }
-      return { ...prev, [questionId]: arr };
+      return { ...prev, [questionId]: [optionId] };
     });
   };
 
-  // helpers to navigate single-question pager
-  const goToPrevQuestion = () => setQuestionIndex(i => Math.max(0, i - 1));
-  const goToNextQuestion = () => setQuestionIndex(i => Math.min(questions.length - 1, i + 1));
-
   const progressPct = () => {
-    // Make progress empty on the initial profession selection step
-    // Progress is based on completed units: profession (once moved to questions) + answered questions
-    const totalUnits = 1 + questions.length + 1; // profession + questions + review
-    if (currentStep === 1) return 0;
-
-    // Count completed: profession counts as 1 once we've advanced to questions
-    const professionCompleted = 1;
-    // Count how many questions have at least one selected option
-    const answeredQuestions = questions.reduce((acc, q) => acc + ((answers[q.id] && answers[q.id].length) ? 1 : 0), 0);
-
-    // If on review (step 3), treat as fully complete
-    if (currentStep === 3) return 100;
-
-    const completedUnits = professionCompleted + answeredQuestions;
-    return Math.round((completedUnits / totalUnits) * 100);
+    if (currentStep === 1) return 33;
+    if (currentStep === 2) {
+      const total = questions.length || 1;
+      const done = Object.keys(answers).length ? Object.values(answers).reduce((acc, arr) => acc + (arr.length ? 1 : 0), 0) : 0;
+      return Math.min(99, 33 + Math.round((done / total) * 66));
+    }
+    return 100;
   };
 
-  const validateRequired = (): string[] => {
+  const validateRequired = () => {
     const missing: string[] = [];
+    if (professionQuestion && !(answers[professionQuestion.id] && answers[professionQuestion.id].length)) missing.unshift(professionQuestion.text);
     for (const q of questions) {
       if (q.isRequired && !(answers[q.id] && answers[q.id].length)) missing.push(q.text);
     }
-    // profession question required by definition
-    if (professionQuestion && !(answers[professionQuestion.id] && answers[professionQuestion.id].length)) missing.unshift(professionQuestion.text);
     return missing;
   };
 
@@ -190,44 +158,45 @@ const OnboardingPage: React.FC = () => {
     setError(null);
     if (currentStep === 1) {
       if (!selectedProfession) { setError('Please select your profession to continue.'); return; }
-      const ok = await fetchQuestionsForProfession(selectedProfession);
+      const ok = await fetchQuestionsForProfession(selectedProfession!);
       if (ok) setCurrentStep(2);
       return;
     }
-    setCurrentStep(s => Math.min(3, s + 1));
+    if (currentStep === 2) {
+      setCurrentStep(3);
+      return;
+    }
   };
 
-  const handleBack = () => setCurrentStep(s => Math.max(1, s - 1));
+  const handleBack = () => {
+    if (currentStep === 2 && questionIndex > 0) {
+      setQuestionIndex(qi => Math.max(0, qi - 1));
+      return;
+    }
+    setCurrentStep(s => Math.max(1, s - 1));
+  };
+
+  const goToNextQuestion = () => {
+    setQuestionIndex(i => Math.min(questions.length - 1, i + 1));
+  };
 
   const handleComplete = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setError(null);
-
     const missing = validateRequired();
     if (missing.length) { setError('Please answer required questions: ' + missing.join('; ')); setCurrentStep(2); return; }
 
-    if (selectedProfession === null) { setError('Please select your profession.'); return; }
-
-    const answersPayload: { questionId: string; optionId: string }[] = [];
-    if (professionQuestion && answers[professionQuestion.id]) {
-      for (const optId of answers[professionQuestion.id]) answersPayload.push({ questionId: professionQuestion.id, optionId: optId });
-    }
-    for (const q of questions) {
-      const sel = answers[q.id] ?? [];
-      if (sel.length === 0) continue;
-      for (const optId of sel) answersPayload.push({ questionId: q.id, optionId: optId });
-    }
-
-    const payload = { profession: selectedProfession, jobTitle, answers: answersPayload };
-
     try {
+      const payload = {
+        userId: null,
+        profession: selectedProfession,
+        jobTitle,
+        answers: Object.entries(answers).flatMap(([qid, ids]) => ids.map(i => ({ questionId: qid, optionId: i }))),
+      } as any;
       await postJson('/api/onboarding/complete', payload);
       window.location.href = '/dashboard';
     } catch (err: any) {
-      // ApiError may carry details in .details or .data depending on where it was thrown
-      const details = err?.details ?? err?.data ?? null;
-      const msg = details ? parseApiError(details, err?.status ? { status: err.status, statusText: '' } as any : undefined) : (err?.message || 'Failed to complete onboarding.');
-      setError(msg);
+      setError(err?.message || 'Failed to complete onboarding.');
     }
   };
 
@@ -255,33 +224,32 @@ const OnboardingPage: React.FC = () => {
             <div className="space-y-4">
               <p className="font-medium">{professionQuestion.text}</p>
               <div className="flex flex-wrap gap-3">
-                {professionQuestion.options.map(opt => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => selectProfessionOption(opt)}
-                    className={`px-4 py-2 rounded-sm border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${answers[professionQuestion.id] && answers[professionQuestion.id].includes(opt.id) ? 'bg-transparent text-primary border-2 border-primary' : 'bg-secondary hover:shadow-sm'}`}>
-                    {opt.text}
-                  </button>
-                ))}
+                {professionQuestion.options.map(opt => {
+                  const selected = answers[professionQuestion.id] && answers[professionQuestion.id].includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => selectProfessionOption(opt)}
+                      className={`px-4 py-2 rounded-sm border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${selected ? 'border-2 border-primary text-primary' : 'border border-border bg-secondary hover:shadow-sm'}`}
+                      style={{ background: 'transparent' }}
+                    >
+                      {opt.text}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex justify-end gap-3">
-                <button className="px-4 py-2 rounded-lg bg-secondary" onClick={() => window.location.href = '/dashboard'}>Skip</button>
-                <button
-                  className={`px-4 py-2 rounded-lg ${answers[professionQuestion.id] && answers[professionQuestion.id].length ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-                  onClick={handleNext}
-                  disabled={!(answers[professionQuestion.id] && answers[professionQuestion.id].length)}
-                >
-                  Next
-                </button>
+
+              <div className="flex justify-end">
+                <button onClick={handleNext} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">Next</button>
               </div>
             </div>
           )}
 
           {currentStep === 2 && (
-            <form onSubmit={handleComplete} className="space-y-6">
+            <form onSubmit={handleComplete} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Job title (optional)</label>
+                <label className="text-sm text-muted-foreground">Job title (optional)</label>
                 <input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Senior Software Developer" className="w-full px-3 py-2 rounded-lg bg-secondary border border-border" />
               </div>
 
@@ -292,7 +260,6 @@ const OnboardingPage: React.FC = () => {
                   {questions.length === 0 ? (
                     <div className="text-sm text-muted-foreground">No questions for this profession.</div>
                   ) : (
-                    // single-question pager view
                     (() => {
                       const q = questions[questionIndex];
                       const total = questions.length;
@@ -302,40 +269,23 @@ const OnboardingPage: React.FC = () => {
                             <p className="font-medium">{q.text}{q.isRequired ? ' *' : ''}</p>
                             <div className="text-sm text-muted-foreground">{questionIndex + 1} / {total}</div>
                           </div>
-                          <div className="flex flex-wrap gap-2 mb-4">
+
+                          <div className="flex flex-wrap gap-3">
                             {q.options.map(opt => {
-                              const selected = (answers[q.id] ?? []).includes(opt.id);
+                              const sel = answers[q.id] && answers[q.id].includes(opt.id);
                               return (
-                                <button
-                                  key={opt.id}
-                                  type="button"
-                                  onClick={() => toggleOption(q.id, opt.id, q.isMultiSelect)}
-                                  className={`px-3 py-2 rounded-sm border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/50 ${selected ? 'bg-transparent text-primary border-2 border-primary' : 'bg-secondary'}`}>
+                                <button key={opt.id} type="button" onClick={() => toggleAnswer(q.id, opt.id, q.isMultiSelect)} className={`px-4 py-2 rounded-sm border transition-all duration-150 focus:outline-none ${sel ? 'border-2 border-primary text-primary' : 'border border-border bg-secondary'}`} style={{ background: 'transparent' }}>
                                   {opt.text}
                                 </button>
                               );
                             })}
                           </div>
 
-                          <div className="flex justify-between">
+                          <div className="flex items-center justify-between mt-4">
                             <div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  // Single Back behaviour: if we're in questions and not at the first question, go to previous question
-                                  if (currentStep === 2) {
-                                    if (questionIndex > 0) goToPrevQuestion();
-                                    else handleBack();
-                                  } else {
-                                    handleBack();
-                                  }
-                                }}
-                                className="px-4 py-2 rounded-lg bg-secondary mr-2"
-                              >
-                                Back
-                              </button>
-                              <button type="button" onClick={() => { window.location.href = '/dashboard'; }} className="px-4 py-2 rounded-lg bg-secondary">Skip</button>
+                              <button type="button" onClick={() => { if (questionIndex > 0) setQuestionIndex(i => Math.max(0, i - 1)); else setCurrentStep(1); }} className="px-4 py-2 rounded-lg bg-secondary">Back</button>
                             </div>
+
                             <div className="flex gap-2">
                               {questionIndex < total - 1 ? (
                                 <button type="button" onClick={goToNextQuestion} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">Next</button>
@@ -379,6 +329,7 @@ const OnboardingPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
               </div>
 
               <div className="flex justify-between gap-3">
@@ -387,32 +338,12 @@ const OnboardingPage: React.FC = () => {
               </div>
             </div>
           )}
+
         </div>
       </div>
     </div>
   );
 };
-
-function parseApiError(result: any, response?: Response) {
-  if (!result) return response?.statusText || 'An unknown error occurred.';
-  const errs = result.errors ?? result.Errors ?? null;
-  if (Array.isArray(errs) && errs.length > 0) return errs.join('\n');
-  if (errs && typeof errs === 'object') {
-    try {
-      const parts: string[] = [];
-      for (const key of Object.keys(errs)) {
-        const v = errs[key];
-        if (Array.isArray(v)) parts.push(`${key}: ${v.join(', ')}`);
-        else parts.push(`${key}: ${String(v)}`);
-      }
-      if (parts.length) return parts.join('\n');
-    } catch (e) {}
-  }
-  if (result.message) return String(result.message);
-  if (result.error) return String(result.error);
-  if (response) return `${response.status} ${response.statusText}`;
-  return 'An unexpected server error occurred.';
-}
 
 export default OnboardingPage;
 
