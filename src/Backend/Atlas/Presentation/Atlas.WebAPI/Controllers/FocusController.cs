@@ -2,7 +2,9 @@ using Atlas.Application.Features.Focus.Commands.CompleteFocusSession;
 using Atlas.Application.Features.Focus.Commands.InterruptFocusSession;
 using Atlas.Application.Features.Focus.Commands.LogSession;
 using Atlas.Application.Features.Focus.Commands.PauseFocusSession;
+using Atlas.Application.Features.Focus.Commands.ResumeFocusSession;
 using Atlas.Application.Features.Focus.Dtos;
+using Atlas.Application.Features.Focus.Queries.GetActiveFocusSession;
 using Atlas.Application.Features.Focus.Queries.GetFocusHistory;
 using Atlas.Application.Features.Focus.Queries.GetFocusStats;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +29,13 @@ public class FocusController : ApiControllerBase
         return OkResponse(result);
     }
 
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActive()
+    {
+        var result = await Mediator.Send(new GetActiveFocusSessionQuery());
+        return OkResponse(result);
+    }
+
     [HttpPost("{sessionId}/complete")]
     public async Task<IActionResult> Complete(Guid sessionId)
     {
@@ -38,6 +47,13 @@ public class FocusController : ApiControllerBase
     public async Task<IActionResult> Pause(Guid sessionId)
     {
         var result = await Mediator.Send(new PauseFocusSessionCommand(sessionId));
+        return OkResponse(result);
+    }
+
+    [HttpPost("{sessionId}/resume")]
+    public async Task<IActionResult> Resume(Guid sessionId)
+    {
+        var result = await Mediator.Send(new ResumeFocusSessionCommand(sessionId));
         return OkResponse(result);
     }
 

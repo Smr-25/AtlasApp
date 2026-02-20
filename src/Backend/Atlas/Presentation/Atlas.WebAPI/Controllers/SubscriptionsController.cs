@@ -1,5 +1,6 @@
 using Atlas.Application.Features.Subscriptions.Commands.CancelSubscription;
 using Atlas.Application.Features.Subscriptions.Commands.CreateCheckoutSession;
+using Atlas.Application.Features.Subscriptions.Commands.CreatePortalSession;
 using Atlas.Application.Features.Subscriptions.Dtos;
 using Atlas.Application.Features.Subscriptions.Queries.GetCurrentSubscription;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +23,13 @@ public class SubscriptionsController : ApiControllerBase
     {
         var checkoutUrl = await Mediator.Send(command);
         return OkResponse(new { Url = checkoutUrl });
+    }
+
+    [HttpPost("portal")]
+    public async Task<IActionResult> CreatePortal([FromBody] CreatePortalSessionCommand command)
+    {
+        var portalUrl = await Mediator.Send(command);
+        return OkResponse(new { Url = portalUrl });
     }
 
     [HttpPost("cancel")]

@@ -1,7 +1,9 @@
 using Atlas.Application.Features.Snippets.Commands.CreateSnippet;
+using Atlas.Application.Features.Snippets.Commands.DeleteSnippet;
 using Atlas.Application.Features.Snippets.Commands.PasteFromNotion;
 using Atlas.Application.Features.Snippets.Commands.SendSnippetToNotion;
-using Atlas.Application.Features.Snippets.Dtos;
+using Atlas.Application.Features.Snippets.Commands.ToggleFavorite;
+using Atlas.Application.Features.Snippets.Commands.UpdateSnippet;
 using Atlas.Application.Features.Snippets.Queries.GetSnippets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +25,28 @@ public class SnippetsController : ApiControllerBase
     {
         var snippetId = await Mediator.Send(command);
         return CreatedResponse(snippetId);
+    }
+
+    [HttpPut("{snippetId}")]
+    public async Task<IActionResult> Update(Guid snippetId, [FromBody] UpdateSnippetCommand command)
+    {
+        if (snippetId != command.SnippetId) return BadRequestResponse("Snippet ID mismatch.");
+        var result = await Mediator.Send(command);
+        return OkResponse(result);
+    }
+
+    [HttpDelete("{snippetId}")]
+    public async Task<IActionResult> Delete(Guid snippetId)
+    {
+        var result = await Mediator.Send(new DeleteSnippetCommand(snippetId));
+        return OkResponse(result);
+    }
+
+    [HttpPatch("{snippetId}/favorite")]
+    public async Task<IActionResult> ToggleFavorite(Guid snippetId)
+    {
+        var result = await Mediator.Send(new ToggleSnippetFavoriteCommand(snippetId));
+        return OkResponse(new { IsFavorite = result });
     }
 
     [HttpPost("send-to-notion")]
