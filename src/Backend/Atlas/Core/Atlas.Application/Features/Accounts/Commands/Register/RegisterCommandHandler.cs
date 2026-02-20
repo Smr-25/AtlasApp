@@ -17,6 +17,7 @@ public class RegisterCommandHandler(
     UserManager<AppUser> userManager,
     IEmailService emailService,
     IPhoneVerificationService phoneVerificationService,
+    IApplicationDbContext dbContext,
     IOptions<TelegramSettings> telegramSettings
 ) : IRequestHandler<RegisterCommand, RegisterResponseDto>
 {
@@ -44,6 +45,7 @@ public class RegisterCommandHandler(
             request.UserName,
             request.Email,
             request.FullName,
+            request.Role,
             request.PhoneNumber,
             request.PhoneVerificationChannel
         );
@@ -52,6 +54,14 @@ public class RegisterCommandHandler(
         if (!result.Succeeded)
             throw new IdentityException(result.Errors.Select(e => e.Description).ToArray());
         
+        // Assign Identity role
+        await userManager.AddToRoleAsync(user, request.Role.ToString());
+
+        // Create Free subscription for new user
+        var subscription = Subscription.CreateFree(user.Id);
+        await dbContext.Subscriptions.AddAsync(subscription, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         await SendEmailVerificationCodeAsync(user);
 
         string? telegramBotLink = null;

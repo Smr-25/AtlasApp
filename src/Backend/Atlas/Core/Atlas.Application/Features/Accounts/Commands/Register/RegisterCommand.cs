@@ -11,5 +11,6 @@ public record RegisterCommand(
     string? PhoneNumber,
     string Password,
     string ConfirmPassword,
+    UserRole Role,
     UserVerificationChannel? PhoneVerificationChannel
 ) : IRequest<RegisterResponseDto>;

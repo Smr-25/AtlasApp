@@ -7,5 +7,7 @@ public record WorkspaceDto(
     string Name,
     string? Description,
     bool IsDefault,
+    string? LocalFolderPath,
+    bool IsShared,
     List<IntegrationDto> ActiveIntegrations
 );    

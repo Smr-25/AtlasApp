@@ -6,6 +6,7 @@ namespace Atlas.Domain.Entities;
 public class AppUser : IdentityUser<Guid>
 {
     public string FullName { get; set; } = null!;
+    public UserRole Role { get; private set; }
     public UserStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public DateTime? ActivatedAt { get; private set; }
@@ -28,14 +29,15 @@ public class AppUser : IdentityUser<Guid>
     public DateTime? LockoutEndTime { get; set; }
     public bool IsLockedOut  => LockoutEndTime.HasValue && LockoutEndTime > DateTime.UtcNow;
 
-    public static AppUser Create(string userName, string email, string fullName, string? phoneNumber = null, 
-        UserVerificationChannel? preferredChannel = null)
+    public static AppUser Create(string userName, string email, string fullName, UserRole role = UserRole.Developer,
+        string? phoneNumber = null, UserVerificationChannel? preferredChannel = null)
     {
         return new AppUser
         {
             UserName = userName,
             Email = email,
             FullName = fullName,
+            Role = role,
             PhoneNumber = phoneNumber,
             PreferredVerificationChannel = preferredChannel,
             Status = UserStatus.PendingVerification,

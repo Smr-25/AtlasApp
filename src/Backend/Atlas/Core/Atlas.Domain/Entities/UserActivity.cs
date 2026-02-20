@@ -6,11 +6,13 @@ public class UserActivity : BaseEntity
 {
     public Guid UserId { get; init; }
     public Guid? WorkspaceId { get; init; }
+    public Guid? FocusSessionId { get; init; }
     public string ActionType { get; init; } = null!;
     public string Description { get; init; } = null!;
     public string? MetaData { get; init; }
     
-    public static UserActivity Create(Guid userId, string actionType, string description, Guid? workspaceId = null)
+    public static UserActivity Create(Guid userId, string actionType, string description, 
+        Guid? workspaceId = null, Guid? focusSessionId = null)
     {
         return new UserActivity
         {
@@ -18,6 +20,7 @@ public class UserActivity : BaseEntity
             ActionType = actionType,
             Description = description,
             WorkspaceId = workspaceId,
+            FocusSessionId = focusSessionId,
             CreatedAt = DateTime.UtcNow
         };
     }

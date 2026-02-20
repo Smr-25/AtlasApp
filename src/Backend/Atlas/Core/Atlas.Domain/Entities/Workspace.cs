@@ -6,7 +6,9 @@ public partial class Workspace : BaseEntity
 {
     public string Name { get; private set; } = null!; 
     public string? Description { get; private set; }
-    public bool IsDefault { get; private set; } 
+    public bool IsDefault { get; private set; }
+    public string? LocalFolderPath { get; private set; }
+    public bool IsShared { get; private set; }
 
     public Guid UserProfileId { get; private set; } 
     
@@ -16,13 +18,15 @@ public partial class Workspace : BaseEntity
     
     private Workspace() { }
 
-    public static Workspace Create(string name, Guid userProfileId, bool isDefault = false)
+    public static Workspace Create(string name, Guid userProfileId, bool isDefault = false, string? localFolderPath = null)
     {
         return new Workspace
         {
             Name = name,
             UserProfileId = userProfileId,
-            IsDefault = isDefault
+            IsDefault = isDefault,
+            LocalFolderPath = localFolderPath,
+            IsShared = false
         };
     }
     
@@ -30,6 +34,18 @@ public partial class Workspace : BaseEntity
     {
         Name = name;
         Description = description;
+        SetModified();
+    }
+
+    public void SetLocalFolderPath(string? path)
+    {
+        LocalFolderPath = path;
+        SetModified();
+    }
+
+    public void SetShared(bool isShared)
+    {
+        IsShared = isShared;
         SetModified();
     }
 

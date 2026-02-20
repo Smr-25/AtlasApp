@@ -9,6 +9,7 @@ namespace Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
 public class CreateWorkspaceCommandHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService,
+    ISubscriptionGuardService subscriptionGuard,
     ILogger<CreateWorkspaceCommandHandler> logger) : IRequestHandler<CreateWorkspaceCommand, Guid>
 {
     public async Task<Guid> Handle(CreateWorkspaceCommand request, CancellationToken cancellationToken)
@@ -16,7 +17,9 @@ public class CreateWorkspaceCommandHandler(
         var userId = currentUserService.GetRequiredUserId();
         logger.LogInformation("Creating workspace '{Name}' for user {UserId}", request.Name, userId);
         
-        var workspace = Workspace.Create(request.Name, userId);
+        await subscriptionGuard.ThrowIfCannotCreateWorkspaceAsync(userId, cancellationToken);
+        
+        var workspace = Workspace.Create(request.Name, userId, localFolderPath: request.LocalFolderPath);
         if (!string.IsNullOrEmpty(request.Description)) workspace.UpdateDetails(request.Name, request.Description);
 
         await applicationDbContext.Workspaces.AddAsync(workspace, cancellationToken);

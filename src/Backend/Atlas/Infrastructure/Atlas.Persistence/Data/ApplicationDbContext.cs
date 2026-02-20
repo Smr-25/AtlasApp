@@ -24,7 +24,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProjectProfile> ProjectProfiles { get; set; }
     public DbSet<DesignAsset> DesignAssets { get; set; }
     public DbSet<DesignPalette> DesignPalettes { get; set; }
-    public DbSet<PaletteColor> PaletteColors { get; set; }
+    public DbSet<PaletteColor> PaletteColors { get; set; } 
+    public DbSet<Subscription> Subscriptions { get; set; }
+    public DbSet<Team> Teams { get; set; }
+    public DbSet<TeamMember> TeamMembers { get; set; }
+    public DbSet<ModalState> ModalStates { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

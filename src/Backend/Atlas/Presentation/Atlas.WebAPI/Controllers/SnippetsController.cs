@@ -1,4 +1,6 @@
 using Atlas.Application.Features.Snippets.Commands.CreateSnippet;
+using Atlas.Application.Features.Snippets.Commands.PasteFromNotion;
+using Atlas.Application.Features.Snippets.Commands.SendSnippetToNotion;
 using Atlas.Application.Features.Snippets.Dtos;
 using Atlas.Application.Features.Snippets.Queries.GetSnippets;
 using Microsoft.AspNetCore.Authorization;
@@ -21,5 +23,19 @@ public class SnippetsController : ApiControllerBase
     {
         var snippetId = await Mediator.Send(command);
         return CreatedResponse(snippetId);
+    }
+
+    [HttpPost("send-to-notion")]
+    public async Task<IActionResult> SendToNotion([FromBody] SendSnippetToNotionCommand command)
+    {
+        var notionPageId = await Mediator.Send(command);
+        return OkResponse(new { NotionPageId = notionPageId });
+    }
+
+    [HttpPost("paste-from-notion")]
+    public async Task<IActionResult> PasteFromNotion([FromBody] PasteFromNotionCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return OkResponse(result);
     }
 }

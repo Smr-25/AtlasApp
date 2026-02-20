@@ -48,4 +48,105 @@ public class NotionService : INotionService
 
         return notes;
     }
+
+    public async Task<string> SendSnippetToNotionAsync(string title, string code, string language,
+        string databaseId, string authToken, CancellationToken cancellationToken = default)
+    {
+        var client = NotionClientFactory.Create(new ClientOptions { AuthToken = authToken });
+
+        var properties = new Dictionary<string, PropertyValue>
+        {
+            ["Title"] = new TitlePropertyValue
+            {
+                Title = [new RichTextText { Text = new Text { Content = title } }]
+            },
+            ["Language"] = new RichTextPropertyValue
+            {
+                RichText = [new RichTextText { Text = new Text { Content = language } }]
+            }
+        };
+
+        var children = new List<IBlock>
+        {
+            new CodeBlock
+            {
+                Code = new CodeBlock.Info
+                {
+                    RichText = [new RichTextText { Text = new Text { Content = code } }],
+                    Language = language
+                }
+            }
+        };
+
+        var page = await client.Pages.CreateAsync(new PagesCreateParameters
+        {
+            Parent = new DatabaseParentInput { DatabaseId = databaseId },
+            Properties = properties,
+            Children = children
+        }, cancellationToken);
+
+        return page.Id;
+    }
+
+    public async Task<List<NotionSnippetDto>> FetchSnippetsFromNotionAsync(string databaseId, string authToken,
+        int limit = 10, CancellationToken cancellationToken = default)
+    {
+        var client = NotionClientFactory.Create(new ClientOptions { AuthToken = authToken });
+
+        var queryParams = new DatabasesQueryParameters
+        {
+            PageSize = limit,
+            Sorts = [new Sort { Direction = Direction.Descending, Timestamp = Timestamp.LastEditedTime }]
+        };
+
+        var result = await client.Databases.QueryAsync(databaseId, queryParams, cancellationToken);
+        var snippets = new List<NotionSnippetDto>();
+
+        foreach (var item in result.Results)
+        {
+            if (item is not Page page) continue;
+
+            var title = "Untitled";
+            var language = "text";
+
+            foreach (var prop in page.Properties)
+            {
+                if (prop.Value is TitlePropertyValue titleProp && titleProp.Title.Count > 0)
+                    title = titleProp.Title[0].PlainText;
+                if (prop.Key == "Language" && prop.Value is RichTextPropertyValue langProp && langProp.RichText.Count > 0)
+                    language = langProp.RichText[0].PlainText;
+            }
+
+            // Fetch page content (code block)
+            var code = "";
+            try
+            {
+                var blockRequest = new BlockRetrieveChildrenRequest { BlockId = page.Id };
+                var blocks = await client.Blocks.RetrieveChildrenAsync(blockRequest, cancellationToken);
+                foreach (var block in blocks.Results)
+                {
+                    if (block is CodeBlock codeBlock && codeBlock.Code.RichText.Any())
+                    {
+                        code = codeBlock.Code.RichText.First().PlainText;
+                        break;
+                    }
+                }
+            }
+            catch
+            {
+                // If we can't fetch blocks, use empty code
+            }
+
+            snippets.Add(new NotionSnippetDto(
+                page.Id,
+                title,
+                code,
+                language,
+                page.Url,
+                page.LastEditedTime
+            ));
+        }
+
+        return snippets;
+    }
 }

@@ -5,6 +5,7 @@ using Atlas.Application.Settings;
 using Atlas.Infrastructure;
 using Atlas.Persistence;
 using Atlas.WebAPI.Middlewares;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,12 @@ builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("TeamLeaderOnly", policy => policy.RequireRole("TeamLeader"))
+    .AddPolicy("DeveloperOrSecOps", policy => policy.RequireRole("Developer", "SecOps"))
+    .AddPolicy("DesignerOnly", policy => policy.RequireRole("Designer"))
+    .AddPolicy("MarketerOnly", policy => policy.RequireRole("Marketer"));
 
 var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>()
                         ?? new RateLimitSettings();
@@ -121,5 +128,17 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Seed roles
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    string[] roles = ["Developer", "Designer", "SecOps", "Marketer", "TeamLeader"];
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
+    }
+}
 
 app.Run();

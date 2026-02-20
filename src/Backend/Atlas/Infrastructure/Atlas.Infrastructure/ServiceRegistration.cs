@@ -36,6 +36,7 @@ public static class ServiceRegistration
             services.Configure<TelegramSettings>(configuration.GetSection(TelegramSettings.SectionName));
             services.Configure<ExternalAuthSettings>(configuration.GetSection(ExternalAuthSettings.SectionName));
             services.Configure<AiSettings>(configuration.GetSection(AiSettings.SectionName));
+            services.Configure<StripeSettings>(configuration.GetSection(StripeSettings.SectionName));
             
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IJwtService, JwtService>();
@@ -68,6 +69,9 @@ public static class ServiceRegistration
             services.AddTransient<INetworkToolAdapter, NetworkToolAdapter>();
             services.AddTransient<IJsonToolService, JsonToolService>();
             services.AddTransient<ISecurityToolAdapter, SecurityToolAdapter>();
+            services.AddScoped<ISubscriptionGuardService, SubscriptionGuardService>();
+            services.AddScoped<IStripeService, StripeService>();
+            services.AddTransient<IFileSystemService, FileSystemService>();
         }
     }
 }

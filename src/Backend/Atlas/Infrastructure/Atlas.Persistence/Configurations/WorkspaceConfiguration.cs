@@ -26,6 +26,13 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.Property(w => w.LocalFolderPath)
+            .HasMaxLength(500);
+
+        builder.Property(w => w.IsShared)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(w => w.UserProfileId)
             .IsRequired();
 

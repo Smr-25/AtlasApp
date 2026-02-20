@@ -119,7 +119,7 @@ public class OnboardingQuestionConfiguration : IEntityTypeConfiguration<Onboardi
                 Text = "Which cloud platforms do you work with?", 
                 Order = 3, 
                 IsMultiSelect = true,
-                TargetProfession = UserProfession.DevOps,
+                TargetProfession = UserProfession.Developer,
                 CreatedAt = SeedDate,
                 IsDeleted = false
             },
@@ -129,7 +129,7 @@ public class OnboardingQuestionConfiguration : IEntityTypeConfiguration<Onboardi
                 Text = "Which CI/CD tools do you use?", 
                 Order = 4, 
                 IsMultiSelect = true,
-                TargetProfession = UserProfession.DevOps,
+                TargetProfession = UserProfession.CyberSecurity,
                 CreatedAt = SeedDate,
                 IsDeleted = false
             },
@@ -140,7 +140,7 @@ public class OnboardingQuestionConfiguration : IEntityTypeConfiguration<Onboardi
                 Text = "Which data science tools and libraries do you use?", 
                 Order = 3, 
                 IsMultiSelect = true,
-                TargetProfession = UserProfession.DataScientist,
+                TargetProfession = UserProfession.Developer,
                 CreatedAt = SeedDate,
                 IsDeleted = false
             },
@@ -162,7 +162,7 @@ public class OnboardingQuestionConfiguration : IEntityTypeConfiguration<Onboardi
                 Text = "Which AI/ML frameworks do you work with?", 
                 Order = 3, 
                 IsMultiSelect = true,
-                TargetProfession = UserProfession.AiEngineer,
+                TargetProfession = UserProfession.DigitalMarketing,
                 CreatedAt = SeedDate,
                 IsDeleted = false
             },

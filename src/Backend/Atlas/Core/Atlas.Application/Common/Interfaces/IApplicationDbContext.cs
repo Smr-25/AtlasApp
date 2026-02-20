@@ -19,6 +19,9 @@ public interface IApplicationDbContext
     DbSet<ProjectProfile> ProjectProfiles { get; }
     DbSet<DesignAsset> DesignAssets { get; }
     DbSet<DesignPalette> DesignPalettes { get; }
-    DbSet<PaletteColor> PaletteColors { get; }
+    DbSet<PaletteColor> PaletteColors { get; } DbSet<Subscription> Subscriptions { get; }
+    DbSet<Team> Teams { get; }
+    DbSet<TeamMember> TeamMembers { get; }
+    DbSet<ModalState> ModalStates { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

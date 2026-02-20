@@ -52,6 +52,7 @@ public static class ServiceRegistration
                     opt.User.RequireUniqueEmail = true;
                     opt.SignIn.RequireConfirmedEmail = true;
                 })
+                .AddRoles<IdentityRole<Guid>>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 

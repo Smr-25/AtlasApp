@@ -15,12 +15,28 @@ public class LogSessionCommandHandler(
         if (userId == null)
             throw new UnauthorizedAccessException("User is not authenticated.");
 
+        var parsedUserId = Guid.Parse(userId);
+
         var session = FocusSession.Create(
             request.DurationMinutes,
             request.Tag,
-            Guid.Parse(userId)
+            parsedUserId,
+            request.SessionType,
+            request.BreakDurationMinutes,
+            request.WorkspaceId
         );
         await applicationDbContext.FocusSessions.AddAsync(session, cancellationToken);
+
+        // Log activity for Team Radar
+        var activity = UserActivity.Create(
+            parsedUserId,
+            "FocusSessionStarted",
+            $"Started {request.SessionType} session ({request.DurationMinutes} min)",
+            request.WorkspaceId,
+            session.Id
+        );
+        await applicationDbContext.UserActivities.AddAsync(activity, cancellationToken);
+
         await applicationDbContext.SaveChangesAsync(cancellationToken);
 
         return session.Id;
