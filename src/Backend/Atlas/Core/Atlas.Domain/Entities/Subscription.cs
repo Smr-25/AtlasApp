@@ -1,5 +1,6 @@
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
+using Atlas.Domain.Events;
 
 namespace Atlas.Domain.Entities;
 
@@ -64,6 +65,7 @@ public class Subscription : BaseEntity
 
     public void UpgradeTo(SubscriptionTier tier, string stripeCustomerId, string stripeSubscriptionId, DateTime periodEnd)
     {
+        var oldTier = Tier;
         Tier = tier;
         StripeCustomerId = stripeCustomerId;
         StripeSubscriptionId = stripeSubscriptionId;
@@ -89,6 +91,7 @@ public class Subscription : BaseEntity
                 break;
         }
 
+        AddDomainEvent(new SubscriptionChangedEvent(UserId, oldTier, tier));
         SetModified();
     }
 

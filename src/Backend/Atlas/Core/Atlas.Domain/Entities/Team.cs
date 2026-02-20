@@ -1,5 +1,6 @@
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
+using Atlas.Domain.Events;
 using Atlas.Domain.Exceptions;
 
 namespace Atlas.Domain.Entities;
@@ -42,6 +43,7 @@ public class Team : BaseEntity
             throw new BusinessRuleViolationException("Duplicate", "User is already a member of this team.");
 
         _members.Add(TeamMember.Create(Id, userId, TeamMemberRole.Member));
+        AddDomainEvent(new TeamMemberJoinedEvent(Id, userId));
         SetModified();
     }
 

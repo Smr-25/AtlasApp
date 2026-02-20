@@ -5,6 +5,7 @@ using Atlas.Application.Features.Workspaces.Commands.ToggleIntegration;
 using Atlas.Application.Features.Workspaces.Commands.UpdateWorkspace;
 using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceById;
 using Atlas.Application.Features.Workspaces.Queries.GetWorkspaces;
+using Atlas.Application.Features.Workspaces.Queries.ValidateFolder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Atlas.Application.Features.Workspaces.Dtos;
@@ -63,4 +64,13 @@ public class WorkspacesController : ApiControllerBase
         await Mediator.Send(new SetDefaultWorkspaceCommand(id));
         return NoContent();
     }
+
+    [HttpPost("validate-folder")]
+    public async Task<IActionResult> ValidateFolder([FromBody] ValidateFolderRequest request)
+    {
+        var result = await Mediator.Send(new ValidateFolderQuery(request.FolderPath));
+        return OkResponse(result);
+    }
 }
+
+public record ValidateFolderRequest(string FolderPath);
