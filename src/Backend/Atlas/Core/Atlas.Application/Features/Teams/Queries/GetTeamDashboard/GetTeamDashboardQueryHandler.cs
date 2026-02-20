@@ -21,7 +21,6 @@ public class GetTeamDashboardQueryHandler(
             .FirstOrDefaultAsync(t => t.Id == request.TeamId, cancellationToken)
             ?? throw new NotFoundException("Team", request.TeamId);
 
-        // Check that the current user is a member of this team
         var isMember = team.Members.Any(m => m.UserId == userId);
         if (!isMember)
             throw new ForbiddenException("You are not a member of this team.");

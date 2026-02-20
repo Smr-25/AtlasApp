@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
+using StripeSubscription = Stripe.Subscription;
 
 namespace Atlas.WebAPI.Controllers;
 
@@ -65,7 +66,6 @@ public class StripeWebhookController(
 
         if (subscription == null) return;
 
-        // Determine tier from Stripe subscription
         StripeConfiguration.ApiKey = _stripeSettings.SecretKey;
         var stripeSubService = new SubscriptionService();
         var stripeSub = await stripeSubService.GetAsync(subscriptionId);
@@ -94,7 +94,7 @@ public class StripeWebhookController(
 
     private async Task HandleSubscriptionUpdated(Event stripeEvent)
     {
-        if (stripeEvent.Data.Object is not Subscription stripeSub) return;
+        if (stripeEvent.Data.Object is not StripeSubscription stripeSub) return;
 
         var subscription = await dbContext.Subscriptions
             .FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSub.Id);
@@ -115,7 +115,7 @@ public class StripeWebhookController(
 
     private async Task HandleSubscriptionDeleted(Event stripeEvent)
     {
-        if (stripeEvent.Data.Object is not Subscription stripeSub) return;
+        if (stripeEvent.Data.Object is not StripeSubscription stripeSub) return;
 
         var subscription = await dbContext.Subscriptions
             .FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSub.Id);
@@ -126,4 +126,5 @@ public class StripeWebhookController(
         await dbContext.SaveChangesAsync();
     }
 }
+
 

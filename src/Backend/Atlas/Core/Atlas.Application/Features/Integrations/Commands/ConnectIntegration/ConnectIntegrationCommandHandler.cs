@@ -13,6 +13,7 @@ public class ConnectIntegrationCommandHandler(
     IEncryptionService encryptionService, 
     IMapper mapper,
     ICurrentUserService currentUserService,
+    ISubscriptionGuardService subscriptionGuard,
     ILogger<ConnectIntegrationCommandHandler> logger) 
     : IRequestHandler<ConnectIntegrationCommand, IntegrationDto>
 {
@@ -20,6 +21,9 @@ public class ConnectIntegrationCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
         logger.LogInformation("Connecting {Provider} integration for user {UserId}", request.Provider, userId);
+        
+        // Check subscription limits
+        await subscriptionGuard.ThrowIfCannotAddIntegrationAsync(userId, cancellationToken);
         
         var encAccess = encryptionService.Encrypt(request.AccessToken);
         var encRefresh = request.RefreshToken != null ? encryptionService.Encrypt(request.RefreshToken) : null;

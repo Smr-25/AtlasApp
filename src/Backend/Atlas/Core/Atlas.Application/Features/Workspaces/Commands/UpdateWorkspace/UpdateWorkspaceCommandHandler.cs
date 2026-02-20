@@ -23,6 +23,7 @@ public class UpdateWorkspaceCommandHandler(
         if (workspace == null) throw new NotFoundException("Workspace", request.WorkspaceId);
 
         workspace.UpdateDetails(request.Name, request.Description);
+        workspace.SetLocalFolderPath(request.LocalFolderPath);
         await applicationDbContext.SaveChangesAsync(cancellationToken);
         
         logger.LogInformation("Successfully updated workspace {WorkspaceId}", request.WorkspaceId);

@@ -1,3 +1,4 @@
+using Atlas.Domain.Enums;
 using FluentValidation;
 
 namespace Atlas.Application.Features.Accounts.Commands.Register;
@@ -37,5 +38,8 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
         RuleFor(x => x.ConfirmPassword)
             .Equal(x => x.Password)
             .WithMessage("Passwords do not match.");
+        RuleFor(x => x.Role)
+            .IsInEnum()
+            .WithMessage("Invalid role. Must be one of: Developer, Designer, SecOps, Marketer, TeamLeader.");
     }
 }

@@ -1,4 +1,5 @@
 using Atlas.Domain.Entities;
+using Atlas.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -35,6 +36,12 @@ public class UserConfiguration : IEntityTypeConfiguration<AppUser>
             .IsRequired()
             .HasConversion<string>()
             .HasMaxLength(50);
+
+        builder.Property(u => u.Role)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(UserRole.Developer);
 
         builder.Property(u => u.CreatedAt)
             .IsRequired();

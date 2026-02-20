@@ -27,7 +27,6 @@ public class LogSessionCommandHandler(
         );
         await applicationDbContext.FocusSessions.AddAsync(session, cancellationToken);
 
-        // Log activity for Team Radar
         var activity = UserActivity.Create(
             parsedUserId,
             "FocusSessionStarted",
