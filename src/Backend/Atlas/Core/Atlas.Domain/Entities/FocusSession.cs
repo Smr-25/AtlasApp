@@ -1,5 +1,6 @@
 using Atlas.Domain.Entities.Common;
 using Atlas.Domain.Enums;
+using Atlas.Domain.Events;
 
 namespace Atlas.Domain.Entities;
 
@@ -54,6 +55,7 @@ public class FocusSession : BaseEntity
     {
         Status = FocusSessionStatus.Completed;
         CompletedAt = DateTime.UtcNow;
+        AddDomainEvent(new FocusSessionCompletedEvent(Id, UserId, DurationMinutes, WorkspaceId));
         SetModified();
     }
 
