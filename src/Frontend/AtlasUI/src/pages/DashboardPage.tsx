@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import GitHubWidget from '@/components/dashboard/widgets/GitHubWidget';
@@ -7,8 +7,6 @@ import JiraWidget from '@/components/dashboard/widgets/JiraWidget';
 import QuickActionsWidget from '@/components/dashboard/widgets/QuickActionsWidget';
 
 const DashboardPage: React.FC = () => {
-  const [selected, setSelected] = useState<string | null>(null);
-
   return (
     <DashboardLayout>
       <div className="min-h-screen p-6 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#0f1115] to-[#07070a] text-foreground">
@@ -23,7 +21,7 @@ const DashboardPage: React.FC = () => {
 
           <div className="grid grid-cols-12 gap-4 auto-rows-[120px]">
             <div className="col-span-8 row-span-2">
-              <div onClick={() => setSelected('github')} className={`h-full`}>
+              <div className={`h-full`}>
                 <GitHubWidget />
               </div>
             </div>
