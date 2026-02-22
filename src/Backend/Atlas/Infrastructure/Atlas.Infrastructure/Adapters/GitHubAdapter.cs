@@ -82,10 +82,20 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
         logger.LogInformation("Approved PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
     }
 
-    public Task RejectPullRequestAsync(string accessToken, string owner, string repo, string prNumber, string? reason,
+    public async Task RejectPullRequestAsync(string accessToken, string owner, string repo, string prNumber, string? reason,
         CancellationToken ct)
     {
-        throw new NotImplementedException();
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(repo);
+        ArgumentException.ThrowIfNullOrWhiteSpace(prNumber);
+
+        var url = $"{GitHubApiBaseUrl}/repos/{owner}/{repo}/pulls/{prNumber}/reviews";
+
+        using var client = CreateAuthenticatedClient(accessToken);
+        var response = await client.PostAsJsonAsync(url, new { @event = "REQUEST_CHANGES", body = reason ?? "Changes requested." }, ct);
+
+        response.EnsureSuccessStatusCode();
+        logger.LogInformation("Rejected PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
     }
 
     public async Task MergePullRequestAsync(string accessToken, string owner, string repo, string prNumber, CancellationToken ct)
