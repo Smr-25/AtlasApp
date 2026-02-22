@@ -30,6 +30,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<TeamMember> TeamMembers { get; set; }
     public DbSet<ModalState> ModalStates { get; set; }
     public DbSet<HotkeyBinding> HotkeyBindings { get; set; }
+    public DbSet<SentryIssue> SentryIssues { get; }
+    public DbSet<AwsDeployment> AwsDeployments { get; }
+    public DbSet<SonarQubeReport> SonarQubeReports { get; }
+    public DbSet<ProactiveAlert> ProactiveAlerts { get; }
+    public DbSet<DependencyWatch> DependencyWatches { get; }
+    public DbSet<FigmaComment> FigmaComments { get; }
+    public DbSet<DesignHandoff> DesignHandoffs { get; }
+    public DbSet<DesignAlert> DesignAlerts { get; }
+    public DbSet<InsightSnapshot> InsightSnapshots { get; }
+    public DbSet<DesignInsightSnapshot> DesignInsightSnapshots { get; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

@@ -25,5 +25,15 @@ public interface IApplicationDbContext
     DbSet<TeamMember> TeamMembers { get; }
     DbSet<ModalState> ModalStates { get; }
     DbSet<HotkeyBinding> HotkeyBindings { get; }
+    DbSet<SentryIssue> SentryIssues { get; }
+    DbSet<AwsDeployment> AwsDeployments { get; }
+    DbSet<SonarQubeReport> SonarQubeReports { get; }
+    DbSet<ProactiveAlert> ProactiveAlerts { get; }
+    DbSet<DependencyWatch> DependencyWatches { get; }
+    DbSet<FigmaComment> FigmaComments { get; }
+    DbSet<DesignHandoff> DesignHandoffs { get; }
+    DbSet<DesignAlert> DesignAlerts { get; }
+    DbSet<InsightSnapshot> InsightSnapshots { get; }
+    DbSet<DesignInsightSnapshot> DesignInsightSnapshots { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
