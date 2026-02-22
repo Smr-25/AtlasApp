@@ -82,6 +82,12 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
         logger.LogInformation("Approved PR #{PrNumber} in {Owner}/{Repo}", prNumber, owner, repo);
     }
 
+    public Task RejectPullRequestAsync(string accessToken, string owner, string repo, string prNumber, string? reason,
+        CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task MergePullRequestAsync(string accessToken, string owner, string repo, string prNumber, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(owner);
