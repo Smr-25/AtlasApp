@@ -72,6 +72,21 @@ public static class ServiceRegistration
             services.AddScoped<ISubscriptionGuardService, SubscriptionGuardService>();
             services.AddScoped<IStripeService, StripeService>();
             services.AddTransient<IFileSystemService, FileSystemService>();
+            
+            services.AddTransient<ISentryAdapter, SentryAdapter>();
+            services.AddTransient<IAwsAdapter, AwsAdapter>();
+            services.AddTransient<ISonarQubeAdapter, SonarQubeAdapter>();
+            services.AddTransient<IPerplexityAdapter, PerplexityAdapter>();
+            services.AddTransient<IFigmaAdapter, FigmaAdapter>();
+            services.AddTransient<IMiroAdapter, MiroAdapter>();
+            services.AddTransient<ILottieFilesAdapter, LottieFilesAdapter>();
+            services.AddTransient<IDribbbleAdapter, DribbbleAdapter>();
+            services.AddTransient<IZeplinAdapter, ZeplinAdapter>();
+            services.AddTransient<IDevUtilityService, DevUtilityService>();
+            services.AddTransient<IDesignUtilityService, DesignUtilityService>();
+            services.AddTransient<IProactiveAgentService, ProactiveAgentService>();
+            services.AddScoped<IInsightCalculationService, InsightCalculationService>();
+            services.AddScoped<IDesignInsightCalculationService, DesignInsightCalculationService>();
         }
     }
 }
