@@ -1,4 +1,6 @@
-using Atlas.Domain.Entities.Common; using Atlas.Domain.Exceptions;
+using Atlas.Domain.Entities.Common;
+using Atlas.Domain.Enums;
+using Atlas.Domain.Exceptions;
 
 namespace Atlas.Domain.Entities;
 
@@ -10,6 +12,7 @@ public class Script : BaseEntity
     public string? WorkingDirectory { get; private set; }
     public string? Icon { get; private set; }
     public string? Color { get; private set; }
+    public ScriptType ScriptType { get; private set; }
     public Guid UserId { get; private set; }
 
     private Script() { }

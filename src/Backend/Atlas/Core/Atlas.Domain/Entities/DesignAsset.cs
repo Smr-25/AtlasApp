@@ -9,6 +9,8 @@ public class DesignAsset : BaseEntity
     public long OriginalSizeBytes { get; private set; }
     public long ConvertedSizeBytes { get; private set; }
     public string FilePath { get; private set; } 
+    public bool IsOptimized { get; private set; }
+    public long OptimizedSizeBytes { get; private set; }
     public Guid UserId { get; private set; }
 
     private DesignAsset() { }
@@ -35,6 +37,13 @@ public class DesignAsset : BaseEntity
     public void SetConvertedSize(long sizeBytes)
     {
         ConvertedSizeBytes = sizeBytes;
+        SetModified();
+    }
+
+    public void MarkOptimized(long optimizedSize)
+    {
+        IsOptimized = true;
+        OptimizedSizeBytes = optimizedSize;
         SetModified();
     }
 }
