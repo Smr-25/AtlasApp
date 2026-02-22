@@ -14,9 +14,9 @@ public class SystemToolsController : ApiControllerBase
         var result = await Mediator.Send(new GetPortProcessQuery(port));
         
         if (!result.IsFound)
-            return NotFound(new { message = $"Port {port} is free (no process found)." });
+            return NotFoundResponse($"Port {port} is free (no process found).");
 
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [HttpDelete("kill-process/{pid}")]
@@ -25,11 +25,11 @@ public class SystemToolsController : ApiControllerBase
         try
         {
             await Mediator.Send(new KillProcessCommand(pid));
-            return Ok(new { message = $"Process {pid} has been terminated." });
+            return OkResponse(new { message = $"Process {pid} has been terminated." });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequestResponse(ex.Message);
         }
     }
 }

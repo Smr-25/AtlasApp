@@ -14,7 +14,7 @@ namespace Atlas.WebAPI.Controllers;
 [Route("api/stripe/webhook")]
 public class StripeWebhookController(
     IApplicationDbContext dbContext,
-    IOptions<StripeSettings> stripeSettings) : ControllerBase
+    IOptions<StripeSettings> stripeSettings) : ApiControllerBase
 {
     private readonly StripeSettings _stripeSettings = stripeSettings.Value;
 
@@ -32,7 +32,7 @@ public class StripeWebhookController(
         }
         catch (StripeException)
         {
-            return BadRequest("Invalid Stripe signature.");
+            return BadRequestResponse("Invalid Stripe signature.");
         }
 
         switch (stripeEvent.Type)
@@ -51,7 +51,7 @@ public class StripeWebhookController(
                 break;
         }
 
-        return Ok();
+        return NoContentResponse();
     }
 
     private async Task HandleCheckoutCompleted(Event stripeEvent)
@@ -126,5 +126,3 @@ public class StripeWebhookController(
         await dbContext.SaveChangesAsync();
     }
 }
-
-

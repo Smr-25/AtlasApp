@@ -13,11 +13,11 @@ public class JsonToolsController : ApiControllerBase
         try
         {
             var result = await Mediator.Send(query);
-            return Ok(new { result }); 
+            return OkResponse(new { result }); 
         }
         catch (Exception ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return BadRequestResponse(ex.Message);
         }
     }
 }

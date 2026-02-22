@@ -26,7 +26,7 @@ public class PalettesController : ApiControllerBase
     [HttpPost("{id}/colors")]
     public async Task<IActionResult> AddColor(Guid id, [FromBody] AddColorCommand command)
     {
-        if (id != command.PaletteId) return BadRequest("ID mismatch");
+        if (id != command.PaletteId) return BadRequestResponse("ID mismatch");
         var colorId = await Mediator.Send(command);
         return CreatedResponse(colorId);
     }

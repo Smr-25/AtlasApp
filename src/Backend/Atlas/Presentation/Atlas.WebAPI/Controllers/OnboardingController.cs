@@ -17,37 +17,37 @@ public class OnboardingController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetProfessionQuestionQuery());
         if (result == null)
-            return NotFound("Profession question not found");
-        return Ok(result);
+            return NotFoundResponse("Profession question not found");
+        return OkResponse(result);
     }
     [HttpGet("questions")]
     [AllowAnonymous] 
     public async Task<IActionResult> GetQuestions([FromQuery] UserProfession? profession = null)
     {
         var result = await Mediator.Send(new GetOnboardingQuestionsQuery(profession));
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [HttpPost("questions")]
     public async Task<IActionResult> CreateQuestion(CreateOnboardingQuestionCommand command)
     {
         var id = await Mediator.Send(command);
-        return CreatedAtAction(nameof(GetQuestions), new { profession = 0 }, id);
+        return CreatedResponse(id);
     }
 
     [HttpPost("questions/{id}/options")]
     public async Task<IActionResult> AddOption(Guid id, AddOnboardingOptionCommand command)
     {
-        if (id != command.QuestionId) return BadRequest();
+        if (id != command.QuestionId) return BadRequestResponse("Question ID mismatch.");
         
         var optionId = await Mediator.Send(command);
-        return Ok(optionId);
+        return OkResponse(optionId);
     }
 
     [HttpPost("complete")]
     public async Task<IActionResult> Complete(CompleteOnboardingCommand command)
     {
         var profileId = await Mediator.Send(command);
-        return Ok(new { ProfileId = profileId });
+        return OkResponse(new { ProfileId = profileId });
     }
 }

@@ -16,38 +16,38 @@ namespace Atlas.WebAPI.Controllers;
 public class WorkspacesController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<WorkspaceDto>>> GetAll()
+    public async Task<IActionResult> GetAll()
     {
-        return Ok(await Mediator.Send(new GetWorkspacesQuery()));
+        return OkResponse(await Mediator.Send(new GetWorkspacesQuery()));
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<WorkspaceDto>> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        return Ok(await Mediator.Send(new GetWorkspaceByIdQuery(id)));
+        return OkResponse(await Mediator.Send(new GetWorkspaceByIdQuery(id)));
     }
 
     [HttpPost]
-    public async Task<ActionResult<Guid>> Create(CreateWorkspaceCommand command)
+    public async Task<IActionResult> Create(CreateWorkspaceCommand command)
     {
         var id = await Mediator.Send(command);
-        return CreatedAtAction(nameof(GetById), new { id }, id);
+        return CreatedResponse(id);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, UpdateWorkspaceCommand command)
     {
-        if (id != command.WorkspaceId) return BadRequest();
+        if (id != command.WorkspaceId) return BadRequestResponse("Workspace ID mismatch.");
         
         await Mediator.Send(command);
-        return NoContent();
+        return NoContentResponse();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         await Mediator.Send(new DeleteWorkspaceCommand(id));
-        return NoContent();
+        return NoContentResponse();
     }
     
     [HttpPost("{id}/integrations/toggle")]
@@ -55,14 +55,14 @@ public class WorkspacesController : ApiControllerBase
     {
         var command = new ToggleWorkspaceIntegrationCommand(id, dto.IntegrationId, dto.Enable);
         await Mediator.Send(command);
-        return NoContent();
+        return NoContentResponse();
     }
     
     [HttpPatch("{id}/set-default")]
     public async Task<IActionResult> SetDefault(Guid id)
     {
         await Mediator.Send(new SetDefaultWorkspaceCommand(id));
-        return NoContent();
+        return NoContentResponse();
     }
 
     [HttpPost("validate-folder")]
