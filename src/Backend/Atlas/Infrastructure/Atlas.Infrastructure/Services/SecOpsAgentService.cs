@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
@@ -65,11 +64,11 @@ public class SecOpsAgentService(IScriptRunnerService scriptRunner) : ISecOpsAgen
         var leaks = new List<LeakedKeyInfo>();
         var patterns = new Dictionary<string, string>
         {
-            ["AWS Access Key"] = @"AKIA[0-9A-Z]{16}",
-            ["AWS Secret Key"] = @"(?i)aws(.{0,20})?['\"][0-9a-zA-Z/+]{40}['\"]",
-            ["GitHub Token"] = @"ghp_[0-9a-zA-Z]{36}",
-            ["Generic API Key"] = @"(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"]?[0-9a-zA-Z]{20,}",
-            ["Private Key"] = @"-----BEGIN (RSA |EC )?PRIVATE KEY-----"
+            { "AWS Access Key", @"AKIA[0-9A-Z]{16}" },
+            { "AWS Secret Key", "(?i)aws(.{0,20})?['\"][0-9a-zA-Z/+]{40}['\"]" },
+            { "GitHub Token", @"ghp_[0-9a-zA-Z]{36}" },
+            { "Generic API Key", "(?i)(api[_-]?key|apikey)\\s*[:=]\\s*['\"]?[0-9a-zA-Z]{20,}" },
+            { "Private Key", @"-----BEGIN (RSA |EC )?PRIVATE KEY-----" }
         };
 
         var lines = content.Split('\n');
