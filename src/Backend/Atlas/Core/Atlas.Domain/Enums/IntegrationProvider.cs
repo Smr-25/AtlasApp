@@ -32,7 +32,7 @@ public enum IntegrationProvider
     GoogleSearchConsole = 71,
     Mailchimp = 72,
     SocialListening = 73,
-    GA4 = 74,
+    Ga4 = 74,
     StripeMkt = 75,
     HubSpot = 76
 }
