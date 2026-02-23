@@ -41,5 +41,10 @@ public interface IApplicationDbContext
     DbSet<MarketerAlert> MarketerAlerts { get; }
     DbSet<MarketerInsightSnapshot> MarketerInsightSnapshots { get; }
     DbSet<MarketingCampaignMetric> MarketingCampaignMetrics { get; }
+    DbSet<QuickCapture> QuickCaptures { get; }
+    DbSet<TeamObjective> TeamObjectives { get; }
+    DbSet<TeamVaultLink> TeamVaultLinks { get; }
+    DbSet<TeamArmory> TeamArmories { get; }
+    DbSet<TeamMemberFocus> TeamMemberFocuses { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
