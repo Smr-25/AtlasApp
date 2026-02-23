@@ -18,7 +18,7 @@ public class ProcessAiContextCommandHandler(
         var userId = currentUserService.GetRequiredUserId();
 
         var profile = await dbContext.UserProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == userId, cancellationToken);
 
         var role = profile?.Profession.ToString() ?? "Developer";
 

@@ -28,7 +28,7 @@ public class QuickShareCommandHandler(
                 return new QuickShareResultDto("Gmail", true, null);
 
             case ShareChannel.Telegram:
-                await telegramService.SendMessageAsync(request.Content);
+                await telegramService.SendMessageAsync("default", request.Content);
                 return new QuickShareResultDto("Telegram", true, null);
 
             case ShareChannel.Slack:

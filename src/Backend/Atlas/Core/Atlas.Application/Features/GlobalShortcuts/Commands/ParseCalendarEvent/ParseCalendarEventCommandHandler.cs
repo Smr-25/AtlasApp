@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Features.GlobalShortcuts.Dtos;
@@ -22,8 +23,8 @@ public class ParseCalendarEventCommandHandler(
 
         try
         {
-            var parsed = System.Text.Json.JsonSerializer.Deserialize<ParsedEvent>(aiResult,
-                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var parsed = JsonSerializer.Deserialize<ParsedEvent>(aiResult,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (parsed != null && DateTime.TryParse(parsed.DateTime, out var dt))
             {
@@ -32,6 +33,7 @@ public class ParseCalendarEventCommandHandler(
         }
         catch
         {
+            // ignored
         }
 
         return new CalendarEventResultDto("Meeting", DateTime.UtcNow.AddDays(1).Date.AddHours(10), false, null);

@@ -1,4 +1,3 @@
-using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
@@ -27,23 +26,29 @@ public class CaptureToNotionCommandHandler(
 
         await dbContext.QuickCaptures.AddAsync(capture, cancellationToken);
 
-        var notionIntegration = await dbContext.Integrations
-            .FirstOrDefaultAsync(i =>
-                i.UserId == userId &&
-                i.Provider == IntegrationProvider.Notion &&
-                i.Status == IntegrationStatus.Connected, cancellationToken);
+        var profile = await dbContext.UserProfiles
+            .FirstOrDefaultAsync(p => p.Id == userId, cancellationToken);
 
-        if (notionIntegration != null)
+        if (profile != null)
         {
-            var externalId = await notionService.SendSnippetToNotionAsync(
-                request.Title ?? "Quick Capture",
-                request.Content,
-                "text",
-                notionIntegration.ExternalId!,
-                notionIntegration.AccessToken!,
-                cancellationToken);
+            var notionIntegration = await dbContext.Integrations
+                .FirstOrDefaultAsync(i =>
+                    i.UserProfileId == profile.Id &&
+                    i.Provider == IntegrationProvider.Notion &&
+                    i.Status == IntegrationStatus.Active, cancellationToken);
 
-            capture.MarkSynced(externalId);
+            if (notionIntegration != null)
+            {
+                var externalId = await notionService.SendSnippetToNotionAsync(
+                    request.Title ?? "Quick Capture",
+                    request.Content,
+                    "text",
+                    notionIntegration.MetadataJson ?? "",
+                    notionIntegration.EncryptedAccessToken,
+                    cancellationToken);
+
+                capture.MarkSynced(externalId);
+            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
