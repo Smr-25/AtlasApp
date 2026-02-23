@@ -1,4 +1,5 @@
 using Atlas.Application.Features.ResourceHub.Commands.AddResource;
+using Atlas.Application.Features.ResourceHub.Commands.DeleteResource;
 using Atlas.Application.Features.ResourceHub.Commands.PinResource;
 using Atlas.Application.Features.ResourceHub.Commands.UpdateResource;
 using Atlas.Application.Features.ResourceHub.Queries.GetResources;
@@ -29,6 +30,13 @@ public class ResourceHubController : ApiControllerBase
     public async Task<IActionResult> UpdateResource([FromBody] UpdateResourceCommand command)
     {
         await Mediator.Send(command);
+        return NoContentResponse();
+    }
+
+    [HttpDelete("{resourceId:guid}")]
+    public async Task<IActionResult> DeleteResource(Guid resourceId)
+    {
+        await Mediator.Send(new DeleteResourceCommand(resourceId));
         return NoContentResponse();
     }
 
