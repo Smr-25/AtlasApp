@@ -95,6 +95,13 @@ public static class ServiceRegistration
             services.AddTransient<IMarketerAgentService, MarketerAgentService>();
             services.AddScoped<IMarketerInsightCalculationService, MarketerInsightCalculationService>();
             
+            services.AddTransient<ILeaderScriptService, LeaderScriptService>();
+            services.AddTransient<ILeaderUtilityService, LeaderUtilityService>();
+            services.AddTransient<ILeaderAgentService, LeaderAgentService>();
+            services.AddScoped<ILeaderInsightCalculationService, LeaderInsightCalculationService>();
+            services.AddScoped<ISquadRadarService, SquadRadarService>();
+            services.AddScoped<IOmniFeedService, OmniFeedService>();
+            
             services.AddTransient<ICloudflareAdapter, CloudflareAdapter>();
             services.AddTransient<ISnykAdapter, SnykAdapter>();
             services.AddTransient<IAwsGuardDutyAdapter, AwsGuardDutyAdapter>();
