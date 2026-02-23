@@ -20,5 +20,19 @@ public enum IntegrationProvider
     Discord = 41,
     Sentry = 50,
     SonarQube = 51,
-    Perplexity = 52
+    Perplexity = 52,
+    Cloudflare = 60,
+    Snyk = 61,
+    AwsGuardDuty = 62,
+    OnePassword = 63,
+    VirusTotal = 64,
+    Shodan = 65,
+    PagerDuty = 66,
+    MetaAds = 70,
+    GoogleSearchConsole = 71,
+    Mailchimp = 72,
+    SocialListening = 73,
+    GA4 = 74,
+    StripeMkt = 75,
+    HubSpot = 76
 }
