@@ -87,6 +87,26 @@ public static class ServiceRegistration
             services.AddTransient<IProactiveAgentService, ProactiveAgentService>();
             services.AddScoped<IInsightCalculationService, InsightCalculationService>();
             services.AddScoped<IDesignInsightCalculationService, DesignInsightCalculationService>();
+            
+            services.AddTransient<ISecOpsUtilityService, SecOpsUtilityService>();
+            services.AddTransient<ISecOpsAgentService, SecOpsAgentService>();
+            services.AddScoped<ISecOpsInsightCalculationService, SecOpsInsightCalculationService>();
+            services.AddTransient<IMarketerUtilityService, MarketerUtilityService>();
+            services.AddTransient<IMarketerAgentService, MarketerAgentService>();
+            services.AddScoped<IMarketerInsightCalculationService, MarketerInsightCalculationService>();
+            
+            services.AddTransient<ICloudflareAdapter, CloudflareAdapter>();
+            services.AddTransient<ISnykAdapter, SnykAdapter>();
+            services.AddTransient<IAwsGuardDutyAdapter, AwsGuardDutyAdapter>();
+            services.AddTransient<IVirusTotalAdapter, VirusTotalAdapter>();
+            services.AddTransient<IShodanAdapter, ShodanAdapter>();
+            services.AddTransient<IPagerDutyAdapter, PagerDutyAdapter>();
+            services.AddTransient<IMetaAdsAdapter, MetaAdsAdapter>();
+            services.AddTransient<IGoogleSearchConsoleAdapter, GoogleSearchConsoleAdapter>();
+            services.AddTransient<IMailchimpAdapter, MailchimpAdapter>();
+            services.AddTransient<ISocialListeningAdapter, SocialListeningAdapter>();
+            services.AddTransient<IGA4Adapter, GA4Adapter>();
+            services.AddTransient<IHubSpotAdapter, HubSpotAdapter>();
         }
     }
 }

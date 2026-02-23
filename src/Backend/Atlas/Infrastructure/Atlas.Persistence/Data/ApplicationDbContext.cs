@@ -40,6 +40,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<DesignAlert> DesignAlerts { get; set; }
     public DbSet<InsightSnapshot> InsightSnapshots { get; set; }
     public DbSet<DesignInsightSnapshot> DesignInsightSnapshots { get; set; }
+    public DbSet<SecOpsAlert> SecOpsAlerts { get; set; }
+    public DbSet<SecOpsInsightSnapshot> SecOpsInsightSnapshots { get; set; }
+    public DbSet<SecurityScanResult> SecurityScanResults { get; set; }
+    public DbSet<MarketerAlert> MarketerAlerts { get; set; }
+    public DbSet<MarketerInsightSnapshot> MarketerInsightSnapshots { get; set; }
+    public DbSet<MarketingCampaignMetric> MarketingCampaignMetrics { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

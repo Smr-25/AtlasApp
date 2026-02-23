@@ -35,5 +35,11 @@ public interface IApplicationDbContext
     DbSet<DesignAlert> DesignAlerts { get; }
     DbSet<InsightSnapshot> InsightSnapshots { get; }
     DbSet<DesignInsightSnapshot> DesignInsightSnapshots { get; }
+    DbSet<SecOpsAlert> SecOpsAlerts { get; }
+    DbSet<SecOpsInsightSnapshot> SecOpsInsightSnapshots { get; }
+    DbSet<SecurityScanResult> SecurityScanResults { get; }
+    DbSet<MarketerAlert> MarketerAlerts { get; }
+    DbSet<MarketerInsightSnapshot> MarketerInsightSnapshots { get; }
+    DbSet<MarketingCampaignMetric> MarketingCampaignMetrics { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
