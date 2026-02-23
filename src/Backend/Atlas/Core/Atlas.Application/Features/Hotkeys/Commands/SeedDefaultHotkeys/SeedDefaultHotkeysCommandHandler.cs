@@ -13,14 +13,18 @@ public class SeedDefaultHotkeysCommandHandler(
 {
     private static readonly (string Action, string Key, bool IsGlobal)[] DefaultBindings =
     [
-        ("SendToNotion", "Cmd+I", true),
-        ("PasteFromNotion", "Cmd+Shift+I", true),
+        ("OpenCommandPalette", "Cmd+K", true),
+        ("AiContextAction", "Cmd+I", true),
+        ("CaptureToNotion", "Cmd+N", true),
+        ("QuickShareMessage", "Cmd+M", true),
+        ("CalendarEventMagic", "Cmd+E", true),
+        ("SendToNotion", "Cmd+Shift+I", true),
+        ("PasteFromNotion", "Cmd+Shift+N", true),
         ("ToggleFocusMode", "Cmd+Shift+F", false),
         ("QuickSnippet", "Cmd+Shift+S", false),
-        ("OpenCommandPalette", "Cmd+K", false),
         ("ToggleTerminal", "Cmd+`", false),
         ("SearchWorkspace", "Cmd+P", false),
-        ("NewWorkspace", "Cmd+N", false)
+        ("NewWorkspace", "Cmd+W", false)
     ];
 
     public async Task<int> Handle(SeedDefaultHotkeysCommand request, CancellationToken cancellationToken)

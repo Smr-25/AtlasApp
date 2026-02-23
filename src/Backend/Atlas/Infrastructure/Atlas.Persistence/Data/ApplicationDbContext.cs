@@ -46,6 +46,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<MarketerAlert> MarketerAlerts { get; set; }
     public DbSet<MarketerInsightSnapshot> MarketerInsightSnapshots { get; set; }
     public DbSet<MarketingCampaignMetric> MarketingCampaignMetrics { get; set; }
+    public DbSet<QuickCapture> QuickCaptures { get; set; }
+    public DbSet<TeamObjective> TeamObjectives { get; set; }
+    public DbSet<TeamVaultLink> TeamVaultLinks { get; set; }
+    public DbSet<TeamArmory> TeamArmories { get; set; }
+    public DbSet<TeamMemberFocus> TeamMemberFocuses { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
