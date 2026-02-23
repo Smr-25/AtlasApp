@@ -51,6 +51,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<TeamVaultLink> TeamVaultLinks { get; set; }
     public DbSet<TeamArmory> TeamArmories { get; set; }
     public DbSet<TeamMemberFocus> TeamMemberFocuses { get; set; }
+    public DbSet<LeaderModalState> LeaderModalStates { get; set; }
+    public DbSet<LeaderAlert> LeaderAlerts { get; set; }
+    public DbSet<LeaderInsightSnapshot> LeaderInsightSnapshots { get; set; }
+    public DbSet<SquadRadarEntry> SquadRadarEntries { get; set; }
+    public DbSet<SquadArenaEntry> SquadArenaEntries { get; set; }
+    public DbSet<BountyBoard> BountyBoards { get; set; }
+    public DbSet<OmniFeedItem> OmniFeedItems { get; set; }
+    public DbSet<SharedResource> SharedResources { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

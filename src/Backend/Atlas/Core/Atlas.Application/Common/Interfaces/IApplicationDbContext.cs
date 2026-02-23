@@ -46,5 +46,13 @@ public interface IApplicationDbContext
     DbSet<TeamVaultLink> TeamVaultLinks { get; }
     DbSet<TeamArmory> TeamArmories { get; }
     DbSet<TeamMemberFocus> TeamMemberFocuses { get; }
+    DbSet<LeaderModalState> LeaderModalStates { get; }
+    DbSet<LeaderAlert> LeaderAlerts { get; }
+    DbSet<LeaderInsightSnapshot> LeaderInsightSnapshots { get; }
+    DbSet<SquadRadarEntry> SquadRadarEntries { get; }
+    DbSet<SquadArenaEntry> SquadArenaEntries { get; }
+    DbSet<BountyBoard> BountyBoards { get; }
+    DbSet<OmniFeedItem> OmniFeedItems { get; }
+    DbSet<SharedResource> SharedResources { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
