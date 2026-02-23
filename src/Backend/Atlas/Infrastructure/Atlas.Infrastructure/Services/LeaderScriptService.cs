@@ -2,7 +2,7 @@ using Atlas.Application.Common.Interfaces;
 
 namespace Atlas.Infrastructure.Services;
 
-public class LeaderScriptService(IJiraAdapter jiraAdapter, IGitIntegrationAdapter gitAdapter) : ILeaderScriptService
+public class LeaderScriptService(IJiraAdapter jiraAdapter) : ILeaderScriptService
 {
     public Task<SprintStarterResult> RunSprintStarterAsync(Guid userId, string sprintName, List<string> initialTasks, Guid teamId, CancellationToken ct)
     {
