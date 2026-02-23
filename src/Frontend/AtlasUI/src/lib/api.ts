@@ -25,19 +25,19 @@ const REFRESH_KEY = 'atlas_refresh_token';
 const ACCESS_EXP_KEY = 'atlas_access_token_exp';
 const REFRESH_EXP_KEY = 'atlas_refresh_token_exp';
 
-function getAccessToken() {
+export function getAccessToken() {
   return localStorage.getItem(ACCESS_KEY);
 }
-function getRefreshToken() {
+export function getRefreshToken() {
   return localStorage.getItem(REFRESH_KEY);
 }
-function setTokens(tokens: { accessToken?: string; refreshToken?: string; accessTokenExpiration?: string; refreshTokenExpiration?: string }) {
+export function setTokens(tokens: { accessToken?: string; refreshToken?: string; accessTokenExpiration?: string; refreshTokenExpiration?: string }) {
   if (tokens.accessToken) localStorage.setItem(ACCESS_KEY, tokens.accessToken);
   if (tokens.refreshToken) localStorage.setItem(REFRESH_KEY, tokens.refreshToken);
   if (tokens.accessTokenExpiration) localStorage.setItem(ACCESS_EXP_KEY, tokens.accessTokenExpiration);
   if (tokens.refreshTokenExpiration) localStorage.setItem(REFRESH_EXP_KEY, tokens.refreshTokenExpiration);
 }
-function clearTokens() {
+export function clearTokens() {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(ACCESS_EXP_KEY);

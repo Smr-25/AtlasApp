@@ -15,6 +15,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import WorkspacesPage from "./pages/WorkspacesPage";
+import SnippetsPage from "./pages/SnippetsPage";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/workspaces" element={<WorkspacesPage />} />
+          <Route path="/snippets" element={<SnippetsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

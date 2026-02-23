@@ -1,3 +1,4 @@
+using System.Text;
 using Atlas.Application.Common.Interfaces;
 using MediatR;
 
@@ -11,7 +12,7 @@ public class DecodeJwtQueryHandler(
     {
         var json = devUtility.DecodeJwt(request.Token);
         var parts = request.Token.Split('.');
-        var header = parts.Length > 0 ? System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(PadBase64(parts[0]))) : "";
+        var header = parts.Length > 0 ? Encoding.UTF8.GetString(Convert.FromBase64String(PadBase64(parts[0]))) : "";
         var payload = json;
 
         DateTime? expiresAt = null;
