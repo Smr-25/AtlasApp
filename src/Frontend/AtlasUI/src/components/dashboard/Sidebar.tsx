@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Copy,
@@ -33,6 +33,8 @@ const interactions = [
 
 const Sidebar = () => {
   const [showMore, setShowMore] = useState(false);
+
+  const toggleShowMore = useCallback(() => setShowMore((s) => !s), []);
 
   return (
     <aside className="w-56 shrink-0 border-r border-border bg-card flex flex-col h-full overflow-y-auto">
@@ -100,7 +102,7 @@ const Sidebar = () => {
           ))}
         </div>
         <button
-          onClick={() => setShowMore(!showMore)}
+          onClick={toggleShowMore}
           className="flex items-center gap-1 px-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <motion.div animate={{ rotate: showMore ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -125,4 +127,6 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+const MemoizedSidebar = React.memo(Sidebar);
+
+export default MemoizedSidebar;
