@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, ChevronDown, MessageSquare, Send } from "lucide-react";
+import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 import { countries, Country } from "@/lib/countries";
+import { useToast } from '@/hooks/use-toast'
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { toast } = useToast();
 
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [phoneContact, setPhoneContact] = useState<"sms" | "telegram">("sms");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -26,30 +24,37 @@ const Register = () => {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = "Full name is required";
+    if (fullName.length < 3) errs.fullName = "Full name must be at least 3 characters";
+    if (fullName.length > 20) errs.fullName = "Full name must be less than 20 characters";
     if (!username.trim()) errs.username = "Username is required";
     if (username.length < 3) errs.username = "Username must be at least 3 characters";
+    if (username.length > 20) errs.username = "Username must be less than 15 characters";
     if (!email.trim()) errs.email = "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Invalid email address";
     if (!password) errs.password = "Password is required";
     if (password.length < 8) errs.password = "Password must be at least 8 characters";
-    if (password !== confirmPassword) errs.confirmPassword = "Passwords don't match";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    register({
+    const success = await register({
       fullName,
       username,
       email,
-      phone: phone ? `${selectedCountry.dialCode}${phone}` : undefined,
-      phoneContact: phone ? phoneContact : undefined,
+      password,
     });
 
-    navigate("/verify-email");
+    if (success) {
+      toast({ title: 'Account created', description: 'Welcome! You are signed in.' })
+      navigate('/onboarding')
+    } else {
+      setErrors({ ...errors, form: 'Registration failed. Please try again.' })
+      toast({ title: 'Registration failed', description: 'Please fix errors and try again.' })
+    }
   };
 
   const inputClass =
@@ -99,102 +104,6 @@ const Register = () => {
           {errors.email && <p className={errorClass}>{errors.email}</p>}
         </div>
 
-        {/* Phone (Optional) */}
-        <div>
-          <label className={labelClass}>
-            Phone <span className="text-muted-foreground font-normal">(optional)</span>
-          </label>
-          <div className="flex gap-2">
-            {/* Country selector */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                className="h-11 px-3 rounded-xl bg-muted/50 border border-border flex items-center gap-1.5 text-sm hover:bg-muted transition-colors min-w-[100px]"
-              >
-                <span className="text-lg">{selectedCountry.flag}</span>
-                <span className="text-foreground text-xs">{selectedCountry.dialCode}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-
-              <AnimatePresence>
-                {showCountryDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="absolute z-50 top-full mt-1 left-0 w-64 max-h-60 overflow-y-auto rounded-xl bg-card border border-border shadow-xl"
-                  >
-                    {countries.map((country) => (
-                      <button
-                        key={country.code}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCountry(country);
-                          setShowCountryDropdown(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 text-sm transition-colors text-left"
-                      >
-                        <span className="text-lg">{country.flag}</span>
-                        <span className="text-foreground flex-1">{country.name}</span>
-                        <span className="text-muted-foreground text-xs">{country.dialCode}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <input
-              type="tel"
-              placeholder="50 123 45 67"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
-              className={`${inputClass} flex-1`}
-            />
-          </div>
-        </div>
-
-        {/* Phone Contact Method - only show if phone is entered */}
-        <AnimatePresence>
-          {phone.length > 3 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <label className={labelClass}>Preferred contact method</label>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPhoneContact("sms")}
-                  className={`flex-1 h-11 rounded-xl border flex items-center justify-center gap-2 text-sm font-medium transition-all ${
-                    phoneContact === "sms"
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/30"
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  SMS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPhoneContact("telegram")}
-                  className={`flex-1 h-11 rounded-xl border flex items-center justify-center gap-2 text-sm font-medium transition-all ${
-                    phoneContact === "telegram"
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/30"
-                  }`}
-                >
-                  <Send className="w-4 h-4" />
-                  Telegram
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Password */}
         <div>
           <label className={labelClass}>Password</label>
@@ -215,28 +124,6 @@ const Register = () => {
             </button>
           </div>
           {errors.password && <p className={errorClass}>{errors.password}</p>}
-        </div>
-
-        {/* Confirm Password */}
-        <div>
-          <label className={labelClass}>Confirm Password</label>
-          <div className="relative">
-            <input
-              type={showConfirm ? "text" : "password"}
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={inputClass}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          {errors.confirmPassword && <p className={errorClass}>{errors.confirmPassword}</p>}
         </div>
 
         {/* Submit */}

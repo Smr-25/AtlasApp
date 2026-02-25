@@ -72,7 +72,7 @@ const Onboarding = () => {
     return answer === option;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 0 && !selectedRole) return;
     if (currentStep > 0 && !isAnswered(questions[currentStep - 1].id)) return;
 
@@ -85,8 +85,8 @@ const Onboarding = () => {
         flatAnswers[key] = Array.isArray(val) ? val.join(", ") : val;
       });
       flatAnswers.role = selectedRole!;
-      completeOnboarding(flatAnswers);
-      navigate("/");
+      const ok = await completeOnboarding(flatAnswers);
+      if (ok) navigate("/");
     }
   };
 

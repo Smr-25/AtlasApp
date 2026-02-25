@@ -13,6 +13,8 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -33,23 +35,46 @@ const ResetPassword = () => {
     }
   };
 
-  const verifyCode = () => {
+  const verifyCode = async () => {
+    if (email.trim() === "") {
+      setError('Please enter your email');
+      return;
+    }
     if (code.join("").length === 6) {
-      setStep("reset");
+      try {
+        const client = await import('@/lib/apiClient');
+        const res = await client.default.accounts.verifyResetCode({ Email: email, VerificationCode: code.join("") });
+        // res should include ResetToken
+        setResetToken(res.ResetToken)
+        setStep("reset");
+      } catch (e) {
+        setError('Invalid or expired code');
+      }
     }
   };
 
-  const handleReset = (e: React.FormEvent) => {
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
+      return;
+    }
+    // enforce complexity: uppercase, lowercase, digit, special
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      setError('Password must contain uppercase, lowercase, digit and special character');
       return;
     }
     if (password !== confirmPassword) {
       setError("Passwords don't match");
       return;
     }
-    setStep("success");
+    try {
+      const client = await import('@/lib/apiClient');
+      await client.default.accounts.resetPassword({ Email: email, ResetToken: resetToken, NewPassword: password, ConfirmPassword: confirmPassword });
+      setStep('success');
+    } catch (e) {
+      setError('Failed to reset password');
+    }
   };
 
   const inputClass =
@@ -82,6 +107,17 @@ const ResetPassword = () => {
     >
       {step === "code" ? (
         <div className="space-y-6">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
           <div className="flex justify-center gap-3">
             {code.map((digit, i) => (
               <input
@@ -97,6 +133,12 @@ const ResetPassword = () => {
               />
             ))}
           </div>
+
+          {error && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              {error}
+            </motion.div>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.01 }}

@@ -1,4 +1,3 @@
-using Atlas.Domain.Enums;
 using FluentValidation;
 
 namespace Atlas.Application.Features.Accounts.Commands.Register;
@@ -26,20 +25,10 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .WithMessage("Email is required.")
             .EmailAddress()
             .WithMessage("A valid email is required.");
-        RuleFor(x => x.PhoneNumber)
-            .Matches(@"^\+?[1-9]\d{1,14}$")
-            .WithMessage("A valid phone number is required.")
-            .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
         RuleFor(x => x.Password)
             .NotEmpty()
             .WithMessage("Password is required.")
             .MinimumLength(6)
             .WithMessage("Password must be at least 6 characters long.");
-        RuleFor(x => x.ConfirmPassword)
-            .Equal(x => x.Password)
-            .WithMessage("Passwords do not match.");
-        RuleFor(x => x.Role)
-            .IsInEnum()
-            .WithMessage("Invalid role. Must be one of: Developer, Designer, SecOps, Marketer, TeamLeader.");
     }
 }

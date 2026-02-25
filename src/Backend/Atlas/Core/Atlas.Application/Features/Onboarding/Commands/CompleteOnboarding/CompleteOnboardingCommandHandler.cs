@@ -4,12 +4,14 @@ using Atlas.Domain.Entities;
 using Atlas.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Atlas.Application.Features.Onboarding.Commands.CompleteOnboarding;
 
 public class CompleteOnboardingCommandHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService) 
+    ICurrentUserService currentUserService,
+    UserManager<AppUser> userManager) 
     : IRequestHandler<CompleteOnboardingCommand, Guid>
 {
     public async Task<Guid> Handle(CompleteOnboardingCommand request, CancellationToken cancellationToken)
@@ -18,6 +20,29 @@ public class CompleteOnboardingCommandHandler(
 
         if (await applicationDbContext.UserProfiles.AnyAsync(u => u.Id == userId, cancellationToken))
             throw new Exception("Profile already exists.");
+
+        var role = request.Profession switch
+        {
+            UserProfession.Developer => UserRole.Developer,
+            UserProfession.Designer => UserRole.Designer,
+            UserProfession.CyberSecurity => UserRole.SecOps,
+            UserProfession.DigitalMarketing => UserRole.Marketer,
+            UserProfession.ProductManager => UserRole.TeamLeader,
+            _ => UserRole.Developer
+        };
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+            throw new Exception("User not found.");
+
+        user.AssignRole(role);
+        await userManager.UpdateAsync(user);
+
+        var roles = await userManager.GetRolesAsync(user);
+        if (!roles.Contains(role.ToString()))
+        {
+            await userManager.AddToRoleAsync(user, role.ToString());
+        }
 
         var userProfile = AppUserProfile.Create(userId, request.Profession, request.JobTitle);
 
@@ -56,7 +81,6 @@ public class CompleteOnboardingCommandHandler(
             }
         }
 
-        
         await applicationDbContext.UserProfiles.AddAsync(userProfile, cancellationToken);
         await applicationDbContext.SaveChangesAsync(cancellationToken);
 

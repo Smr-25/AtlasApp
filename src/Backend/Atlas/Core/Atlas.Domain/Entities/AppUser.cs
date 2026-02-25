@@ -98,4 +98,9 @@ public class AppUser : IdentityUser<Guid>
         FailedLoginAttempts = 0;
         LockoutEndTime = null;
     }
+
+    public void AssignRole(UserRole role)
+    {
+        Role = role;
+    }
 }

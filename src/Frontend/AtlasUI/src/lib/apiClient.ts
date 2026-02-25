@@ -23,19 +23,10 @@ export type RegisterRequest = {
   FullName: string
   UserName: string
   Email: string
-  PhoneNumber?: string | null
   Password: string
-  ConfirmPassword: string
-  Role: number
-  PhoneVerificationChannel?: number | null
 }
 
-export type RegisterResponse = {
-  Success: boolean
-  RequiresEmailVerification: boolean
-  RequiresPhoneVerification: boolean
-  TelegramBotLink?: string | null
-}
+export type RegisterResponse = AuthResponseDto
 
 export type LoginRequest = { Email?: string | null; UserName?: string | null; Password: string }
 
@@ -96,7 +87,7 @@ export type CreateOnboardingQuestionResponse = string // created GUID
 export type AddOptionToQuestionRequest = { QuestionId: string; Text: string; RecommendedIntegration?: string | null; RecommendedTemplate?: string | null }
 export type AddOptionToQuestionResponse = string // created GUID
 export type OnboardingAnswerDto = { QuestionId: string; OptionId: string }
-export type CompleteOnboardingRequest = { UserId?: string; Profession: number; JobTitle?: string | null; Answers: OnboardingAnswerDto[] }
+export type CompleteOnboardingRequest = { Profession: number; JobTitle?: string | null; Answers: OnboardingAnswerDto[] }
 export type CompleteOnboardingResponse = { ProfileId: string }
 
 // -------------------- Token helpers --------------------
@@ -150,6 +141,9 @@ const DEFAULT_POST_THROTTLE_MS = 1000 // 1 second between POST/PUT to prevent ac
 const inFlightRequests = new Map<string, Promise<Response>>()
 const lastRequestTimestamps = new Map<string, number>()
 
+// single-flight refresh promise to avoid multiple concurrent refresh calls
+let refreshPromise: Promise<TokenDto> | null = null
+
 function makeRequestKey(method: string, url: string, body?: any) {
   // for GET requests body is ignored; for others include body to distinguish
   return `${method.toUpperCase()}::${url}::${body ? JSON.stringify(body) : ''}`
@@ -174,31 +168,62 @@ async function rawFetch(path: string, opts: RequestInit = {}, timeout?: number) 
 }
 
 async function refreshTokensIfPossible(): Promise<TokenDto> {
-  const { refreshToken } = getTokens()
-  if (!refreshToken) throw new ApiError(401, ['No refresh token available'])
+  // If there's already an in-flight refresh, return it (single-flight)
+  if (refreshPromise) return refreshPromise
 
-  const res = await rawFetch('/api/accounts/refresh-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ RefreshToken: refreshToken }),
-  })
+  refreshPromise = (async () => {
+    const { refreshToken } = getTokens()
+    if (!refreshToken) {
+      refreshPromise = null
+      throw new ApiError(401, ['No refresh token available'])
+    }
 
-  if (res.status === 204) throw new ApiError(401, ['Refresh failed'])
+    const res = await rawFetch('/api/accounts/refresh-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ RefreshToken: refreshToken }),
+    })
 
-  let json: ApiEnvelope<TokenDto>
-  try {
-    json = await res.json()
-  } catch (e) {
-    throw new ApiError(res.status, ['Invalid JSON from refresh endpoint'])
-  }
+    if (res.status === 204) {
+      refreshPromise = null
+      throw new ApiError(401, ['Refresh failed'])
+    }
 
-  if (!json?.success) {
-    clearTokens()
-    throw new ApiError(res.status, json?.errors || ['Failed to refresh token'])
-  }
+    let json: ApiEnvelope<TokenDto> | any
+    try {
+      json = await res.json()
+    } catch (e) {
+      refreshPromise = null
+      throw new ApiError(res.status, ['Invalid JSON from refresh endpoint'])
+    }
 
-  setTokens({ AccessToken: json.data.AccessToken, RefreshToken: json.data.RefreshToken })
-  return json.data
+    // tolerate both envelope and direct TokenDto
+    if (json && typeof json === 'object' && json.success === undefined) {
+      // assume direct TokenDto
+      if (!json?.AccessToken || !json?.RefreshToken) {
+        refreshPromise = null
+        clearTokens()
+        throw new ApiError(res.status, ['Invalid token payload'])
+      }
+      setTokens({ AccessToken: json.AccessToken, RefreshToken: json.RefreshToken })
+      const out: TokenDto = { AccessToken: json.AccessToken, RefreshToken: json.RefreshToken, AccessTokenExpiration: json.AccessTokenExpiration, RefreshTokenExpiration: json.RefreshTokenExpiration }
+      refreshPromise = null
+      return out
+    }
+
+    if (!json?.success) {
+      refreshPromise = null
+      clearTokens()
+      throw new ApiError(res.status, json?.errors || ['Failed to refresh token'])
+    }
+
+    setTokens({ AccessToken: json.data.AccessToken, RefreshToken: json.data.RefreshToken })
+    const result = json.data as TokenDto
+    refreshPromise = null
+    return result
+  })()
+
+  return refreshPromise
 }
 
 async function request<T = any>(path: string, opts: RequestOptions = {}): Promise<T> {
@@ -235,12 +260,14 @@ async function request<T = any>(path: string, opts: RequestOptions = {}): Promis
       // reuse the ongoing fetch promise, then parse JSON + envelope like normal
       const reuseRes = await existing
       if (reuseRes.status === 204) return undefined as unknown as T
-      let envelope: ApiEnvelope<any>
+      let envelope: ApiEnvelope<any> | any
       try {
         envelope = await reuseRes.clone().json()
       } catch (e) {
         throw new ApiError(reuseRes.status, ['Invalid JSON response'])
       }
+      // tolerate non-envelope responses
+      if (envelope && typeof envelope === 'object' && envelope.success === undefined) return envelope as T
       if (!envelope?.success) throw new ApiError(reuseRes.status, envelope?.errors || ['Unknown error'])
       return envelope.data as T
     }
@@ -258,11 +285,16 @@ async function request<T = any>(path: string, opts: RequestOptions = {}): Promis
     // 204 No Content
     if (res.status === 204) return undefined as unknown as T
 
-    let envelope: ApiEnvelope<any>
+    let envelope: ApiEnvelope<any> | any
     try {
       envelope = await res.json()
     } catch (e) {
       throw new ApiError(res.status, ['Invalid JSON response'])
+    }
+
+    // If server returned a direct DTO (no envelope), tolerate it by wrapping as success
+    if (envelope && typeof envelope === 'object' && envelope.success === undefined) {
+      return envelope as T
     }
 
     if (res.status === 401 && !opts._retry) {
@@ -279,6 +311,8 @@ async function request<T = any>(path: string, opts: RequestOptions = {}): Promis
         if (retryRes.status === 204) return undefined as unknown as T
         try {
           const retryEnvelope = await retryRes.json()
+          // tolerate direct DTO on retry as well
+          if (retryEnvelope && typeof retryEnvelope === 'object' && retryEnvelope.success === undefined) return retryEnvelope as T
           if (!retryEnvelope.success) throw new ApiError(retryRes.status, retryEnvelope.errors || ['Request failed'])
           return retryEnvelope.data as T
         } catch (e) {
@@ -337,18 +371,18 @@ export async function safeRequest<T = any>(path: string, opts: RequestOptions = 
 // -------------------- Accounts endpoints --------------------
 
 export const accounts = {
-  register: (payload: RegisterRequest) => request<RegisterResponse>('/api/accounts/register', { method: 'POST', body: JSON.stringify(payload) }),
-  login: (payload: LoginRequest) => request<AuthResponseDto>('/api/accounts/login', { method: 'POST', body: JSON.stringify(payload) }),
+  register: (payload: RegisterRequest) => request<AuthResponseDto>('/api/accounts/register', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
+  login: (payload: LoginRequest) => request<AuthResponseDto>('/api/accounts/login', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
   refreshToken: (refreshToken: string) => request<TokenDto>('/api/accounts/refresh-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ RefreshToken: refreshToken }), skipAuth: true }),
-  revokeRefreshToken: () => rawFetch(`${API_BASE}/api/accounts/revoke-refresh-token`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(getTokens().accessToken ? { Authorization: `Bearer ${getTokens().accessToken}` } : {}) }, body: JSON.stringify({}) }).then(r => { if (r.status === 204) return; return r.json() }),
-  externalLogin: (payload: ExternalLoginRequest) => request<ExternalLoginResponse>('/api/accounts/external-login', { method: 'POST', body: JSON.stringify(payload) }),
-  forgotPassword: (payload: ForgotPasswordRequest) => request<boolean>('/api/accounts/forgot-password', { method: 'POST', body: JSON.stringify(payload) }),
-  verifyResetCode: (payload: VerifyResetCodeRequest) => request<VerifyResetCodeResponse>('/api/accounts/verify-reset-code', { method: 'POST', body: JSON.stringify(payload) }),
-  resetPassword: (payload: ResetPasswordRequest) => request<boolean>('/api/accounts/reset-password', { method: 'POST', body: JSON.stringify(payload) }),
+  revokeRefreshToken: () => request<void>('/api/accounts/revoke-refresh-token', { method: 'POST', body: JSON.stringify({}) }),
+  externalLogin: (payload: ExternalLoginRequest) => request<ExternalLoginResponse>('/api/accounts/external-login', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
+  forgotPassword: (payload: ForgotPasswordRequest) => request<boolean>('/api/accounts/forgot-password', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
+  verifyResetCode: (payload: VerifyResetCodeRequest) => request<VerifyResetCodeResponse>('/api/accounts/verify-reset-code', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
+  resetPassword: (payload: ResetPasswordRequest) => request<boolean>('/api/accounts/reset-password', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
   verifyEmail: (payload: VerifyEmailRequest) => request<boolean>('/api/accounts/verify-email', { method: 'POST', body: JSON.stringify(payload) }),
   verifyPhone: (payload: VerifyPhoneRequest) => request<boolean>('/api/accounts/verify-phone', { method: 'POST', body: JSON.stringify(payload) }),
-  resendEmailVerification: (payload: ResendEmailRequest) => request<boolean>('/api/accounts/resend-email-verification-code', { method: 'POST', body: JSON.stringify(payload) }),
-  resendPhoneVerification: (payload: ResendPhoneRequest) => request<boolean>('/api/accounts/resend-phone-verification-code', { method: 'POST', body: JSON.stringify(payload) }),
+  resendEmailVerification: (payload: ResendEmailRequest) => request<boolean>('/api/accounts/resend-email-verification-code', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
+  resendPhoneVerification: (payload: ResendPhoneRequest) => request<boolean>('/api/accounts/resend-phone-verification-code', { method: 'POST', body: JSON.stringify(payload), skipAuth: true }),
   getProfile: () => request<AccountDto>('/api/accounts/profile', { method: 'GET' }),
   updateProfile: (payload: UpdateProfileRequest) => request<AccountDto>('/api/accounts/profile', { method: 'PUT', body: JSON.stringify(payload) }),
   changePassword: (payload: ChangePasswordRequest) => request<boolean>('/api/accounts/change-password', { method: 'PUT', body: JSON.stringify(payload) }),
@@ -365,7 +399,27 @@ export const onboarding = {
   },
   createQuestion: (payload: CreateOnboardingQuestionRequest) => request<CreateOnboardingQuestionResponse>('/api/onboarding/questions', { method: 'POST', body: JSON.stringify(payload) }),
   addOptionToQuestion: (questionId: string, payload: AddOptionToQuestionRequest) => request<AddOptionToQuestionResponse>(`/api/onboarding/questions/${questionId}/options`, { method: 'POST', body: JSON.stringify(payload) }),
-  complete: (payload: CompleteOnboardingRequest) => request<CompleteOnboardingResponse>('/api/onboarding/complete', { method: 'POST', body: JSON.stringify(payload) }),
+  complete: (payload: CompleteOnboardingRequest | Record<string, any>) => {
+    const hasAnswers = (payload as any).Answers && Array.isArray((payload as any).Answers)
+    let finalPayload: CompleteOnboardingRequest
+    if (hasAnswers) {
+      finalPayload = payload as CompleteOnboardingRequest
+    } else {
+      const obj = payload as Record<string, any>
+      const skipKeys = new Set(['Profession', 'JobTitle'])
+      const answers: OnboardingAnswerDto[] = Object.entries(obj)
+        .filter(([k, v]) => !skipKeys.has(k) && v !== undefined && v !== null)
+        .map(([k, v]) => ({ QuestionId: k, OptionId: String(v) }))
+
+      finalPayload = {
+        Profession: obj.Profession ?? (obj.profession as any) ?? 1,
+        JobTitle: obj.JobTitle ?? obj.jobTitle ?? null,
+        Answers: answers,
+      }
+    }
+
+    return request<CompleteOnboardingResponse>('/api/onboarding/complete', { method: 'POST', body: JSON.stringify(finalPayload) })
+  },
 }
 
 export default { accounts, onboarding, getTokens, setTokens, clearTokens }

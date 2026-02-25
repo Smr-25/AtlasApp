@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 import { Mail } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
+import api from '@/lib/apiClient'
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const { user, verifyEmail } = useAuth();
+  const [emailFallback, setEmailFallback] = useState('')
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
 
@@ -28,23 +30,40 @@ const VerifyEmail = () => {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const fullCode = code.join("");
     if (fullCode.length < 6) {
       setError("Please enter the full 6-digit code");
       return;
     }
-    const success = verifyEmail(fullCode);
-    if (success) {
+    const emailToUse = user?.email ?? emailFallback
+    if (!emailToUse) return setError('Please provide your email')
+    // verifyEmail in context expects code and uses user.email; call api directly to pass email fallback
+    try {
+      await api.accounts.verifyEmail({ Email: emailToUse, VerificationCode: fullCode })
+      // update context if user exists
+      if (user) await verifyEmail(fullCode)
       if (user?.phone) {
         navigate("/verify-phone");
       } else {
         navigate("/onboarding");
       }
-    } else {
-      setError("Invalid verification code");
+      return
+    } catch (e) {
+      setError('Invalid verification code')
+      return
     }
   };
+
+  const handleResend = async () => {
+    try {
+      const emailToUse = user?.email ?? emailFallback
+      if (!emailToUse) return setError('Please provide your email')
+      await api.accounts.resendEmailVerification({ Email: emailToUse })
+    } catch (e) {
+      setError('Failed to resend code.')
+    }
+  }
 
   return (
     <AuthLayout title="Verify your email" subtitle={`We've sent a 6-digit code to ${user?.email || "your email"}`}>
@@ -61,6 +80,14 @@ const VerifyEmail = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
             {error}
           </motion.div>
+        )}
+
+        {/* if we don't have user.email, allow user to enter it */}
+        {!user?.email && (
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
+            <input value={emailFallback} onChange={(e) => setEmailFallback(e.target.value)} placeholder="your@email.com" className="w-full h-11 px-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground" />
+          </div>
         )}
 
         <div className="flex justify-center gap-3">
@@ -94,7 +121,7 @@ const VerifyEmail = () => {
 
         <p className="text-center text-sm text-muted-foreground">
           Didn't receive the code?{" "}
-          <button className="text-primary font-medium hover:underline">Resend</button>
+          <button onClick={handleResend} className="text-primary font-medium hover:underline">Resend</button>
         </p>
       </div>
     </AuthLayout>

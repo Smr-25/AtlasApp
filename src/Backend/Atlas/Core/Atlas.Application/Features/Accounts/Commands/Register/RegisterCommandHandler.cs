@@ -3,27 +3,20 @@ using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Helpers;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Features.Accounts.Dtos;
-using Atlas.Application.Settings;
 using Atlas.Domain.Entities;
-using Atlas.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Atlas.Application.Features.Accounts.Commands.Register;
 
 public class RegisterCommandHandler(
     UserManager<AppUser> userManager,
     IEmailService emailService,
-    IPhoneVerificationService phoneVerificationService,
     IApplicationDbContext dbContext,
-    IOptions<TelegramSettings> telegramSettings
-) : IRequestHandler<RegisterCommand, RegisterResponseDto>
+    IJwtService jwtService
+) : IRequestHandler<RegisterCommand, AuthResponseDto>
 {
-    private readonly TelegramSettings _telegramSettings = telegramSettings.Value;
-
-    public async Task<RegisterResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public async Task<AuthResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         var existingUser = await userManager.FindByNameAsync(request.UserName);
         if (existingUser != null)
@@ -33,29 +26,19 @@ public class RegisterCommandHandler(
         if (existingEmail != null)
             throw new AlreadyExistException("Email", request.Email);
         
-        if (!string.IsNullOrEmpty(request.PhoneNumber))
-        {
-            var existingPhone = await userManager.Users
-                .FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber, cancellationToken);
-            if (existingPhone != null)
-                throw new AlreadyExistException("PhoneNumber", request.PhoneNumber);
-        }
-
+        // Create user with default role (AppUser.Create default is Developer)
         var user = AppUser.Create(
             request.UserName,
             request.Email,
-            request.FullName,
-            request.Role,
-            request.PhoneNumber,
-            request.PhoneVerificationChannel
+            request.FullName
         );
         
         var result = await userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             throw new IdentityException(result.Errors.Select(e => e.Description).ToArray());
         
-        // Assign Identity role
-        await userManager.AddToRoleAsync(user, request.Role.ToString());
+        // Assign Identity role based on user's Role property
+        await userManager.AddToRoleAsync(user, user.Role.ToString());
 
         // Create Free subscription for new user
         var subscription = Subscription.CreateFree(user.Id);
@@ -64,33 +47,26 @@ public class RegisterCommandHandler(
 
         await SendEmailVerificationCodeAsync(user);
 
-        string? telegramBotLink = null;
-        var requiresPhoneVerification = !string.IsNullOrEmpty(request.PhoneNumber) && 
-                                         request.PhoneVerificationChannel.HasValue;
+        // Generate tokens (reuse Login handler logic)
+        var accessToken = jwtService.GenerateAccessToken(user);
+        var refreshToken = jwtService.GenerateRefreshTokenResponse(user);
+        user.SetRefreshToken(refreshToken.RefreshToken, refreshToken.RefreshTokenExpiresAt);
+        user.UpdateLastLogin();
+        await userManager.UpdateAsync(user);
 
-        if (requiresPhoneVerification)
-        {
-            if (request.PhoneVerificationChannel == UserVerificationChannel.Telegram)
-            {
-                var linkCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
-                user.TelegramLinkCode = linkCode;
-                user.TelegramLinkCodeExpiry = DateTime.UtcNow.AddMinutes(30);
-                await userManager.UpdateAsync(user);
-                
-                telegramBotLink = $"https://t.me/{_telegramSettings.BotUsername}?start={linkCode}";
-            }
-            else
-            {
-                await phoneVerificationService.SendVerificationCodeAsync(user, request.PhoneVerificationChannel.Value);
-            }
-        }
-        
-        return new RegisterResponseDto(
-            Success: true,
-            RequiresEmailVerification: true,
-            RequiresPhoneVerification: requiresPhoneVerification,
-            TelegramBotLink: telegramBotLink
+        var response = new AuthResponseDto(
+            AccessToken: accessToken.Token,
+            RefreshToken: refreshToken.RefreshToken,
+            AccessTokenExpiration: accessToken.Expiration,
+            RefreshTokenExpiration: refreshToken.RefreshTokenExpiresAt,
+            UserId: user.Id.ToString(),
+            UserName: user.UserName!,
+            Email: user.Email!,
+            FullName: user.FullName
         );
+
+
+        return response;
     }
 
     private async Task SendEmailVerificationCodeAsync(AppUser user)

@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
+using Atlas.Application.Settings;
 
 namespace Atlas.WebAPI.Controllers;
 
@@ -211,7 +212,12 @@ public class AccountsController : ApiControllerBase
             var github = HttpContext.RequestServices.GetRequiredService<IOptions<ExternalAuthSettings>>().Value.GitHub;
             var redirectUri = Url.ActionLink(action: "ExternalCallback", controller: "Accounts", values: new { provider = "github" });
             var state = Guid.NewGuid().ToString("N");
-            var authUrl = $"https://github.com/login/oauth/authorize?client_id={Uri.EscapeDataString(github.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope={Uri.EscapeDataString("read:user user:email")}&state={state}";
+
+            var clientIdEsc = Uri.EscapeDataString(github.ClientId);
+            var redirectUriEsc = Uri.EscapeDataString(redirectUri ?? string.Empty);
+            var scopeEsc = Uri.EscapeDataString("read:user user:email");
+
+            var authUrl = $"https://github.com/login/oauth/authorize?client_id={clientIdEsc}&redirect_uri={redirectUriEsc}&scope={scopeEsc}&state={state}";
             return Redirect(authUrl);
         }
         return BadRequestResponse("Unsupported provider");

@@ -9,10 +9,16 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim()) {
-      setSent(true);
+      try {
+        await (await import('@/lib/apiClient')).default.accounts.forgotPassword({ Email: email });
+        setSent(true);
+      } catch (err) {
+        // show error (simple)
+        alert('Failed to send reset email.');
+      }
     }
   };
 

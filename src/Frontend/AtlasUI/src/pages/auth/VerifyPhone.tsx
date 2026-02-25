@@ -4,10 +4,11 @@ import { motion } from "framer-motion";
 import { Phone } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
+import api from '@/lib/apiClient'
 
 const VerifyPhone = () => {
   const navigate = useNavigate();
-  const { user, verifyPhone } = useAuth();
+  const { user, verifyPhone, resendPhoneVerification } = useAuth();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
 
@@ -27,19 +28,29 @@ const VerifyPhone = () => {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const fullCode = code.join("");
     if (fullCode.length < 6) {
       setError("Please enter the full 6-digit code");
       return;
     }
-    const success = verifyPhone(fullCode);
+    const success = await verifyPhone(fullCode);
     if (success) {
       navigate("/onboarding");
     } else {
       setError("Invalid verification code");
     }
   };
+
+  const handleResend = async () => {
+    try {
+      if (!user?.phone) return setError('No phone available')
+      const channel = user.phoneContact === 'telegram' ? 2 : 1
+      await api.accounts.resendPhoneVerification({ PhoneNumber: user.phone, Channel: channel })
+    } catch (e) {
+      setError('Failed to resend code.')
+    }
+  }
 
   const contactMethod = user?.phoneContact === "telegram" ? "Telegram" : "SMS";
 
@@ -91,7 +102,7 @@ const VerifyPhone = () => {
 
         <p className="text-center text-sm text-muted-foreground">
           Didn't receive the code?{" "}
-          <button className="text-primary font-medium hover:underline">Resend via {contactMethod}</button>
+          <button onClick={handleResend} className="text-primary font-medium hover:underline">Resend via {contactMethod}</button>
         </p>
       </div>
     </AuthLayout>

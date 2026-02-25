@@ -4,26 +4,30 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from '@/hooks/use-toast'
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { toast } = useToast();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) {
       setError("Please fill in all fields");
       return;
     }
-    const success = login(identifier, password);
+    const success = await login(identifier, password);
     if (success) {
+      toast({ title: 'Signed in', description: 'Welcome back!' })
       navigate("/");
     } else {
       setError("Invalid credentials");
+      toast({ title: 'Sign in failed', description: 'Invalid username/email or password', action: undefined })
     }
   };
 
