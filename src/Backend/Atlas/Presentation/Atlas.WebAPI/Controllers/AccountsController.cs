@@ -21,6 +21,7 @@ using Atlas.Application.Features.Accounts.Queries.GetProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace Atlas.WebAPI.Controllers;
 
@@ -198,6 +199,34 @@ public class AccountsController : ApiControllerBase
     }
     
     #endregion
-    
-   
+
+    [HttpGet("external/{provider}")]
+    [AllowAnonymous]
+    public IActionResult ExternalRedirect(string provider)
+    {
+        if (string.IsNullOrEmpty(provider)) return BadRequestResponse("Provider is required");
+        provider = provider.ToLower();
+        if (provider == "github")
+        {
+            var github = HttpContext.RequestServices.GetRequiredService<IOptions<ExternalAuthSettings>>().Value.GitHub;
+            var redirectUri = Url.ActionLink(action: "ExternalCallback", controller: "Accounts", values: new { provider = "github" });
+            var state = Guid.NewGuid().ToString("N");
+            var authUrl = $"https://github.com/login/oauth/authorize?client_id={Uri.EscapeDataString(github.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope={Uri.EscapeDataString("read:user user:email")}&state={state}";
+            return Redirect(authUrl);
+        }
+        return BadRequestResponse("Unsupported provider");
+    }
+
+    [HttpGet("external/callback/{provider}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ExternalCallback(string provider, [FromQuery] string code, [FromQuery] string? state = null)
+    {
+        if (string.IsNullOrEmpty(provider) || string.IsNullOrEmpty(code)) return BadRequestResponse("Missing provider or code");
+        provider = provider.ToLower();
+        if (provider != "github") return BadRequestResponse("Unsupported provider");
+
+        var command = new ExternalLoginCommand(Provider: "github", IdToken: string.Empty, AccessToken: null, AuthorizationCode: code);
+        var result = await Mediator.Send(command);
+        return OkResponse(result);
+    }
 }

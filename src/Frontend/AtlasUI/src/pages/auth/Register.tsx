@@ -1,17 +1,17 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import SocialButtons from "@/components/ui/SocialButtons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-const roles = ["Developer", "Designer", "SecOps", "Marketer", "TeamLeader"];
+import PhoneInput from "@/components/auth/PhoneInput";
+import { Phone } from 'lucide-react';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [form, setForm] = useState({ FullName: "", UserName: "", Email: "", PhoneNumber: "", Password: "", ConfirmPassword: "", Role: roles[0], PhoneVerificationChannel: "" });
+  const [form, setForm] = useState({ FullName: "", UserName: "", Email: "", PhoneNumber: "", Password: "", ConfirmPassword: "", PhoneVerificationChannel: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -33,7 +33,6 @@ export default function RegisterPage() {
     if (!form.Email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.Email)) return "Invalid email.";
     if (!form.Password || form.Password.length < 6) return "Password must be at least 6 characters.";
     if (form.Password !== form.ConfirmPassword) return "Passwords do not match.";
-    if (!roles.includes(form.Role)) return "Invalid role.";
     if (form.PhoneNumber && !/^\+?[1-9]\d{1,14}$/.test(form.PhoneNumber)) return "Invalid phone number.";
     return null;
   };
@@ -73,7 +72,6 @@ export default function RegisterPage() {
         PhoneNumber: form.PhoneNumber || null,
         Password: form.Password,
         ConfirmPassword: form.ConfirmPassword,
-        Role: form.Role,
         PhoneVerificationChannel: form.PhoneNumber ? (form.PhoneVerificationChannel || 'Sms') : null,
       };
 
@@ -111,7 +109,7 @@ export default function RegisterPage() {
 
   const handleExternal = (provider: 'google' | 'github') => {
     // redirect to backend external endpoint (keeps existing behaviour)
-    window.location.href = `${import.meta.env.VITE_API_BASE || 'http://localhost:5000'}/api/accounts/external/${provider}`;
+    window.location.href = `${import.meta.env.VITE_API_BASE || 'http://localhost:5075'}/api/accounts/external/${provider}`;
   };
 
   return (
@@ -133,11 +131,17 @@ export default function RegisterPage() {
           <Input name="Email" placeholder="Email" value={form.Email} onChange={handleChange} />
           {fieldErrors.Email && <div className="text-sm text-destructive">{fieldErrors.Email}</div>}
 
-          <Input name="PhoneNumber" placeholder="Phone (optional)" value={form.PhoneNumber} onChange={handleChange} />
+          <PhoneInput value={form.PhoneNumber} onChange={(v) => setForm(s => ({ ...s, PhoneNumber: v }))} placeholder="501234567" />
+          {/* channel buttons shown directly under phone input (each half width of input) */}
           {form.PhoneNumber && (
-            <div className="flex gap-2 mt-2">
-              <button type="button" onClick={() => setForm(s => ({ ...s, PhoneVerificationChannel: 'Sms' }))} className={`px-3 py-1 rounded-md ${form.PhoneVerificationChannel === 'Sms' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>SMS</button>
-              <button type="button" onClick={() => setForm(s => ({ ...s, PhoneVerificationChannel: 'Telegram' }))} className={`px-3 py-1 rounded-md ${form.PhoneVerificationChannel === 'Telegram' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>Telegram</button>
+            <div className="mt-3 flex gap-3">
+              <button type="button" onClick={() => setForm(s => ({ ...s, PhoneVerificationChannel: 'Sms' }))} className={`flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-md border ${form.PhoneVerificationChannel === 'Sms' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                <Phone className="w-5 h-5" /> Send via SMS
+              </button>
+              <button type="button" onClick={() => setForm(s => ({ ...s, PhoneVerificationChannel: 'Telegram' }))} className={`flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-md border ${form.PhoneVerificationChannel === 'Telegram' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 240 240" className="w-5 h-5"><circle cx="120" cy="120" r="120" fill="#37AEE2" /><path d="M84 124l65-27c2-1 4 0 3 2l-18 69c-1 4-5 5-9 3l-23-16-11 11c-1 1-3 1-4 0l-1-26-26-6c-4-1-4-5 2-7l99-39c3-1 6 1 5 4l-37 119c-1 3-5 4-8 3l-69-31c-3-1-5-3-4-6l23-93c1-3 4-4 6-3z" fill="#fff"/></svg>
+                Send via Telegram
+              </button>
             </div>
           )}
           {fieldErrors.PhoneNumber && <div className="text-sm text-destructive">{fieldErrors.PhoneNumber}</div>}
@@ -145,13 +149,6 @@ export default function RegisterPage() {
           <Input type="password" name="Password" placeholder="Password" value={form.Password} onChange={handleChange} />
           {fieldErrors.Password && <div className="text-sm text-destructive">{fieldErrors.Password}</div>}
           <Input type="password" name="ConfirmPassword" placeholder="Confirm password" value={form.ConfirmPassword} onChange={handleChange} />
-
-          <div>
-            <label className="block text-sm mb-1">Role</label>
-            <select name="Role" value={form.Role} onChange={handleChange} className="w-full rounded-md border px-3 py-2">
-              {roles.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
 
           <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</Button>
         </form>

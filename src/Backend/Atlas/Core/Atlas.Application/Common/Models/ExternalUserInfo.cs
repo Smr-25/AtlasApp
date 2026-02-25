@@ -5,5 +5,6 @@ public record ExternalUserInfo(
     string Email,
     string? FullName,
     string Provider,
-    bool EmailVerified
+    bool EmailVerified,
+    string? AccessToken = null
 );

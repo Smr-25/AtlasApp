@@ -4,15 +4,19 @@ using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Common.Models;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Entities;
+using Atlas.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Application.Features.Accounts.Commands.ExternalLogin;
 
 public class ExternalLoginCommandHandler(
     UserManager<AppUser> userManager,
     IJwtService jwtService,
-    IExternalAuthService externalAuthService)
+    IExternalAuthService externalAuthService,
+    IApplicationDbContext dbContext,
+    IEncryptionService encryptionService) // added db & encryption
     : IRequestHandler<ExternalLoginCommand, ExternalLoginResponseDto>
 {
     public async Task<ExternalLoginResponseDto> Handle(ExternalLoginCommand request,
@@ -20,9 +24,9 @@ public class ExternalLoginCommandHandler(
     {
         var externalUser = request.Provider.ToLower() switch
         {
-            "apple" => await externalAuthService.ValidateAppleTokenAsync(request.IdToken),
             "google" => await externalAuthService.ValidateGoogleTokenAsync(request.IdToken),
-            _ => throw new BadRequestException("Unsupported external authentication provider. Supported: Google, Apple")
+            "github" => await externalAuthService.ValidateGitHubTokenAsync(request.AccessToken, request.AuthorizationCode),
+            _ => throw new BadRequestException("Unsupported external authentication provider. Supported: Google, GitHub")
         };
 
         if (externalUser == null)
@@ -36,6 +40,34 @@ public class ExternalLoginCommandHandler(
         user.SetRefreshToken(refreshTokenResponse.RefreshToken, refreshTokenResponse.RefreshTokenExpiresAt);
         user.UpdateLastLogin();
         await userManager.UpdateAsync(user);
+
+        var accessTokenForIntegration = externalUser.AccessToken ?? request.AccessToken;
+
+        // AUTOMATIC GITHUB INTEGRATION: if provider is github, access token present, and user is Developer -> create Integration active
+        if (request.Provider?.ToLower() == "github" && !string.IsNullOrEmpty(accessTokenForIntegration) && user.Role == UserRole.Developer)
+        {
+            // avoid duplicates
+            var existing = await dbContext.Integrations
+                .AsQueryable()
+                .FirstOrDefaultAsync(i => i.UserProfileId == user.Id && i.Provider == IntegrationProvider.GitHub && !i.IsDeleted, cancellationToken);
+
+            if (existing == null)
+            {
+                var encryptedToken = encryptionService.Encrypt(accessTokenForIntegration);
+                var integration = Integration.Create(
+                    userProfileId: user.Id,
+                    name: "GitHub",
+                    provider: IntegrationProvider.GitHub,
+                    encryptedAccessToken: encryptedToken,
+                    encryptedRefreshToken: null,
+                    expiresAt: null,
+                    metadataJson: null
+                );
+
+                await dbContext.Integrations.AddAsync(integration, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
 
         var externalLoginResponseDto = new ExternalLoginResponseDto
         (

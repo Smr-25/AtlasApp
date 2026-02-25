@@ -23,7 +23,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     if (!form.Password || !form.Identifier) {
-      setError("Email/username and password are required.");
+      setError("Email/USERNAME and password are required.");
       return;
     }
     setLoading(true);
@@ -58,17 +58,12 @@ export default function LoginPage() {
         {error && <div className="mb-4 text-sm text-destructive">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input name="Identifier" placeholder="Email address or username" value={form.Identifier} onChange={handleChange} />
+          <Input name="Identifier" placeholder="Email address or USERNAME" value={form.Identifier} onChange={handleChange} />
           <Input type="password" name="Password" placeholder="Password" value={form.Password} onChange={handleChange} />
 
           <div className="flex items-center justify-between">
-            <div>
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" />
-                <span className="text-sm">Remember me</span>
-              </label>
-            </div>
-            <a className="text-sm text-primary hover:underline" href="#">Forgot password?</a>
+            <div />
+            <a className="text-sm text-primary hover:underline" href="/forgot-password">Forgot password?</a>
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</Button>

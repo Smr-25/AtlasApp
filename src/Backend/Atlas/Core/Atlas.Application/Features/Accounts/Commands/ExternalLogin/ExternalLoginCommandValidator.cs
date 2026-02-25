@@ -4,7 +4,7 @@ namespace Atlas.Application.Features.Accounts.Commands.ExternalLogin;
 
 public class ExternalLoginCommandValidator : AbstractValidator<ExternalLoginCommand>
 {
-    private static readonly string[] SupportedProviders = { "google", "apple" };
+    private static readonly string[] SupportedProviders = { "google", "github" };
 
     public ExternalLoginCommandValidator()
     {
@@ -12,7 +12,7 @@ public class ExternalLoginCommandValidator : AbstractValidator<ExternalLoginComm
             .NotEmpty()
             .WithMessage("Provider is required.")
             .Must(provider => SupportedProviders.Contains(provider.ToLower()))
-            .WithMessage("Unsupported provider. Supported providers: Google, Apple.");
+            .WithMessage("Unsupported provider. Supported providers: Google, GitHub.");
 
         RuleFor(x => x.IdToken)
             .NotEmpty()

@@ -3,16 +3,8 @@ namespace Atlas.Application.Settings;
 public class ExternalAuthSettings
 {
     public const string SectionName = "ExternalAuthSettings";
-    public AppleAuthSettings Apple { get; set; } = new();
     public GoogleAuthSettings Google { get; set; } = new();
-}
-
-public class AppleAuthSettings
-{
-    public string ClientId { get; set; } = string.Empty;
-    public string TeamId { get; set; } = string.Empty;
-    public string KeyId { get; set; } = string.Empty;
-    public string PrivateKey { get; set; } = string.Empty;
+    public GitHubAuthSettings GitHub { get; set; } = new();
 }
 
 public class GoogleAuthSettings
@@ -21,3 +13,11 @@ public class GoogleAuthSettings
     public string ClientSecret { get; set; } = string.Empty;
 }
 
+public class GitHubAuthSettings
+{
+    public string ClientId { get; set; } = string.Empty;
+    public string ClientSecret { get; set; } = string.Empty;
+    public string TokenEndpoint { get; set; } = "https://github.com/login/oauth/access_token";
+    public string UserApiEndpoint { get; set; } = "https://api.github.com/user";
+    public string UserEmailsEndpoint { get; set; } = "https://api.github.com/user/emails";
+}

@@ -1,6 +1,6 @@
 // ...existing code...
 
-export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5075";
 
 export async function postJson<T = any>(path: string, body: any, token?: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
