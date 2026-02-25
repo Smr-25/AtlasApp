@@ -1,72 +1,100 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 222 22% 8%;
-    --foreground: 210 20% 92%;
+    --background: 30 30% 97%;
+    --foreground: 18 100% 4%;
 
-    --card: 222 20% 11%;
-    --card-foreground: 210 20% 92%;
+    --card: 0 0% 100%;
+    --card-foreground: 18 100% 4%;
 
-    --popover: 222 20% 11%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 18 100% 4%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 22% 8%;
+    --primary: 19 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 18% 16%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 25 60% 95%;
+    --secondary-foreground: 18 100% 4%;
 
-    --muted: 222 15% 14%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 30 20% 94%;
+    --muted-foreground: 18 15% 50%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 22% 8%;
+    --accent: 25 80% 94%;
+    --accent-foreground: 18 100% 4%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 20% 92%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 222 15% 18%;
-    --input: 222 15% 18%;
-    --ring: 217 91% 60%;
+    --border: 30 20% 90%;
+    --input: 30 20% 90%;
+    --ring: 19 100% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 22% 6%;
-    --sidebar-foreground: 210 15% 70%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 18 15% 40%;
+    --sidebar-primary: 19 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 20% 14%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 222 15% 15%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 25 80% 96%;
+    --sidebar-accent-foreground: 18 100% 4%;
+    --sidebar-border: 30 20% 92%;
+    --sidebar-ring: 19 100% 50%;
 
-    /* Custom tokens */
-    --success: 152 69% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(230 80% 55%));
-    --gradient-surface: linear-gradient(180deg, hsl(222 20% 11%), hsl(222 22% 8%));
-    --gradient-glow: radial-gradient(ellipse at top, hsl(217 91% 60% / 0.08), transparent 60%);
-
-    --shadow-sm: 0 1px 2px hsl(222 22% 4% / 0.5);
-    --shadow-md: 0 4px 12px hsl(222 22% 4% / 0.5);
-    --shadow-lg: 0 8px 30px hsl(222 22% 4% / 0.6);
-    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.15);
+    --momentum-orange: 19 100% 50%;
+    --momentum-black: 18 100% 4%;
+    --momentum-dark: 18 85% 6%;
+    --momentum-peach: 25 100% 97%;
+    --momentum-green: 145 63% 42%;
+    --momentum-red: 0 72% 51%;
   }
 
-  /* No light mode - always dark */
   .dark {
-    --background: 222 22% 8%;
-    --foreground: 210 20% 92%;
+    --background: 18 100% 4%;
+    --foreground: 30 30% 92%;
+
+    --card: 18 85% 6%;
+    --card-foreground: 30 30% 92%;
+
+    --popover: 18 85% 6%;
+    --popover-foreground: 30 30% 92%;
+
+    --primary: 19 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 18 50% 12%;
+    --secondary-foreground: 30 30% 92%;
+
+    --muted: 18 40% 14%;
+    --muted-foreground: 30 15% 55%;
+
+    --accent: 18 50% 12%;
+    --accent-foreground: 30 30% 92%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 18 40% 12%;
+    --input: 18 40% 14%;
+    --ring: 19 100% 50%;
+
+    --sidebar-background: 18 100% 4%;
+    --sidebar-foreground: 30 15% 60%;
+    --sidebar-primary: 19 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 18 50% 10%;
+    --sidebar-accent-foreground: 30 30% 92%;
+    --sidebar-border: 18 40% 10%;
+    --sidebar-ring: 19 100% 50%;
+
+    --momentum-orange: 19 100% 50%;
+    --momentum-black: 18 100% 4%;
+    --momentum-dark: 18 85% 6%;
+    --momentum-peach: 18 50% 10%;
+    --momentum-green: 145 63% 42%;
+    --momentum-red: 0 72% 51%;
   }
 }
 
@@ -75,73 +103,7 @@
     @apply border-border;
   }
 
-  html {
-    color-scheme: dark;
-  }
-
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-  }
-}
-
-@layer utilities {
-  /* Liquid glass / frosted card styles used site-wide */
-  .glass {
-    background: rgba(255,255,255,0.04);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    backdrop-filter: blur(10px) saturate(120%);
-    border: 1px solid rgba(255,255,255,0.06);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.45);
-  }
-
-  /* stronger variant for main panels */
-  .glass-strong {
-    background: rgba(255,255,255,0.06);
-    -webkit-backdrop-filter: blur(14px) saturate(130%);
-    backdrop-filter: blur(14px) saturate(130%);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  }
-
-  /* Neon/Phosphor border outline helper - only border glows (no fill) */
-  .border-glow {
-    position: relative;
-  }
-  .border-glow::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(90deg, rgba(100,116,255,0.95), rgba(60,220,200,0.9));
-    -webkit-mask: linear-gradient(#fff,#fff) content-box, linear-gradient(#000,#000);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    filter: blur(6px);
-    pointer-events: none;
-    opacity: 0.95;
-  }
-
-  /* Fallback when backdrop-filter not supported */
-  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-    .glass, .glass-strong { background: rgba(20,20,25,0.72); }
-  }
-
-  /* small utility to ensure panels have rounded inner content */
-  .glass .card-content { position: relative; z-index: 1; }
-
-  .glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-primary);
-  }
-
-  .atlas-logo {
-    font-family: 'Inter', sans-serif;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    @apply bg-background text-foreground font-outfit;
   }
 }
