@@ -9,9 +9,6 @@ public interface IApplicationDbContext
     DbSet<Integration> Integrations { get; }
     DbSet<Workspace> Workspaces { get; }
     DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; }
-    DbSet<OnboardingQuestion> OnboardingQuestions { get; }
-    DbSet<OnboardingOption> OnboardingOptions { get; }
-    DbSet<OnboardingAnswer> OnboardingAnswers { get; }
     DbSet<UserActivity> UserActivities { get; }
     DbSet<Snippet> Snippets { get; }
     DbSet<Script> Scripts { get; }
@@ -54,5 +51,8 @@ public interface IApplicationDbContext
     DbSet<BountyBoard> BountyBoards { get; }
     DbSet<OmniFeedItem> OmniFeedItems { get; }
     DbSet<SharedResource> SharedResources { get; }
+    DbSet<OnboardingOption> OnboardingOptions { get; }
+    DbSet<OnboardingQuestion> OnboardingQuestions { get; }
+    DbSet<OnboardingAnswer> OnboardingAnswers { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

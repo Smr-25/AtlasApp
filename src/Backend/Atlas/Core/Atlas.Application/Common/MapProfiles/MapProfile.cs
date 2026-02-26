@@ -1,5 +1,4 @@
 using Atlas.Application.Features.Accounts.Dtos;
-using Atlas.Application.Features.Onboarding.Dtos;
 using Atlas.Application.Features.Profiles.Dtos;
 using Atlas.Application.Features.Workspaces.Dtos;
 using Atlas.Domain.Entities;
@@ -15,10 +14,6 @@ public class MapProfile : Profile
         
         CreateMap<AppUserProfile, UserProfileDetailDto>()
             .ForMember(d => d.Profession, opt => opt.MapFrom(s => s.Profession.ToString()));
-        
-        CreateMap<OnboardingQuestion, OnboardingQuestionDto>()
-            .ForMember(d => d.Options, opt => opt.MapFrom(s => s.Options));
-        CreateMap<OnboardingOption, OnboardingOptionDto>();
 
         CreateMap<Workspace, WorkspaceDto>()
             .ForMember(d => d.ActiveIntegrations, opt => opt.MapFrom(s => 

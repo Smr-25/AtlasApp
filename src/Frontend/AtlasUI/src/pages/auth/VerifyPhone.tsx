@@ -1,16 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Phone } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
-import api from '@/lib/apiClient'
+import { useToast } from '@/hooks/use-toast'
+import { ApiError } from '@/lib/apiClient'
 
 const VerifyPhone = () => {
   const navigate = useNavigate();
   const { user, verifyPhone, resendPhoneVerification } = useAuth();
+  const { toast } = useToast();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState<number>(0)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const id = setInterval(() => {
+      setResendCooldown(s => {
+        if (s <= 1) { clearInterval(id); return 0 }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [resendCooldown])
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -34,21 +48,50 @@ const VerifyPhone = () => {
       setError("Please enter the full 6-digit code");
       return;
     }
-    const success = await verifyPhone(fullCode);
-    if (success) {
-      navigate("/onboarding");
-    } else {
-      setError("Invalid verification code");
+    try {
+      const success = await verifyPhone(fullCode);
+      if (success) {
+        toast({ title: 'Phone verified', description: 'Verified — redirecting to onboarding...' })
+        navigate("/onboarding");
+      } else {
+        setError("Invalid verification code");
+        toast({ title: 'Verification failed', description: 'Invalid verification code', variant: 'destructive' })
+      }
+    } catch (e: any) {
+      if (e instanceof ApiError) {
+        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
+        setError(msg)
+        toast({ title: 'Verification failed', description: msg, variant: 'destructive' })
+      } else {
+        setError('Invalid verification code')
+        toast({ title: 'Verification failed', description: 'Invalid verification code', variant: 'destructive' })
+      }
     }
   };
 
   const handleResend = async () => {
     try {
       if (!user?.phone) return setError('No phone available')
-      const channel = user.phoneContact === 'telegram' ? 2 : 1
-      await api.accounts.resendPhoneVerification({ PhoneNumber: user.phone, Channel: channel })
+      // validate E.164-ish format
+      if (!/^\+\d{7,15}$/.test(user.phone)) return setError('Phone number must be in E.164 format')
+      if (resendCooldown > 0) return
+      const ok = await resendPhoneVerification()
+      if (ok) {
+        toast({ title: 'Verification sent', description: `A new verification code was sent via ${user.phoneContact === 'telegram' ? 'Telegram' : 'SMS'}` })
+        setResendCooldown(60)
+      } else {
+        setError('Failed to resend code.')
+        toast({ title: 'Resend failed', description: 'Failed to resend code.', variant: 'destructive' })
+      }
     } catch (e) {
-      setError('Failed to resend code.')
+      if (e instanceof ApiError) {
+        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
+        setError(msg)
+        toast({ title: 'Resend failed', description: msg, variant: 'destructive' })
+      } else {
+        setError('Failed to resend code.')
+        toast({ title: 'Resend failed', description: 'Failed to resend code.', variant: 'destructive' })
+      }
     }
   }
 
@@ -101,8 +144,10 @@ const VerifyPhone = () => {
         </motion.button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">Resend via {contactMethod}</button>
+          Didn't receive the code?{' '}
+          <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-primary font-medium hover:underline ${resendCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : `Resend via ${contactMethod}`}
+          </button>
         </p>
       </div>
     </AuthLayout>

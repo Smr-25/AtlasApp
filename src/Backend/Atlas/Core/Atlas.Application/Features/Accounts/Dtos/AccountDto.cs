@@ -4,7 +4,7 @@ namespace Atlas.Application.Features.Accounts.Dtos;
 
 public record AccountDto(
     string Id,
-    string UserName,
+    string? UserName,
     string Email,
     string FullName,
     string? PhoneNumber,
@@ -12,5 +12,7 @@ public record AccountDto(
     bool PhoneNumberConfirmed,
     DateTime CreatedAt,
     UserStatus Status,
-    DateTime? LastLoginAt
+    DateTime? LastLoginAt,
+    string? Bio = null,
+    IReadOnlyCollection<string>? Tags = null
 );

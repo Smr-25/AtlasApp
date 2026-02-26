@@ -26,7 +26,6 @@ public class RegisterCommandHandler(
         if (existingEmail != null)
             throw new AlreadyExistException("Email", request.Email);
         
-        // Create user with default role (AppUser.Create default is Developer)
         var user = AppUser.Create(
             request.UserName,
             request.Email,
@@ -37,17 +36,14 @@ public class RegisterCommandHandler(
         if (!result.Succeeded)
             throw new IdentityException(result.Errors.Select(e => e.Description).ToArray());
         
-        // Assign Identity role based on user's Role property
         await userManager.AddToRoleAsync(user, user.Role.ToString());
 
-        // Create Free subscription for new user
         var subscription = Subscription.CreateFree(user.Id);
         await dbContext.Subscriptions.AddAsync(subscription, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await SendEmailVerificationCodeAsync(user);
 
-        // Generate tokens (reuse Login handler logic)
         var accessToken = jwtService.GenerateAccessToken(user);
         var refreshToken = jwtService.GenerateRefreshTokenResponse(user);
         user.SetRefreshToken(refreshToken.RefreshToken, refreshToken.RefreshTokenExpiresAt);

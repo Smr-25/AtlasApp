@@ -25,8 +25,35 @@ public class DeleteWorkspaceCommandHandler(
 
         if (workspace.IsDefault)
         {
-            logger.LogWarning("Attempted to delete default workspace {WorkspaceId}", request.WorkspaceId);
-            throw new BusinessRuleViolationException("Delete", "Cannot delete default workspace.");
+            var replacement = await context.Workspaces
+                .Where(w => w.UserProfileId == userId && !w.IsDeleted && w.Id != workspace.Id)
+                .OrderByDescending(w => w.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (replacement == null)
+            {
+                logger.LogWarning("Attempted to delete the only default workspace {WorkspaceId} for user {UserId}", request.WorkspaceId, userId);
+                throw new BusinessRuleViolationException("Delete", "Cannot delete the only workspace. Please create another workspace before deleting this one.");
+            }
+
+            var otherDefaults = await context.Workspaces
+                .Where(w => w.UserProfileId == userId && w.IsDefault && w.Id != workspace.Id && w.Id != replacement.Id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var od in otherDefaults)
+            {
+                od.SetDefault(false);
+                logger.LogDebug("Cleared stray default flag from workspace {WorkspaceId}", od.Id);
+            }
+
+            replacement.SetDefault(true);
+            logger.LogInformation("Auto-selected workspace {ReplacementId} as new default for user {UserId} because default workspace {OldId} is being deleted", replacement.Id, userId, workspace.Id);
+        }
+
+        foreach (var link in workspace.WorkspaceIntegrations.ToList())
+        {
+            link.Delete();
+            logger.LogDebug("Soft-deleted workspace-integration link {LinkId} for workspace {WorkspaceId}", link.Id, workspace.Id);
         }
 
         workspace.Delete(); 
@@ -35,4 +62,3 @@ public class DeleteWorkspaceCommandHandler(
         logger.LogInformation("Successfully deleted workspace {WorkspaceId}", request.WorkspaceId);
     }
 }
-

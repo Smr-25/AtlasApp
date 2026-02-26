@@ -210,13 +210,21 @@ public class AccountsController : ApiControllerBase
         if (provider == "github")
         {
             var github = HttpContext.RequestServices.GetRequiredService<IOptions<ExternalAuthSettings>>().Value.GitHub;
-            var redirectUri = Url.ActionLink(action: "ExternalCallback", controller: "Accounts", values: new { provider = "github" });
             var state = Guid.NewGuid().ToString("N");
-
             var clientIdEsc = Uri.EscapeDataString(github.ClientId);
-            var redirectUriEsc = Uri.EscapeDataString(redirectUri ?? string.Empty);
-            var scopeEsc = Uri.EscapeDataString("read:user user:email");
+            var scopeEsc = Uri.EscapeDataString("repo read:user user:email");
 
+            string redirectUriToUse;
+            if (!string.IsNullOrEmpty(github.FrontendRedirectUri))
+            {
+                redirectUriToUse = github.FrontendRedirectUri!;
+            }
+            else
+            {
+                redirectUriToUse = Url.ActionLink(action: "ExternalCallback", controller: "Accounts", values: new { provider = "github" }) ?? string.Empty;
+            }
+
+            var redirectUriEsc = Uri.EscapeDataString(redirectUriToUse);
             var authUrl = $"https://github.com/login/oauth/authorize?client_id={clientIdEsc}&redirect_uri={redirectUriEsc}&scope={scopeEsc}&state={state}";
             return Redirect(authUrl);
         }

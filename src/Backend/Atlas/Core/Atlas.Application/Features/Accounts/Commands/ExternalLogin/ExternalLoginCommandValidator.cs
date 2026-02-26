@@ -4,20 +4,17 @@ namespace Atlas.Application.Features.Accounts.Commands.ExternalLogin;
 
 public class ExternalLoginCommandValidator : AbstractValidator<ExternalLoginCommand>
 {
-    private static readonly string[] SupportedProviders = { "google", "github" };
-
     public ExternalLoginCommandValidator()
     {
         RuleFor(x => x.Provider)
             .NotEmpty()
             .WithMessage("Provider is required.")
-            .Must(provider => SupportedProviders.Contains(provider.ToLower()))
-            .WithMessage("Unsupported provider. Supported providers: Google, GitHub.");
+            .Must(provider => string.Equals(provider, "github", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("Unsupported provider. Supported provider: GitHub.");
 
-        RuleFor(x => x.IdToken)
-            .NotEmpty()
-            .WithMessage("IdToken is required.")
-            .MinimumLength(50)
-            .WithMessage("IdToken appears to be invalid.");
+        RuleFor(x => x)
+            .Must(cmd => !string.IsNullOrEmpty(cmd.AccessToken) || !string.IsNullOrEmpty(cmd.AuthorizationCode))
+            .When(x => string.Equals(x.Provider, "github", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("For GitHub login either AccessToken or AuthorizationCode must be provided.");
     }
 }

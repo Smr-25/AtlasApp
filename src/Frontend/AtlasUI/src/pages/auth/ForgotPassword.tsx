@@ -3,21 +3,39 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Mail } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { useToast } from '@/hooks/use-toast'
+import api, { ApiError } from '@/lib/apiClient'
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      try {
-        await (await import('@/lib/apiClient')).default.accounts.forgotPassword({ Email: email });
-        setSent(true);
-      } catch (err) {
-        // show error (simple)
-        alert('Failed to send reset email.');
+    // client-side validation
+    if (!email.trim()) {
+      toast({ title: 'Email required', description: 'Please enter your email address', variant: 'destructive' })
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: 'Invalid email', description: 'Please enter a valid email address', variant: 'destructive' })
+      return
+    }
+
+    try {
+      await api.accounts.forgotPassword({ Email: email });
+      setSent(true);
+      toast({ title: 'Reset email sent', description: `If an account exists for ${email} we'll send instructions.` })
+      // navigate to reset password flow with email prefilled
+      navigate(`/reset-password?email=${encodeURIComponent(email)}`)
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        const msg = err.errors && err.errors.length ? err.errors.join(', ') : err.message
+        toast({ title: 'Failed to send reset email', description: msg, variant: 'destructive' })
+      } else {
+        toast({ title: 'Failed to send reset email', description: err?.message || 'Failed to send reset email.', variant: 'destructive' })
       }
     }
   };

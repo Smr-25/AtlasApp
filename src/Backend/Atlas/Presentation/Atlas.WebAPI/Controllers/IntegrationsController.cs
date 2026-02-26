@@ -5,6 +5,7 @@ using Atlas.Application.Features.Integrations.Commands.ReportFailure;
 using Atlas.Application.Features.Integrations.Commands.UpdateIntegration;
 using Atlas.Application.Features.Integrations.Queries.GetIntegrationById;
 using Atlas.Application.Features.Integrations.Queries.GetIntegrations;
+using Atlas.Application.Features.Integrations.Queries.GetPendingIntegrations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -62,5 +63,11 @@ public class IntegrationsController : ApiControllerBase
     {
         await Mediator.Send(new MarkIntegrationExpiredCommand(id));
         return NoContentResponse();
+    }
+    
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPending()
+    {
+        return OkResponse(await Mediator.Send(new GetPendingIntegrationsQuery()));
     }
 }

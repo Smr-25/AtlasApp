@@ -14,6 +14,7 @@ builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+        options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
     });
 builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
@@ -129,7 +130,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed roles
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();

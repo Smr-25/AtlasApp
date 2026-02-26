@@ -1,3 +1,4 @@
+using Atlas.Application.Features.Onboarding.Dtos;
 using Atlas.Application.Features.Workspaces.Dtos;
 using Atlas.Domain.Entities;
 
@@ -9,5 +10,7 @@ public record UserProfileDetailDto(
     string Bio, 
     string ThemeColor, 
     string Profession,
-    IReadOnlyCollection<Workspace> Workspaces
+    IReadOnlyCollection<Workspace> Workspaces,
+    IReadOnlyCollection<string>? Tags = null,
+    IReadOnlyCollection<OnboardingAnswerDto>? OnboardingAnswers = null
 );

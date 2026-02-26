@@ -16,7 +16,7 @@ public class ExternalLoginCommandHandler(
     IJwtService jwtService,
     IExternalAuthService externalAuthService,
     IApplicationDbContext dbContext,
-    IEncryptionService encryptionService) // added db & encryption
+    IEncryptionService encryptionService) 
     : IRequestHandler<ExternalLoginCommand, ExternalLoginResponseDto>
 {
     public async Task<ExternalLoginResponseDto> Handle(ExternalLoginCommand request,
@@ -43,10 +43,8 @@ public class ExternalLoginCommandHandler(
 
         var accessTokenForIntegration = externalUser.AccessToken ?? request.AccessToken;
 
-        // AUTOMATIC GITHUB INTEGRATION: if provider is github, access token present, and user is Developer -> create Integration active
-        if (request.Provider?.ToLower() == "github" && !string.IsNullOrEmpty(accessTokenForIntegration) && user.Role == UserRole.Developer)
+        if (request.Provider.ToLower() == "github" && !string.IsNullOrEmpty(accessTokenForIntegration))
         {
-            // avoid duplicates
             var existing = await dbContext.Integrations
                 .AsQueryable()
                 .FirstOrDefaultAsync(i => i.UserProfileId == user.Id && i.Provider == IntegrationProvider.GitHub && !i.IsDeleted, cancellationToken);
@@ -66,6 +64,18 @@ public class ExternalLoginCommandHandler(
 
                 await dbContext.Integrations.AddAsync(integration, cancellationToken);
                 await dbContext.SaveChangesAsync(cancellationToken);
+                var defaultWorkspace = await dbContext.Workspaces.FirstOrDefaultAsync(w => w.UserProfileId == user.Id && w.IsDefault && !w.IsDeleted, cancellationToken);
+                if (defaultWorkspace != null)
+                {
+                    var link = new WorkspaceIntegration
+                    {
+                        WorkspaceId = defaultWorkspace.Id,
+                        IntegrationId = integration.Id,
+                        Enabled = true
+                    };
+                    await dbContext.WorkspaceIntegrations.AddAsync(link, cancellationToken);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
             }
         }
 

@@ -8,7 +8,11 @@ public class WorkspaceIntegration : BaseEntity
     public Workspace Workspace { get; set; } = null!;
     public Guid IntegrationId { get; set; }
     public Integration Integration { get; set; } = null!;
-    public string? SettingsJson { get; set; } 
+    public string? SettingsJson { get; set; }
     public bool Enabled { get; set; }
     
+    public void Delete()
+    {
+        SetDelete();
+    }
 }

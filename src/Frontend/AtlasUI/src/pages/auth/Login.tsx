@@ -5,10 +5,11 @@ import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from '@/hooks/use-toast'
+import { ApiError } from '@/lib/apiClient'
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, externalLogin } = useAuth();
   const { toast } = useToast();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -17,19 +18,157 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim() || !password.trim()) {
-      setError("Please fill in all fields");
-      return;
+    setError('')
+    // Validation per API rules:
+    // - At least one of Email or UserName must be provided (identifier covers both)
+    // - If identifier looks like an email validate format
+    // - If identifier is a username validate length 3..20
+    if (!identifier.trim()) { setError('Please enter email or username'); return }
+    if (!password.trim()) { setError('Please enter your password'); return }
+    const isEmail = identifier.includes('@')
+    if (isEmail) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) { setError('Invalid email address'); return }
+    } else {
+      if (identifier.length < 3) { setError('Username must be at least 3 characters'); return }
+      if (identifier.length > 20) { setError('Username must be less than 20 characters'); return }
     }
-    const success = await login(identifier, password);
-    if (success) {
+    const result = await login(identifier, password as string);
+    if (result.ok) {
       toast({ title: 'Signed in', description: 'Welcome back!' })
       navigate("/");
     } else {
-      setError("Invalid credentials");
-      toast({ title: 'Sign in failed', description: 'Invalid username/email or password', action: undefined })
+      if (result.reason === 'email_not_verified') {
+        toast({ title: 'Email not verified', description: 'Please verify your email first' })
+        // keep minimal user in context so /verify-email can show email; navigate there
+        navigate('/verify-email')
+        return
+      }
+      if (result.reason === 'locked') {
+        setError('Account is locked')
+        toast({ title: 'Account locked', description: result.message || 'Your account is locked' })
+        return
+      }
+      setError(result.message || 'Invalid credentials')
+      toast({ title: 'Sign in failed', description: result.message || 'Invalid username/email or password', action: undefined })
     }
   };
+
+  const onExternalClick = async (provider: 'google' | 'github') => {
+    // Preferred flow: redirect to backend OAuth start URL (configured via env). Example env var: VITE_OAUTH_START_URL
+    // That backend endpoint should initiate the provider OAuth flow and eventually redirect back to the app.
+    const oauthStart = import.meta.env.VITE_OAUTH_START_URL as string | undefined
+    // fallback to api base + a conventional path (only used if VITE_OAUTH_START_URL is set accordingly)
+    const apiBase = import.meta.env.VITE_API_BASE || ''
+    const conventionalStart = `${apiBase}/api/accounts/external-login/start?provider=${provider}`
+
+    if (oauthStart || apiBase) {
+      const target = (oauthStart || conventionalStart)
+      // Open in a popup so user returns to the app after provider consent
+      const width = 600, height = 700
+      const left = window.screenX + (window.outerWidth - width) / 2
+      const top = window.screenY + (window.outerHeight - height) / 2
+      const popup = window.open(target, `oauth-${provider}`, `width=${width},height=${height},left=${left},top=${top}`)
+      if (!popup) {
+        toast({ title: 'External sign in', description: 'Could not open popup. Please allow popups or try again.' })
+        return
+      }
+      // Poll the popup for redirect completion (the backend should redirect to a page that can postMessage tokens or close the popup)
+      const popupTick = setInterval(() => {
+        try {
+          if (!popup || popup.closed) {
+            clearInterval(popupTick)
+            window.removeEventListener('message', messageHandler)
+            toast({ title: 'External sign in', description: 'Popup closed' })
+            return
+          }
+          // If backend redirects back to same origin and sets a flag, we can detect it here
+          if (popup.location && popup.location.origin === window.location.origin) {
+            // Try reading a token from URL hash or search params (this depends on your backend redirect implementation)
+            const params = new URLSearchParams(popup.location.search)
+            const idToken = params.get('id_token') || params.get('idToken') || ''
+            if (idToken) {
+              // close popup and exchange token via API
+              popup.close()
+              clearInterval(popupTick)
+              window.removeEventListener('message', messageHandler)
+              ;(async () => {
+                try {
+                  const ok = await externalLogin(provider, idToken)
+                  if (ok) {
+                    toast({ title: 'Signed in', description: `Signed in with ${provider}` })
+                    navigate('/')
+                  } else {
+                    toast({ title: 'External sign in failed', description: `Could not sign in with ${provider}` })
+                  }
+                } catch (e) {
+                  if (e instanceof ApiError) {
+                    const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
+                    toast({ title: 'External sign in failed', description: msg })
+                  } else {
+                    toast({ title: 'External sign in failed', description: `Could not sign in with ${provider}` })
+                  }
+                }
+              })()
+            }
+          }
+        } catch (err) {
+          // cross-origin until redirect back to our origin — ignore
+        }
+      }, 500)
+
+      // message handler fallback: backend redirect page can postMessage the id_token to opener
+      const messageHandler = async (ev: MessageEvent) => {
+        if (!ev.data) return
+        // expect shape { provider: 'google', idToken: '...' }
+        try {
+          const { provider: msgProvider, idToken } = ev.data as any
+          if (msgProvider === provider && idToken) {
+            if (popup && !popup.closed) popup.close()
+            clearInterval(popupTick)
+            window.removeEventListener('message', messageHandler)
+            try {
+              const ok = await externalLogin(provider, idToken)
+              if (ok) {
+                toast({ title: 'Signed in', description: `Signed in with ${provider}` })
+                navigate('/')
+              } else {
+                toast({ title: 'External sign in failed', description: `Could not sign in with ${provider}` })
+              }
+            } catch (e) {
+              if (e instanceof ApiError) {
+                const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
+                toast({ title: 'External sign in failed', description: msg })
+              } else {
+                toast({ title: 'External sign in failed', description: `Could not sign in with ${provider}` })
+              }
+            }
+          }
+        } catch (err) {}
+      }
+      window.addEventListener('message', messageHandler)
+      return
+    }
+
+    // Fallback (dev): ask for an id token to exchange (kept for local testing)
+    const token = window.prompt(`Paste ${provider} id token for testing:`) || ''
+    if (!token) return
+    try {
+      const ok = await externalLogin(provider, token)
+      if (ok) {
+        toast({ title: 'Signed in', description: `Signed in with ${provider}` })
+        navigate('/')
+      } else {
+        toast({ title: 'External sign in failed', description: `Could not sign in with ${provider}` })
+      }
+    } catch (e) {
+      if (e instanceof ApiError) {
+        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
+        toast({ title: 'External sign in failed', description: msg })
+      } else {
+        toast({ title: 'External sign in failed', description: `Could not sign in with ${provider}` })
+      }
+    }
+  }
 
   const inputClass =
     "w-full h-11 px-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all";
@@ -102,6 +241,7 @@ const Login = () => {
         <div className="flex gap-3">
           <button
             type="button"
+            onClick={() => onExternalClick('google')}
             className="flex-1 h-11 rounded-xl border border-border flex items-center justify-center gap-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -114,6 +254,7 @@ const Login = () => {
           </button>
           <button
             type="button"
+            onClick={() => onExternalClick('github')}
             className="flex-1 h-11 rounded-xl border border-border flex items-center justify-center gap-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

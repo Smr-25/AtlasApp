@@ -29,13 +29,14 @@ public class SetDefaultWorkspaceCommandHandler(
             return;
         }
 
-        var currentDefault = await context.Workspaces
-            .FirstOrDefaultAsync(w => w.UserProfileId == userId && w.IsDefault, cancellationToken);
+        var currentDefaults = await context.Workspaces
+            .Where(w => w.UserProfileId == userId && w.IsDefault && w.Id != request.WorkspaceId)
+            .ToListAsync(cancellationToken);
 
-        if (currentDefault != null)
+        foreach (var wd in currentDefaults)
         {
-            currentDefault.SetDefault(false);
-            logger.LogDebug("Removed default status from workspace {WorkspaceId}", currentDefault.Id);
+            wd.SetDefault(false);
+            logger.LogDebug("Removed default status from workspace {WorkspaceId}", wd.Id);
         }
 
         targetWorkspace.SetDefault(true);

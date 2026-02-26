@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import api from '@/lib/apiClient'
+import api, { ApiError } from '@/lib/apiClient'
 
 export type UserRole = "developer" | "designer" | "cybersecurity" | "marketer" | "team-leader";
 
@@ -17,12 +17,16 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  register: (data: Omit<User, "onboardingComplete"> & { password: string }) => Promise<boolean>;
-  login: (identifier: string, password: string) => Promise<boolean>;
+  register: (data: Omit<User, "onboardingComplete"> & { password: string; confirmPassword: string }) => Promise<boolean>;
+  // login now returns a detailed result so UI can react (email verification required, locked, etc.)
+  login: (identifier: string, password: string) => Promise<{ ok: boolean; reason?: 'email_not_verified' | 'locked' | 'invalid_credentials' | 'profile_fetch_failed' | 'other'; message?: string }>;
+  externalLogin: (provider: 'google' | 'github', idToken: string) => Promise<boolean>;
+  // Explicit refresh helper: attempts to exchange stored refresh token for new tokens and finalize auth
+  refreshTokens: () => Promise<boolean>;
   logout: () => void;
   setUserRole: (role: UserRole) => void;
   completeOnboarding: (answers: Record<string, string>) => Promise<boolean>;
-  verifyEmail: (code: string) => Promise<boolean>;
+  verifyEmail: (code: string, email?: string) => Promise<boolean>;
   verifyPhone: (code: string) => Promise<boolean>;
   resendEmailVerification: () => Promise<boolean>;
   resendPhoneVerification: () => Promise<boolean>;
@@ -41,8 +45,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [pendingPassword, setPendingPassword] = useState<string | null>(null);
 
-  const register = async (data: Omit<User, 'onboardingComplete'> & { password: string }) => {
+  const register = async (data: Omit<User, 'onboardingComplete'> & { password: string; confirmPassword: string }) => {
     try {
       // map UI user shape to backend RegisterRequest
       const payload = {
@@ -52,40 +57,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         Password: data.password,
       }
 
+      // Call register and apply returned tokens so frontend treats user as authenticated
       const res = await api.accounts.register(payload)
-      // res is AuthResponseDto
-      api.setTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
 
-      // load full profile from backend
-      try {
-        const profile = await api.accounts.getProfile()
-        setUser({
-          fullName: profile.FullName,
-          username: profile.UserName,
-          email: profile.Email,
-          phone: profile.PhoneNumber || undefined,
-          role: (profile.Status as any) || undefined,
-          onboardingComplete: false,
-        })
-        setEmailVerified(profile.EmailConfirmed)
-        setPhoneVerified(Boolean(profile.PhoneNumberConfirmed))
-      } catch (e) {
-        // if profile fetch fails, still set minimal user from token payload
-        setUser({ fullName: res.FullName, username: res.UserName, email: res.Email, onboardingComplete: false })
-        setEmailVerified(false)
-        setPhoneVerified(false)
+      // If server returned tokens, finalize auth from tokens (this will store tokens, fetch profile and set authenticated state)
+      if (res?.AccessToken && res?.RefreshToken) {
+        const ok = await finalizeAuthFromTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
+        if (!ok) {
+          // If finalizing failed, clear tokens and return false
+          api.clearTokens()
+          return false
+        }
       }
 
-      // after register we auto-login the user (token already stored)
-      setIsAuthenticated(true)
+      // Store minimal user info in case profile fetch didn't set it fully
+      if (!user) setUser({ fullName: data.fullName, username: data.username, email: data.email, onboardingComplete: false })
+      setEmailVerified(false)
+      setPhoneVerified(false)
 
       return true
     } catch (e) {
+      // If server returned ApiError, rethrow so UI can display server-side validation messages
+      if (e instanceof ApiError) throw e
       return false
     }
   };
 
-  const login = async (_identifier: string, _password: string) => {
+  // Helper to finish auth after tokens are set: fetch profile and only on success mark authenticated
+  const finalizeAuthFromTokens = async (tokenPayload: { AccessToken: string; RefreshToken: string } | null) => {
+    if (!tokenPayload || !tokenPayload.AccessToken) return false
+    api.setTokens({ AccessToken: tokenPayload.AccessToken, RefreshToken: tokenPayload.RefreshToken })
+    try {
+      const profile = await api.accounts.getProfile()
+      setUser({
+        fullName: profile.FullName,
+        username: profile.UserName,
+        email: profile.Email,
+        phone: profile.PhoneNumber || undefined,
+        role: (profile.Status as any) || 'team-leader',
+        onboardingComplete: true,
+      })
+      setEmailVerified(profile.EmailConfirmed)
+      setPhoneVerified(Boolean(profile.PhoneNumberConfirmed))
+      setIsAuthenticated(true)
+      return true
+    } catch (e) {
+      // profile fetch failed -> clear tokens and don't authenticate
+      api.clearTokens()
+      setUser(null)
+      setIsAuthenticated(false)
+      return false
+    }
+  }
+
+  const login: AuthContextType['login'] = async (_identifier: string, _password: string) => {
     try {
       const payload: any = {}
       if (_identifier.includes('@')) payload.Email = _identifier
@@ -93,33 +118,121 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       payload.Password = _password
 
       const res = await api.accounts.login(payload)
-      // res is AuthResponseDto
-      api.setTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
-      // load full profile from backend
-      try {
-        const profile = await api.accounts.getProfile()
-        setUser({
-          fullName: profile.FullName,
-          username: profile.UserName,
-          email: profile.Email,
-          phone: profile.PhoneNumber || undefined,
-          role: (profile.Status as any) || 'team-leader', // fallback mapping; UI role enums are different, may adjust
-          onboardingComplete: true,
-        })
-        setEmailVerified(profile.EmailConfirmed)
-        setPhoneVerified(Boolean(profile.PhoneNumberConfirmed))
-      } catch (e) {
-        // if profile fetch fails, still set minimal user from token payload
-        setUser({ fullName: res.FullName, username: res.UserName, email: res.Email, onboardingComplete: true, role: 'team-leader' })
+      // Some backends may return the DTO directly, or may return a wrapper like { data: { ... } } or different casing.
+      // Recursively unwrap nested `data` fields up to a few levels to tolerate different envelopes.
+      let raw: any = res as any
+      for (let i = 0; i < 3; i++) {
+        if (raw && raw.data && typeof raw.data === 'object') raw = raw.data
+        else break
       }
-      setIsAuthenticated(true)
-      setEmailVerified(true)
-      setPhoneVerified(true)
-      return true
+      // tolerate different casing and token key names from backend
+      const accessToken = raw?.AccessToken ?? raw?.accessToken ?? raw?.access_token ?? raw?.token ?? raw?.jwt ?? raw?.idToken ?? raw?.id_token ?? raw?.access
+      const refreshToken = raw?.RefreshToken ?? raw?.refreshToken ?? raw?.refresh_token ?? raw?.refresh ?? raw?.refreshTokenValue
+      if (!accessToken || !refreshToken) {
+        // Log the unexpected server response to console to help debugging.
+        try {
+          console.error('Login: server returned invalid token payload:', res)
+        } catch (logErr) {}
+        return { ok: false, reason: 'other', message: 'Invalid token payload (server returned unexpected response). Check backend logs or inspect network response.' }
+      }
+
+      // normalize tokens object for finalizeAuthFromTokens
+      const normalized = { AccessToken: accessToken, RefreshToken: refreshToken }
+
+      // finalize auth and directly return result
+      if (!(await finalizeAuthFromTokens(normalized))) {
+        return { ok: false, reason: 'profile_fetch_failed', message: 'Failed to fetch profile after login' }
+      }
+      return { ok: true }
     } catch (e) {
-      return false
+      if (e instanceof ApiError) {
+        // Map common server-side statuses/messages to friendly reasons
+        if (e.status === 401) {
+          const rawMsg = e.errors?.join(', ') || e.message || ''
+          const msg = rawMsg.toLowerCase()
+
+          // Email not verified
+          if (msg.includes('email not verified') || msg.includes('email not confirmed')) {
+            try {
+              const maybeEmail = _identifier.includes('@') ? _identifier : undefined
+              const maybeUserName = !_identifier.includes('@') ? _identifier : ''
+              if (maybeEmail) setUser({ fullName: '', username: maybeUserName ?? '', email: maybeEmail, onboardingComplete: false })
+            } catch {}
+            return {
+              ok: false,
+              reason: 'email_not_verified',
+              message: 'Your email address is not verified. Please check your email for the verification code or resend the code.'
+            }
+          }
+
+          // Deleted / unauthorized account
+          if (msg.includes('deleted') || msg.includes('this account has been deleted')) {
+            return {
+              ok: false,
+              reason: 'other',
+              message: 'This account has been deleted. If you believe this is an error, please contact support.'
+            }
+          }
+
+          // Locked mention in 401 message (fallback)
+          if (msg.includes('locked') || msg.includes('too many failed')) {
+            // Surface server message only in logs; show friendly message to user
+            return {
+              ok: false,
+              reason: 'locked',
+              message: 'Your account is temporarily locked due to multiple failed sign-in attempts. Please try again later or contact support.'
+            }
+          }
+
+          // Invalid credentials — try to produce a friendly localized message.
+          // If server provided remaining attempts info, include it when safe.
+          let friendly = 'Invalid email/username or password. Please try again.'
+          // attempt to extract a remaining attempts number from server message (e.g., "2 attempts remaining")
+          const attemptsMatch = rawMsg.match(/(\d+)\s*(?:attempts?|cəhd|tries)/i)
+          if (attemptsMatch && attemptsMatch[1]) {
+            friendly = `Invalid email/username or password. ${attemptsMatch[1]} attempts remaining before account lockout.`
+          }
+          return { ok: false, reason: 'invalid_credentials', message: friendly }
+        }
+        // 423 Locked -> account locked
+        if (e.status === 423) {
+          // If backend provided a human-readable duration/minutes in errors, prefer it for logs; show friendly message to user
+          const serverMsg = e.errors?.join(', ') || e.message || ''
+          try { console.warn('Account locked details from server:', serverMsg) } catch {}
+          return { ok: false, reason: 'locked', message: 'Your account is locked. Please try again later or contact support.' }
+        }
+        // Generic server error: log detailed server message, but return friendly message to user
+        try { console.error('Login ApiError details:', e.status, e.errors) } catch {}
+        return { ok: false, reason: 'other', message: 'Sign in failed due to a server error. Please try again later.' }
+      }
+      // Non-ApiError fallback
+      return { ok: false, reason: 'other', message: e instanceof Error ? e.message : String(e) }
     }
   };
+
+  const externalLogin = async (provider: 'google' | 'github', idToken: string) => {
+    try {
+      const res = await api.accounts.externalLogin({ Provider: provider, IdToken: idToken })
+      if (!res?.AccessToken || !res?.RefreshToken) return false
+      // If backend marks this as a new user, tokens are still provided — finalize auth the same way.
+      return finalizeAuthFromTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
+    } catch (e) {
+      // Rethrow ApiError so UI can display backend validation messages (e.g., 400 invalid token)
+      if (e instanceof ApiError) throw e
+      return false
+    }
+  }
+
+  // Attempt to refresh tokens using the current stored refresh token.
+  const refreshTokens = async () => {
+    const { refreshToken } = api.getTokens()
+    if (!refreshToken) throw new ApiError(401, ['No refresh token available'])
+    const res = await api.accounts.refreshToken(refreshToken)
+    // res should be TokenDto
+    if (!res?.AccessToken || !res?.RefreshToken) throw new ApiError(500, ['Invalid token payload'])
+    // finalizeAuthFromTokens will store tokens and fetch profile
+    return finalizeAuthFromTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
+  }
 
   // On mount: if tokens exist try to load profile
   useEffect(() => {
@@ -150,11 +263,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const logout = () => {
-    api.clearTokens()
-    setUser(null);
-    setIsAuthenticated(false);
-    setEmailVerified(false);
-    setPhoneVerified(false);
+    // Attempt to revoke refresh tokens on the server for the current user.
+    // This endpoint requires Authorization header; apiClient will attach access token if present.
+    (async () => {
+      try {
+        await api.accounts.revokeRefreshToken()
+      } catch (e) {
+        // If revoke fails (e.g., 401 unauthorized), continue with local cleanup.
+        // Re-throwing is not desired for a logout action — we want logout to succeed client-side.
+        // We could show a toast here, but keep silent to avoid blocking logout flow.
+      } finally {
+        api.clearTokens()
+        setUser(null);
+        setIsAuthenticated(false);
+        setEmailVerified(false);
+        setPhoneVerified(false);
+      }
+    })()
   };
 
   const setUserRole = (role: UserRole) => {
@@ -181,14 +306,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const verifyEmail = async (code: string) => {
+  const verifyEmail = async (code: string, emailParam?: string) => {
     if (code.length !== 6) return false
+    const emailToUse = emailParam ?? user?.email
+    if (!emailToUse) return false
     try {
-      if (!user?.email) return false
-      await api.accounts.verifyEmail({ Email: user.email, VerificationCode: code })
+      await api.accounts.verifyEmail({ Email: emailToUse, VerificationCode: code })
       setEmailVerified(true)
+      // after successful verification, if we have a pending password, attempt to login and fetch profile
+      if (pendingPassword && emailToUse) {
+        try {
+          const loginRes = await api.accounts.login({ Email: emailToUse, Password: pendingPassword })
+          if (loginRes?.AccessToken && loginRes?.RefreshToken) {
+            if (!(await finalizeAuthFromTokens({ AccessToken: loginRes.AccessToken, RefreshToken: loginRes.RefreshToken }))) {
+              // auto-login failed; clear pending and return true (verification itself succeeded)
+            }
+          }
+        } catch (loginErr) {
+          // ignore auto-login failure; user can manually login
+        }
+        setPendingPassword(null)
+      }
       return true
     } catch (e) {
+      // Rethrow ApiError so UI can show server-provided messages
+      if (e instanceof ApiError) throw e
       return false
     }
   }
@@ -201,6 +343,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setPhoneVerified(true)
       return true
     } catch (e) {
+      // Rethrow ApiError so UI can show server-provided messages
+      if (e instanceof ApiError) throw e
       return false
     }
   }
@@ -229,6 +373,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated,
         register,
         login,
+        externalLogin,
         logout,
         setUserRole,
         completeOnboarding,
@@ -240,6 +385,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         phoneVerified,
         setEmailVerified,
         setPhoneVerified,
+        refreshTokens,
       }}
     >
       {children}

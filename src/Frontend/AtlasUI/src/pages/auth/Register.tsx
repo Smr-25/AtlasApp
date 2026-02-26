@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
-import { countries, Country } from "@/lib/countries";
 import { useToast } from '@/hooks/use-toast'
+import { ApiError } from '@/lib/apiClient'
 
 const Register = () => {
   const navigate = useNavigate();
@@ -16,9 +16,9 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -28,11 +28,13 @@ const Register = () => {
     if (fullName.length > 20) errs.fullName = "Full name must be less than 20 characters";
     if (!username.trim()) errs.username = "Username is required";
     if (username.length < 3) errs.username = "Username must be at least 3 characters";
-    if (username.length > 20) errs.username = "Username must be less than 15 characters";
+    if (username.length > 20) errs.username = "Username must be less than 20 characters";
     if (!email.trim()) errs.email = "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Invalid email address";
     if (!password) errs.password = "Password is required";
-    if (password.length < 8) errs.password = "Password must be at least 8 characters";
+    if (password.length < 6) errs.password = "Password must be at least 6 characters";
+    if (!confirmPassword) errs.confirmPassword = "Please confirm your password";
+    if (password !== confirmPassword) errs.confirmPassword = "Passwords don't match";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -41,19 +43,31 @@ const Register = () => {
     e.preventDefault();
     if (!validate()) return;
 
-    const success = await register({
-      fullName,
-      username,
-      email,
-      password,
-    });
+    try {
+      const success = await register({
+        fullName,
+        username,
+        email,
+        password,
+        confirmPassword,
+      });
 
-    if (success) {
-      toast({ title: 'Account created', description: 'Welcome! You are signed in.' })
-      navigate('/onboarding')
-    } else {
-      setErrors({ ...errors, form: 'Registration failed. Please try again.' })
-      toast({ title: 'Registration failed', description: 'Please fix errors and try again.' })
+      if (success) {
+        toast({ title: 'Account created', description: "We've sent a verification code to your email. Please enter it to verify your account." })
+        navigate('/verify-email?from=register')
+      } else {
+        setErrors({ ...errors, form: 'Registration failed. Please try again.' })
+        toast({ title: 'Registration failed', description: 'Please fix errors and try again.' })
+      }
+    } catch (e) {
+      if (e instanceof ApiError) {
+        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
+        setErrors({ ...errors, form: msg })
+        toast({ title: 'Registration failed', description: msg })
+      } else {
+        setErrors({ ...errors, form: 'Registration failed. Please try again.' })
+        toast({ title: 'Registration failed', description: 'Please fix errors and try again.' })
+      }
     }
   };
 
@@ -85,7 +99,7 @@ const Register = () => {
             type="text"
             placeholder="oliversmith"
             value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+            onChange={(e) => setUsername(e.target.value.replace(/[^A-Za-z0-9_.]/g, ""))}
             className={inputClass}
           />
           {errors.username && <p className={errorClass}>{errors.username}</p>}
@@ -124,6 +138,28 @@ const Register = () => {
             </button>
           </div>
           {errors.password && <p className={errorClass}>{errors.password}</p>}
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className={labelClass}>Confirm Password</label>
+          <div className="relative">
+            <input
+              type={showConfirm ? "text" : "password"}
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          {errors.confirmPassword && <p className={errorClass}>{errors.confirmPassword}</p>}
         </div>
 
         {/* Submit */}
