@@ -3,6 +3,7 @@ import api, { ApiError } from '@/lib/apiClient'
 import { useToast } from '@/hooks/use-toast'
 import WorkspaceCard from '@/components/workspaces/WorkspaceCard'
 import WorkspaceForm from '@/components/workspaces/WorkspaceForm'
+import { formatApiError } from '@/lib/errorUtils'
 
 export default function Workspaces() {
   const [workspaces, setWorkspaces] = useState<any[]>([])
@@ -16,8 +17,8 @@ export default function Workspaces() {
       const res = await api.workspaces.list()
       setWorkspaces(res || [])
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Failed to load workspaces', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Failed to load workspaces', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Failed to load workspaces')
+      toast({ title: fe.title, description: fe.message })
     } finally {
       setLoading(false)
     }
@@ -33,8 +34,8 @@ export default function Workspaces() {
       await load()
       return true
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Create failed', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Create failed', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Create failed')
+      toast({ title: fe.title, description: fe.message })
       return false
     }
   }
@@ -45,8 +46,8 @@ export default function Workspaces() {
       toast({ title: 'Default set', description: 'Workspace marked as default' })
       await load()
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Operation failed', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Operation failed', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Operation failed')
+      toast({ title: fe.title, description: fe.message })
     }
   }
 
@@ -57,8 +58,8 @@ export default function Workspaces() {
       toast({ title: 'Deleted', description: 'Workspace deleted' })
       await load()
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Delete failed', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Delete failed', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Delete failed')
+      toast({ title: fe.title, description: fe.message })
     }
   }
 

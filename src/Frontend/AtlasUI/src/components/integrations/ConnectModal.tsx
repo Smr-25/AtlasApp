@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api, { ApiError } from '@/lib/apiClient'
 import { useToast } from '@/hooks/use-toast'
+import { formatApiError } from '@/lib/errorUtils'
 
 export default function ConnectModal({ provider, onClose, onConnected }: any) {
   const [link, setLink] = useState<string | null>(null)
@@ -39,8 +40,8 @@ export default function ConnectModal({ provider, onClose, onConnected }: any) {
       toast({ title: 'Connected', description: 'Integration connected' })
       onConnected && onConnected()
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Connect failed', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Connect failed', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Connect failed')
+      toast({ title: fe.title, description: fe.message })
     } finally {
       setLoading(false)
     }

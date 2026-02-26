@@ -413,13 +413,7 @@ export const accounts = {
 // -------------------- Onboarding endpoints --------------------
 
 export const onboarding = {
-  getProfessionQuestion: () => request<ProfessionQuestionDto>('/api/onboarding/profession-question', { method: 'GET', skipAuth: true }),
-  getQuestions: (profession?: number | string) => {
-    const q = profession !== undefined && profession !== null ? `?profession=${encodeURIComponent(String(profession))}` : ''
-    return request<OnboardingQuestionDto[]>(`/api/onboarding/questions${q}`, { method: 'GET', skipAuth: true })
-  },
-  createQuestion: (payload: CreateOnboardingQuestionRequest) => request<CreateOnboardingQuestionResponse>('/api/onboarding/questions', { method: 'POST', body: JSON.stringify(payload) }),
-  addOptionToQuestion: (questionId: string, payload: AddOptionToQuestionRequest) => request<AddOptionToQuestionResponse>(`/api/onboarding/questions/${questionId}/options`, { method: 'POST', body: JSON.stringify(payload) }),
+
   complete: (payload: CompleteOnboardingRequest | Record<string, any>) => {
     const hasAnswers = (payload as any).Answers && Array.isArray((payload as any).Answers)
     let finalPayload: CompleteOnboardingRequest
@@ -465,4 +459,59 @@ export const integrations = {
   markExpired: (id: string) => request<void>(`/api/integrations/${id}/mark-expired`, { method: 'POST' }),
 }
 
-export default { accounts, onboarding, getTokens, setTokens, clearTokens, workspaces, integrations }
+// -------------------- Teams endpoints --------------------
+export const teams = {
+  my: () => request<any[]>('/api/teams/my', { method: 'GET' }),
+  get: (teamId: string) => request<any>(`/api/teams/${teamId}`, { method: 'GET' }),
+  create: (payload: { Name: string; Description?: string | null }) => request<{ Id: string }>('/api/teams', { method: 'POST', body: JSON.stringify(payload) }),
+  inviteMember: (teamId: string, payload: { UserId: string }) => request<any>(`/api/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- LeaderAgents endpoints --------------------
+export const leaderagents = {
+  bottleneck: (teamId: string) => request<any>(`/api/leaderagents/bottleneck/${teamId}`, { method: 'GET' }),
+  burnoutRisk: (teamId: string) => request<any>(`/api/leaderagents/burnout-risk/${teamId}`, { method: 'GET' }),
+  unassignedBugs: (teamId: string) => request<any>(`/api/leaderagents/unassigned-bugs/${teamId}`, { method: 'GET' }),
+  prReviewNag: (payload: { TeamId: string; ThresholdHours: number }) => request<any>('/api/leaderagents/pr-review-nag', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// Add leader-related namespaces for UI integration
+export const omnifeed = {
+  list: (teamId: string, source?: string, page = 1, pageSize = 20) => request<any>(`/api/omnifeed/${teamId}?source=${encodeURIComponent(source || '')}&page=${page}&pageSize=${pageSize}`, { method: 'GET' }),
+  publish: (payload: { TeamId: string; Title: string; Body?: string | null }) => request<void>('/api/omnifeed/publish', { method: 'POST', body: JSON.stringify(payload) }),
+  markRead: (itemId: string) => request<void>(`/api/omnifeed/${itemId}/read`, { method: 'POST' }),
+  addEmoji: (itemId: string, payload: { Emoji: string }) => request<void>(`/api/omnifeed/${itemId}/emoji`, { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+export const squadarena = {
+  leaderboard: (teamId: string) => request<any>(`/api/squadarena/leaderboard/${teamId}`, { method: 'GET' }),
+  createBounty: (payload: any) => request<any>('/api/squadarena/bounty', { method: 'POST', body: JSON.stringify(payload) }),
+  claimBounty: (bountyId: string) => request<void>(`/api/squadarena/bounty/${bountyId}/claim`, { method: 'POST' }),
+}
+
+export const squadradar = {
+  get: (teamId: string) => request<any>(`/api/squadradar/${teamId}`, { method: 'GET' }),
+  updatePresence: (payload: any) => request<void>('/api/squadradar/presence', { method: 'PUT', body: JSON.stringify(payload) }),
+}
+
+export const resourcehub = {
+  list: (teamId: string, category?: string) => request<any>(`/api/resourcehub/${teamId}${category ? `?category=${encodeURIComponent(category)}` : ''}`, { method: 'GET' }),
+  add: (payload: any) => request<any>('/api/resourcehub', { method: 'POST', body: JSON.stringify(payload) }),
+  update: (payload: any) => request<void>('/api/resourcehub', { method: 'PUT', body: JSON.stringify(payload) }),
+  delete: (resourceId: string) => request<void>(`/api/resourcehub/${resourceId}`, { method: 'DELETE' }),
+  pin: (resourceId: string) => request<void>(`/api/resourcehub/${resourceId}/pin`, { method: 'POST' }),
+}
+
+export const leadermodals = {
+  list: () => request<any>('/api/leadermodals', { method: 'GET' }),
+  getPayload: (modalId: string) => request<any>(`/api/leadermodals/${modalId}/payload`, { method: 'GET' }),
+  open: (payload: { ModalType: string; TeamId?: string | null; PayloadJson?: string | null }) => request<any>('/api/leadermodals', { method: 'POST', body: JSON.stringify(payload) }),
+  dismiss: (modalId: string) => request<void>(`/api/leadermodals/${modalId}/dismiss`, { method: 'POST' }),
+}
+
+export const leaderinsights = {
+  sprintVelocity: (teamId: string, from?: string, to?: string) => request<any>(`/api/leaderinsights/sprint-velocity?teamId=${encodeURIComponent(teamId)}${from ? `&from=${encodeURIComponent(from)}` : ''}${to ? `&to=${encodeURIComponent(to)}` : ''}`, { method: 'GET' }),
+  // generic GET helper for other insights can be called directly by path
+}
+
+export default { accounts, onboarding, getTokens, setTokens, clearTokens, workspaces, integrations, teams, leaderagents, omnifeed, squadarena, squadradar, resourcehub, leadermodals, leaderinsights }

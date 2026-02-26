@@ -12,6 +12,8 @@ interface User {
   role?: UserRole;
   onboardingComplete: boolean;
   onboardingAnswers?: Record<string, string>;
+  tags?: string[];
+  bio?: string | null;
 }
 
 interface AuthContextType {
@@ -34,6 +36,8 @@ interface AuthContextType {
   phoneVerified: boolean;
   setEmailVerified: (v: boolean) => void;
   setPhoneVerified: (v: boolean) => void;
+  // allow other components to finalize tokens received from external login flows
+  finalizeAuthFromTokens: (tokenPayload: { AccessToken: string; RefreshToken: string } | null) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -288,17 +292,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const completeOnboarding = async (answers: Record<string, string>) => {
     try {
-      // transform flat answers (questionId->optionId) into backend shape
-      const payload: any = { Profession: 1, JobTitle: null, Answers: [] }
+      // Build payload similar to apiClient.complete normalization
+      const skipKeys = new Set(['Profession', 'JobTitle', 'role', 'Role'])
+      const answerArray: any[] = []
       Object.entries(answers).forEach(([k, v]) => {
-        if (k.toLowerCase() === 'role' || k.toLowerCase() === 'profession') {
-          payload.Profession = Number(v) || 1
+        if (!v || skipKeys.has(k)) return
+        // comma-separated multi-select
+        if (typeof v === 'string' && v.includes(',')) {
+          v.split(',').map(s => s.trim()).filter(Boolean).forEach(val => answerArray.push({ QuestionId: k, OptionId: String(val) }))
         } else {
-          payload.Answers.push({ QuestionId: k, OptionId: String(v) })
+          answerArray.push({ QuestionId: k, OptionId: String(v) })
         }
       })
-      await api.onboarding.complete(payload)
-      if (user) setUser({ ...user, onboardingComplete: true, onboardingAnswers: answers })
+
+      // Profession mapping: support role strings like 'developer'
+      let professionVal: any = answers['Profession'] ?? answers['profession'] ?? answers['role'] ?? answers['Role'] ?? 1
+      if (typeof professionVal === 'string' && isNaN(Number(professionVal))) {
+        const roleMap: Record<string, number> = { developer: 1, designer: 2, cybersecurity: 3, marketer: 4, 'team-leader': 5 }
+        professionVal = roleMap[professionVal] ?? roleMap[professionVal?.toLowerCase?.()] ?? 1
+      }
+
+      const payload = {
+        Profession: Number(professionVal) || 1,
+        JobTitle: (answers['JobTitle'] ?? answers['jobTitle']) || null,
+        Answers: answerArray,
+      }
+
+      const res = await api.onboarding.complete(payload as any)
+
+      // After successful onboarding, update local user: mark onboardingComplete and store answers
+      if (user) {
+        // generate tags from selected options: collect OptionId strings
+        const tagsSet = new Set<string>()
+        answerArray.forEach((a: any) => {
+          if (a && a.OptionId) tagsSet.add(String(a.OptionId))
+        })
+        const tags = Array.from(tagsSet)
+
+        // generate a lightweight bio: use role and experience if provided
+        const roleStr = (answers['role'] ?? user.role) as string | undefined
+        const experience = answers['experience'] || answers['Experience'] || undefined
+        const jobTitle = answers['JobTitle'] || answers['jobTitle'] || undefined
+        let bioParts: string[] = []
+        if (jobTitle) bioParts.push(String(jobTitle))
+        if (roleStr) bioParts.push(String(roleStr))
+        if (experience) bioParts.push(String(experience))
+        const bio = bioParts.length ? bioParts.join(' — ') : null
+
+        setUser({ ...user, onboardingComplete: true, onboardingAnswers: answers, tags, bio })
+      }
+
       setIsAuthenticated(true)
       return true
     } catch (e) {
@@ -386,6 +429,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setEmailVerified,
         setPhoneVerified,
         refreshTokens,
+        finalizeAuthFromTokens,
       }}
     >
       {children}

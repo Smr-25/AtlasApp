@@ -107,3 +107,29 @@
     @apply bg-background text-foreground font-outfit;
   }
 }
+
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 700ms ease both;
+  }
+
+  @keyframes fadeInUp {
+    from { transform: translateY(8px); opacity: 0 }
+    to { transform: translateY(0); opacity: 1 }
+  }
+
+  .hero-title {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .glow-pill {
+    box-shadow: 0 6px 30px rgba(59,130,246,0.12);
+    border-radius: 14px;
+  }
+}

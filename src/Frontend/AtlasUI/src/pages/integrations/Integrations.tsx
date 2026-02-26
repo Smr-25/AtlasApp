@@ -3,6 +3,7 @@ import api, { ApiError } from '@/lib/apiClient'
 import { useToast } from '@/hooks/use-toast'
 import IntegrationCard from '@/components/integrations/IntegrationCard'
 import ConnectModal from '@/components/integrations/ConnectModal'
+import { formatApiError } from '@/lib/errorUtils'
 
 export default function Integrations() {
   const [items, setItems] = useState<any[]>([])
@@ -16,8 +17,8 @@ export default function Integrations() {
       const res = await api.integrations.list()
       setItems(res || [])
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Failed to load integrations', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Failed to load integrations', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Failed to load integrations')
+      toast({ title: fe.title, description: fe.message })
     } finally {
       setLoading(false)
     }
@@ -31,8 +32,8 @@ export default function Integrations() {
       toast({ title: 'Reconnected', description: 'Integration reconnected' })
       await load()
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Reconnect failed', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Reconnect failed', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Reconnect failed')
+      toast({ title: fe.title, description: fe.message })
     }
   }
 
@@ -43,8 +44,8 @@ export default function Integrations() {
       toast({ title: 'Disconnected', description: 'Integration disconnected' })
       await load()
     } catch (e) {
-      if (e instanceof ApiError) toast({ title: 'Disconnect failed', description: e.errors?.join(', ') || e.message })
-      else toast({ title: 'Disconnect failed', description: 'Unknown error' })
+      const fe = formatApiError(e, 'Disconnect failed')
+      toast({ title: fe.title, description: fe.message })
     }
   }
 
