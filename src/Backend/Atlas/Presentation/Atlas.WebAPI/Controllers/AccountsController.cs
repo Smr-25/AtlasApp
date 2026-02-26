@@ -23,6 +23,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Atlas.Application.Settings;
+using System.Text.Json; 
+using System.Net.Http; 
 
 namespace Atlas.WebAPI.Controllers;
 
@@ -228,6 +230,19 @@ public class AccountsController : ApiControllerBase
             var authUrl = $"https://github.com/login/oauth/authorize?client_id={clientIdEsc}&redirect_uri={redirectUriEsc}&scope={scopeEsc}&state={state}";
             return Redirect(authUrl);
         }
+
+        if (provider == "google")
+        {
+            var google = HttpContext.RequestServices.GetRequiredService<IOptions<ExternalAuthSettings>>().Value.Google;
+            var state = Guid.NewGuid().ToString("N");
+            var clientIdEsc = Uri.EscapeDataString(google.ClientId);
+            var redirectUriToUse = Url.ActionLink(action: "ExternalCallback", controller: "Accounts", values: new { provider = "google" }) ?? string.Empty;
+            var redirectUriEsc = Uri.EscapeDataString(redirectUriToUse);
+            var scopeEsc = Uri.EscapeDataString("openid email profile");
+            var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={clientIdEsc}&redirect_uri={redirectUriEsc}&response_type=code&scope={scopeEsc}&state={state}&access_type=offline&prompt=consent";
+            return Redirect(authUrl);
+        }
+
         return BadRequestResponse("Unsupported provider");
     }
 
@@ -237,10 +252,58 @@ public class AccountsController : ApiControllerBase
     {
         if (string.IsNullOrEmpty(provider) || string.IsNullOrEmpty(code)) return BadRequestResponse("Missing provider or code");
         provider = provider.ToLower();
-        if (provider != "github") return BadRequestResponse("Unsupported provider");
+        if (provider == "github")
+        {
+            var command = new ExternalLoginCommand(Provider: "github", IdToken: string.Empty, AccessToken: null, AuthorizationCode: code);
+            var result = await Mediator.Send(command);
+            return OkResponse(result);
+        }
 
-        var command = new ExternalLoginCommand(Provider: "github", IdToken: string.Empty, AccessToken: null, AuthorizationCode: code);
-        var result = await Mediator.Send(command);
-        return OkResponse(result);
+        if (provider == "google")
+        {
+            var googleSettings = HttpContext.RequestServices.GetRequiredService<IOptions<ExternalAuthSettings>>().Value.Google;
+            var httpFactory = HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
+            var client = httpFactory.CreateClient();
+
+            var redirectUriToUse = Url.ActionLink(action: "ExternalCallback", controller: "Accounts", values: new { provider = "google" }) ?? string.Empty;
+
+            var values = new Dictionary<string, string?>
+            {
+                { "code", code },
+                { "client_id", googleSettings.ClientId },
+                { "client_secret", googleSettings.ClientSecret },
+                { "redirect_uri", redirectUriToUse },
+                { "grant_type", "authorization_code" }
+            };
+
+            var req = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token");
+            req.Content = new FormUrlEncodedContent(values.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value!));
+
+            var resp = await client.SendAsync(req);
+            if (!resp.IsSuccessStatusCode)
+                return BadRequestResponse("Google token exchange failed.");
+
+            var body = await resp.Content.ReadAsStringAsync();
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                var idToken = root.TryGetProperty("id_token", out var idt) ? idt.GetString() : null;
+                var accessToken = root.TryGetProperty("access_token", out var at) ? at.GetString() : null;
+
+                if (string.IsNullOrEmpty(idToken))
+                    return BadRequestResponse("Google did not return id_token.");
+
+                var command = new ExternalLoginCommand(Provider: "google", IdToken: idToken, AccessToken: accessToken, AuthorizationCode: null);
+                var result = await Mediator.Send(command);
+                return OkResponse(result);
+            }
+            catch
+            {
+                return BadRequestResponse("Invalid token response from Google.");
+            }
+        }
+
+        return BadRequestResponse("Unsupported provider");
     }
 }

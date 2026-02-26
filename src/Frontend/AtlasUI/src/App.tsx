@@ -14,6 +14,9 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import VerifyPhone from "./pages/auth/VerifyPhone";
 import Onboarding from "./pages/onboarding/Onboarding";
+import RequireAuth from "@/components/auth/RequireAuth";
+import Workspaces from "./pages/workspaces/Workspaces";
+import Integrations from "./pages/integrations/Integrations";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +37,10 @@ const App = () => (
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verify-phone" element={<VerifyPhone />} />
               <Route path="/onboarding" element={<Onboarding />} />
+
+              <Route path="/workspaces" element={<RequireAuth><Workspaces /></RequireAuth>} />
+              <Route path="/integrations" element={<RequireAuth><Integrations /></RequireAuth>} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

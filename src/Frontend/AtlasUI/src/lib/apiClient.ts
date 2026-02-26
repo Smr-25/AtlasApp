@@ -90,6 +90,27 @@ export type OnboardingAnswerDto = { QuestionId: string; OptionId: string }
 export type CompleteOnboardingRequest = { Profession: number; JobTitle?: string | null; Answers: OnboardingAnswerDto[] }
 export type CompleteOnboardingResponse = { ProfileId: string }
 
+// -------------------- Workspaces & Integrations DTOs --------------------
+export type WorkspaceDto = {
+  Id: string
+  Name: string
+  Description?: string | null
+  IsDefault: boolean
+  LocalFolderPath?: string | null
+  IsShared?: boolean
+  CreatedAt?: string
+  ActiveIntegrations?: WorkspaceIntegrationDto[]
+}
+export type WorkspaceIntegrationDto = { IntegrationId: string; IntegrationName: string; Provider: string; Enabled: boolean; ConnectedAt?: string }
+export type ListWorkspacesResponse = WorkspaceDto[]
+export type CreateWorkspaceRequest = { Name: string; Description?: string | null; LocalFolderPath?: string | null; IsShared?: boolean }
+export type CreateWorkspaceResponse = { Id: string }
+
+export type IntegrationDto = { Id: string; Name: string; Provider: string; Status: string; MetadataJson?: string | null; IsActive: boolean; TokenExpiresAt?: string | null }
+export type IntegrationDetailDto = IntegrationDto & { WorkspaceCount?: number; CreatedAt?: string; ModifiedAt?: string }
+export type ListIntegrationsResponse = IntegrationDto[]
+export type ConnectIntegrationRequest = { Provider: string; Name: string; AccessToken: string; RefreshToken?: string | null; ExpiresAt?: string | null; MetadataJson?: string | null }
+
 // -------------------- Token helpers --------------------
 const ACCESS_KEY = 'accessToken'
 const REFRESH_KEY = 'refreshToken'
@@ -422,4 +443,26 @@ export const onboarding = {
   },
 }
 
-export default { accounts, onboarding, getTokens, setTokens, clearTokens }
+// -------------------- Workspaces endpoints --------------------
+export const workspaces = {
+  list: () => request<ListWorkspacesResponse>('/api/workspaces', { method: 'GET' }),
+  get: (id: string) => request<WorkspaceDto>(`/api/workspaces/${id}`, { method: 'GET' }),
+  create: (payload: CreateWorkspaceRequest) => request<CreateWorkspaceResponse>('/api/workspaces', { method: 'POST', body: JSON.stringify(payload) }),
+  update: (id: string, payload: CreateWorkspaceRequest) => request<void>(`/api/workspaces/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  delete: (id: string) => request<void>(`/api/workspaces/${id}`, { method: 'DELETE' }),
+  setDefault: (id: string) => request<void>(`/api/workspaces/${id}/set-default`, { method: 'PATCH' }),
+  validateFolder: (payload: { FolderPath: string }) => request<{ IsValid: boolean; Reason?: string | null }>('/api/workspaces/validate-folder', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- Integrations endpoints --------------------
+export const integrations = {
+  list: () => request<ListIntegrationsResponse>('/api/integrations', { method: 'GET' }),
+  listPending: () => request<ListIntegrationsResponse>('/api/integrations/pending', { method: 'GET' }),
+  get: (id: string) => request<IntegrationDetailDto>(`/api/integrations/${id}`, { method: 'GET' }),
+  create: (payload: ConnectIntegrationRequest) => request<IntegrationDto>('/api/integrations', { method: 'POST', body: JSON.stringify(payload) }),
+  reconnect: (id: string, payload?: { AccessToken: string; RefreshToken?: string | null; ExpiresAt?: string | null }) => request<void>(`/api/integrations/${id}/reconnect`, { method: 'POST', body: JSON.stringify(payload || {}) }),
+  delete: (id: string) => request<void>(`/api/integrations/${id}`, { method: 'DELETE' }),
+  markExpired: (id: string) => request<void>(`/api/integrations/${id}/mark-expired`, { method: 'POST' }),
+}
+
+export default { accounts, onboarding, getTokens, setTokens, clearTokens, workspaces, integrations }
