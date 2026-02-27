@@ -1,10 +1,13 @@
 using System.Threading.RateLimiting;
 using AppSettingsMultiPlatformPackage;
 using Atlas.Application;
+using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Settings;
 using Atlas.Infrastructure;
 using Atlas.Persistence;
+using Atlas.WebAPI.Hubs;
 using Atlas.WebAPI.Middlewares;
+using Atlas.WebAPI.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
@@ -18,6 +21,8 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 builder.Services.AddAppSettingsMultiPlatformJson(builder, "Mac");
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IAtlasHubService, AtlasHubService>();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
@@ -106,9 +111,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin() 
+            policy.SetIsOriginAllowed(_ => true)
                 .AllowAnyMethod() 
-                .AllowAnyHeader(); 
+                .AllowAnyHeader()
+                .AllowCredentials();
         });
 });
 
@@ -129,6 +135,7 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<AtlasHub>("/hubs/atlas");
 
 using (var scope = app.Services.CreateScope())
 {
