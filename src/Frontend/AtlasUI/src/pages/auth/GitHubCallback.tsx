@@ -31,7 +31,7 @@ export default function GitHubCallback() {
           // If backend indicates new user, it may return IsNewUser in response; apiClient currently returns the envelope data as res
           const isNew = (res as any).IsNewUser || (res as any).isNewUser || false
           if (isNew) navigate('/onboarding')
-          else navigate('/')
+          else navigate('/dashboard')
           toast({ title: 'Signed in', description: 'Signed in with GitHub' })
           return
         }
@@ -55,4 +55,3 @@ export default function GitHubCallback() {
     </div>
   )
 }
-

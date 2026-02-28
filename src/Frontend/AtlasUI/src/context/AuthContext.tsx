@@ -3,6 +3,37 @@ import api, { ApiError } from '@/lib/apiClient'
 
 export type UserRole = "developer" | "designer" | "cybersecurity" | "marketer" | "team-leader";
 
+// Map backend profession integer to frontend role string
+function professionToRole(profession: any): UserRole {
+  const map: Record<number | string, UserRole> = {
+    1: 'developer',
+    2: 'designer',
+    3: 'cybersecurity',
+    4: 'marketer',
+    5: 'team-leader',
+    Developer: 'developer',
+    designer: 'designer',
+    Designer: 'designer',
+    CyberSecurity: 'cybersecurity',
+    cybersecurity: 'cybersecurity',
+    DigitalMarketing: 'marketer',
+    marketer: 'marketer',
+    ProductManager: 'team-leader',
+    'team-leader': 'team-leader',
+    TeamLeader: 'team-leader',
+  }
+  if (profession && map[profession]) return map[profession]
+  if (typeof profession === 'string') {
+    const lower = profession.toLowerCase()
+    if (lower.includes('developer') || lower === '1') return 'developer'
+    if (lower.includes('designer') || lower === '2') return 'designer'
+    if (lower.includes('cyber') || lower.includes('security') || lower.includes('secops') || lower === '3') return 'cybersecurity'
+    if (lower.includes('market') || lower === '4') return 'marketer'
+    if (lower.includes('leader') || lower.includes('manager') || lower === '5') return 'team-leader'
+  }
+  return 'developer'
+}
+
 interface User {
   fullName: string;
   username: string;
@@ -19,6 +50,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  // new flag: auth restoration in progress
+  initializing: boolean;
   register: (data: Omit<User, "onboardingComplete"> & { password: string; confirmPassword: string }) => Promise<boolean>;
   // login now returns a detailed result so UI can react (email verification required, locked, etc.)
   login: (identifier: string, password: string) => Promise<{ ok: boolean; reason?: 'email_not_verified' | 'locked' | 'invalid_credentials' | 'profile_fetch_failed' | 'other'; message?: string }>;
@@ -50,6 +83,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [pendingPassword, setPendingPassword] = useState<string | null>(null);
+  // new state to indicate initial auth restoration is running
+  const [initializing, setInitializing] = useState(true);
 
   const register = async (data: Omit<User, 'onboardingComplete'> & { password: string; confirmPassword: string }) => {
     try {
@@ -98,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: profile.UserName,
         email: profile.Email,
         phone: profile.PhoneNumber || undefined,
-        role: (profile.Status as any) || 'team-leader',
+        role: professionToRole((profile as any).Profession ?? (profile as any).profession ?? profile.Status),
         onboardingComplete: true,
       })
       setEmailVerified(profile.EmailConfirmed)
@@ -111,6 +146,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null)
       setIsAuthenticated(false)
       return false
+    } finally {
+      // ensure initializing flag is cleared after any finalize attempt
+      try { setInitializing(false) } catch {}
     }
   }
 
@@ -242,7 +280,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const tryLoad = async () => {
       const { accessToken } = api.getTokens()
-      if (!accessToken) return
+      if (!accessToken) {
+        // no token -> still mark initialization complete
+        setInitializing(false)
+        return
+      }
       try {
         const profile = await api.accounts.getProfile()
         setUser({
@@ -250,7 +292,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           username: profile.UserName,
           email: profile.Email,
           phone: profile.PhoneNumber || undefined,
-          role: (profile.Status as any) || 'team-leader',
+          role: professionToRole((profile as any).Profession ?? (profile as any).profession ?? profile.Status),
           onboardingComplete: true,
         })
         setIsAuthenticated(true)
@@ -261,6 +303,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         api.clearTokens()
         setUser(null)
         setIsAuthenticated(false)
+      } finally {
+        // initialization done regardless of success
+        setInitializing(false)
       }
     }
     tryLoad()
@@ -318,7 +363,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         Answers: answerArray,
       }
 
-      const res = await api.onboarding.complete(payload as any)
+      await api.onboarding.complete(payload as any)
 
       // After successful onboarding, update local user: mark onboardingComplete and store answers
       if (user) {
@@ -430,6 +475,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setPhoneVerified,
         refreshTokens,
         finalizeAuthFromTokens,
+        // expose initialization flag
+        initializing,
       }}
     >
       {children}

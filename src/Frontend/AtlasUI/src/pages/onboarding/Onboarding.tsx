@@ -86,7 +86,7 @@ const Onboarding = () => {
       });
       flatAnswers.role = selectedRole!;
       const ok = await completeOnboarding(flatAnswers);
-      if (ok) navigate("/");
+      if (ok) navigate('/dashboard');
     }
   };
 

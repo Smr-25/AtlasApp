@@ -18,7 +18,7 @@ const GoogleSignInButton: React.FC = () => {
         const res = await externalLogin('google', idToken)
         if (res) {
           toast({ title: 'Signed in', description: 'Signed in with Google' })
-          navigate('/')
+          navigate('/dashboard')
         } else {
           toast({ title: 'External sign in failed', description: 'Could not sign in with Google' })
         }
@@ -51,4 +51,3 @@ const GoogleSignInButton: React.FC = () => {
 }
 
 export default GoogleSignInButton
-

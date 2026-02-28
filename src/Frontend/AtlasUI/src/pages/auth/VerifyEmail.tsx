@@ -11,10 +11,16 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const { user, verifyEmail } = useAuth();
   const { toast } = useToast();
-  const [emailFallback, setEmailFallback] = useState('')
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [resendCooldown, setResendCooldown] = useState<number>(0)
+
+  // If there's no email in context, redirect to login (we expect email to be known from auth flow)
+  useEffect(() => {
+    if (!user?.email) {
+      navigate('/login')
+    }
+  }, [user?.email, navigate])
 
   // countdown effect for resend cooldown
   useEffect(() => {
@@ -54,8 +60,8 @@ const VerifyEmail = () => {
       setError("Please enter the full 6-digit code");
       return;
     }
-    const emailToUse = user?.email ?? emailFallback
-    if (!emailToUse) return setError('Please provide your email')
+    const emailToUse = user?.email
+    if (!emailToUse) return setError('No email available to verify')
     try {
       // Use context.verifyEmail which may auto-login using pendingPassword
       await verifyEmail(fullCode, emailToUse)
@@ -78,8 +84,8 @@ const VerifyEmail = () => {
 
   const handleResend = async () => {
     try {
-      const emailToUse = user?.email ?? emailFallback
-      if (!emailToUse) return setError('Please provide your email')
+      const emailToUse = user?.email
+      if (!emailToUse) return setError('No email available to resend to')
       if (resendCooldown > 0) return
       await api.accounts.resendEmailVerification({ Email: emailToUse })
       toast({ title: 'Verification sent', description: `A new verification code was sent to ${emailToUse}` })
@@ -114,14 +120,6 @@ const VerifyEmail = () => {
           </motion.div>
         )}
 
-        {/* if we don't have user.email, allow user to enter it */}
-        {!user?.email && (
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
-            <input value={emailFallback} onChange={(e) => setEmailFallback(e.target.value)} placeholder="your@email.com" className="w-full h-11 px-4 rounded-xl bg-muted/50 border border-border text-sm text-foreground" />
-          </div>
-        )}
-
         <div className="flex justify-center gap-3">
           {code.map((digit, i) => (
             <motion.input
@@ -145,7 +143,7 @@ const VerifyEmail = () => {
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
           onClick={handleVerify}
-          disabled={code.join("").length < 6}
+          disabled={code.join("").length < 6 || !user?.email}
           className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-lg shadow-primary/25 transition-all disabled:opacity-50"
         >
           Verify
@@ -155,7 +153,7 @@ const VerifyEmail = () => {
             Didn't receive the code?{' '}
             <button
               onClick={handleResend}
-              disabled={resendCooldown > 0}
+              disabled={resendCooldown > 0 || !user?.email}
               className={`text-primary font-medium hover:underline ${resendCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend'}

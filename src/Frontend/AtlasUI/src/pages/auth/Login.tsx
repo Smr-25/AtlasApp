@@ -38,7 +38,7 @@ const Login = () => {
       const result = await login(identifier, password as string);
       if (result.ok) {
         toast({ title: 'Signed in', description: 'Welcome back!' })
-        navigate("/");
+        navigate('/dashboard');
         return
       }
 

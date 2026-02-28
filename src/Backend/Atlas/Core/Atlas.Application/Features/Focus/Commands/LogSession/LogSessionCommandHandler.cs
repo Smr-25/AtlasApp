@@ -6,7 +6,8 @@ namespace Atlas.Application.Features.Focus.Commands.LogSession;
 
 public class LogSessionCommandHandler(
     IApplicationDbContext applicationDbContext,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IAtlasHubService hubService)
     : IRequestHandler<LogSessionCommand, Guid>
 {
     public async Task<Guid> Handle(LogSessionCommand request, CancellationToken cancellationToken)
@@ -37,6 +38,9 @@ public class LogSessionCommandHandler(
         await applicationDbContext.UserActivities.AddAsync(activity, cancellationToken);
 
         await applicationDbContext.SaveChangesAsync(cancellationToken);
+
+        var teamId = request.WorkspaceId ?? Guid.Empty; // best-effort: workspaceId used as team proxy when present
+        await hubService.SendFocusStateAsync(teamId, new { parsedUserId, Status = "Focused", session.Id, request.DurationMinutes, request.Tag, session.StartedAt }, cancellationToken);
 
         return session.Id;
     }

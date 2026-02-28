@@ -514,4 +514,399 @@ export const leaderinsights = {
   // generic GET helper for other insights can be called directly by path
 }
 
-export default { accounts, onboarding, getTokens, setTokens, clearTokens, workspaces, integrations, teams, leaderagents, omnifeed, squadarena, squadradar, resourcehub, leadermodals, leaderinsights }
+// -------------------- Profiles endpoints --------------------
+export const profiles = {
+  me: () => request<any>('/api/profiles/me', { method: 'GET' }),
+  updateMe: (payload: { jobTitle?: string; bio?: string; themeColor?: string }) =>
+    request<void>('/api/profiles/me', { method: 'PUT', body: JSON.stringify(payload) }),
+}
+
+// -------------------- Focus Sessions endpoints --------------------
+export const focus = {
+  start: (payload: { type: number; durationMinutes: number; label?: string; tags?: string[] }) =>
+    request<{ id: string }>('/api/focus', { method: 'POST', body: JSON.stringify(payload) }),
+  stats: () => request<any>('/api/focus/stats', { method: 'GET' }),
+  active: () => request<any>('/api/focus/active', { method: 'GET' }),
+  complete: (sessionId: string) => request<void>(`/api/focus/${sessionId}/complete`, { method: 'POST' }),
+  pause: (sessionId: string) => request<void>(`/api/focus/${sessionId}/pause`, { method: 'POST' }),
+  resume: (sessionId: string) => request<void>(`/api/focus/${sessionId}/resume`, { method: 'POST' }),
+  interrupt: (sessionId: string) => request<void>(`/api/focus/${sessionId}/interrupt`, { method: 'POST' }),
+  history: (days = 7) => request<any>(`/api/focus/history?days=${days}`, { method: 'GET' }),
+}
+
+// -------------------- Hotkeys endpoints --------------------
+export const hotkeys = {
+  list: () => request<any[]>('/api/hotkeys', { method: 'GET' }),
+  create: (payload: { action: string; keyCombination: string; description?: string }) =>
+    request<{ id: string }>('/api/hotkeys', { method: 'POST', body: JSON.stringify(payload) }),
+  delete: (id: string) => request<void>(`/api/hotkeys/${id}`, { method: 'DELETE' }),
+  seedDefaults: () => request<{ createdCount: number }>('/api/hotkeys/seed-defaults', { method: 'POST' }),
+}
+
+// -------------------- Snippets endpoints --------------------
+export const snippets = {
+  list: () => request<any[]>('/api/snippets', { method: 'GET' }),
+  create: (payload: any) => request<{ id: string }>('/api/snippets', { method: 'POST', body: JSON.stringify(payload) }),
+  update: (id: string, payload: any) => request<void>(`/api/snippets/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  delete: (id: string) => request<void>(`/api/snippets/${id}`, { method: 'DELETE' }),
+  toggleFavorite: (id: string) => request<{ isFavorite: boolean }>(`/api/snippets/${id}/favorite`, { method: 'PATCH' }),
+  sendToNotion: (payload: { snippetId: string; notionDatabaseId?: string }) =>
+    request<{ notionPageId: string }>('/api/snippets/send-to-notion', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- Subscription endpoints --------------------
+export const subscriptions = {
+  current: () => request<any>('/api/subscriptions/current', { method: 'GET' }),
+  usage: () => request<any>('/api/subscriptions/usage', { method: 'GET' }),
+  checkout: (payload: { priceId: string; successUrl: string; cancelUrl: string }) =>
+    request<{ url: string }>('/api/subscriptions/checkout', { method: 'POST', body: JSON.stringify(payload) }),
+  portal: (payload: { returnUrl: string }) =>
+    request<{ url: string }>('/api/subscriptions/portal', { method: 'POST', body: JSON.stringify(payload) }),
+  cancel: () => request<void>('/api/subscriptions/cancel', { method: 'POST' }),
+}
+
+// -------------------- Global Shortcuts endpoints --------------------
+export const globalshortcuts = {
+  commandPalette: (search?: string) =>
+    request<any[]>(`/api/globalshortcuts/command-palette${search ? `?search=${encodeURIComponent(search)}` : ''}`, { method: 'GET' }),
+  capture: (payload: { content: string; source?: string; tags?: string[] }) =>
+    request<{ id: string }>('/api/globalshortcuts/capture', { method: 'POST', body: JSON.stringify(payload) }),
+  calendarEvent: (payload: { rawText: string }) =>
+    request<any>('/api/globalshortcuts/calendar-event', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- Greeting --------------------
+export const greeting = {
+  get: (userName: string, timezoneOffsetMinutes = 0, lang = 'en') =>
+    request<string>(`/api/greeting?userName=${encodeURIComponent(userName)}&timezoneOffsetMinutes=${timezoneOffsetMinutes}&lang=${lang}`, { method: 'GET', skipAuth: true }),
+}
+
+// -------------------- Developer Insights --------------------
+export const devinsights = {
+  timeSaved: (from?: string, to?: string) =>
+    request<any>(`/api/devinsights/time-saved${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  focusHeatmap: (from?: string, to?: string) =>
+    request<any>(`/api/devinsights/focus-heatmap${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  deploymentSuccessRate: (from?: string, to?: string) =>
+    request<any>(`/api/devinsights/deployment-success-rate${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  peakHours: (from?: string, to?: string) =>
+    request<any>(`/api/devinsights/peak-hours${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+}
+
+// -------------------- Dev Utilities --------------------
+export const devutilities = {
+  decodeJwt: (token: string) => request<any>('/api/devutilities/decode-jwt', { method: 'POST', body: JSON.stringify({ token }) }),
+  testRegex: (pattern: string, input: string) => request<any>('/api/devutilities/test-regex', { method: 'POST', body: JSON.stringify({ pattern, input }) }),
+  generateCron: (description: string) => request<any>('/api/devutilities/generate-cron', { method: 'POST', body: JSON.stringify({ description }) }),
+  base64: (input: string, encode: boolean) => request<any>('/api/devutilities/base64', { method: 'POST', body: JSON.stringify({ input, encode }) }),
+  sshKey: (type = 'ed25519', bits = 4096, comment = '') => request<any>('/api/devutilities/ssh-key', { method: 'POST', body: JSON.stringify({ type, bits, comment }) }),
+}
+
+// -------------------- Docker --------------------
+export const docker = {
+  list: () => request<any[]>('/api/docker', { method: 'GET' }),
+  logs: (id: string) => request<any>(`/api/docker/${id}/logs`, { method: 'GET' }),
+  start: (id: string) => request<void>(`/api/docker/${id}/start`, { method: 'POST' }),
+  stop: (id: string) => request<void>(`/api/docker/${id}/stop`, { method: 'POST' }),
+  restart: (id: string) => request<void>(`/api/docker/${id}/restart`, { method: 'POST' }),
+}
+
+// -------------------- Git/GitHub --------------------
+export const git = {
+  dashboard: (integrationId: string) => request<any>(`/api/git/dashboard/${integrationId}`, { method: 'GET' }),
+  approve: (payload: { integrationId: string; owner: string; repo: string; pullNumber: number }) =>
+    request<void>('/api/git/approve', { method: 'POST', body: JSON.stringify(payload) }),
+  reject: (payload: { integrationId: string; owner: string; repo: string; pullNumber: number; reason?: string }) =>
+    request<void>('/api/git/reject', { method: 'POST', body: JSON.stringify(payload) }),
+  merge: (payload: { integrationId: string; owner: string; repo: string; pullNumber: number }) =>
+    request<void>('/api/git/merge', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- Network Tools --------------------
+export const networktools = {
+  sendRequest: (payload: { url: string; method: string; headers?: Record<string, string>; body?: any }) =>
+    request<any>('/api/networktools/send-request', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- JSON Tools --------------------
+export const jsontools = {
+  format: (json: string) => request<{ result: string }>('/api/jsontools/format', { method: 'POST', body: JSON.stringify({ json }) }),
+}
+
+// -------------------- Sentry --------------------
+export const sentryApi = {
+  issues: (integrationId: string, projectSlug?: string) =>
+    request<any>(`/api/sentry/${integrationId}/issues${projectSlug ? `?projectSlug=${encodeURIComponent(projectSlug)}` : ''}`, { method: 'GET' }),
+  resolveIssue: (issueId: string, integrationId: string) =>
+    request<void>(`/api/sentry/issues/${issueId}/resolve`, { method: 'POST', body: JSON.stringify({ integrationId, issueId }) }),
+}
+
+// -------------------- Proactive Agents (Dev) --------------------
+export const proactiveagents = {
+  explainError: (errorMessage: string, context?: string) =>
+    request<{ explanation: string }>('/api/proactiveagents/explain-error', { method: 'POST', body: JSON.stringify({ errorMessage, context }) }),
+  suggestCommit: (diff: string) =>
+    request<{ message: string }>('/api/proactiveagents/suggest-commit', { method: 'POST', body: JSON.stringify({ diff }) }),
+  summarizePr: (prUrl: string, integrationId: string) =>
+    request<{ summary: string }>('/api/proactiveagents/summarize-pr', { method: 'POST', body: JSON.stringify({ prUrl, integrationId }) }),
+  resolvePort: (port: number) =>
+    request<any>('/api/proactiveagents/resolve-port', { method: 'POST', body: JSON.stringify({ port }) }),
+}
+
+// -------------------- SecOps Insights --------------------
+export const secopsinsights = {
+  threatsBlocked: (from?: string, to?: string) =>
+    request<any>(`/api/secopsinsights/threats-blocked${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  securityScore: () => request<any>('/api/secopsinsights/security-score', { method: 'GET' }),
+  zeroIncidentStreak: () => request<any>('/api/secopsinsights/zero-incident-streak', { method: 'GET' }),
+  vulnerabilitiesPatched: (from?: string, to?: string) =>
+    request<any>(`/api/secopsinsights/vulnerabilities-patched${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+}
+
+// -------------------- SecOps Utilities --------------------
+export const secopsutilities = {
+  hash: (input: string, algorithm = 'SHA256') =>
+    request<{ hash: string }>('/api/secopsutilities/hash', { method: 'POST', body: JSON.stringify({ input, algorithm }) }),
+  ipDns: (target: string) => request<any>('/api/secopsutilities/ip-dns', { method: 'POST', body: JSON.stringify({ target }) }),
+  passwordEntropy: (password: string) =>
+    request<any>('/api/secopsutilities/password-entropy', { method: 'POST', body: JSON.stringify({ password }) }),
+  sslCheck: (domain: string) =>
+    request<any>('/api/secopsutilities/ssl-check', { method: 'POST', body: JSON.stringify({ domain }) }),
+  portScan: (host: string, startPort: number, endPort: number) =>
+    request<any>('/api/secopsutilities/port-scan', { method: 'POST', body: JSON.stringify({ host, startPort, endPort }) }),
+  encodePayload: (payload: string, encoding: string) =>
+    request<{ encoded: string }>('/api/secopsutilities/encode-payload', { method: 'POST', body: JSON.stringify({ payload, encoding }) }),
+}
+
+// -------------------- SecOps Agents --------------------
+export const secopsagents = {
+  detectRoguePorts: () => request<any>('/api/secopsagents/detect-rogue-ports', { method: 'POST' }),
+  warnExpiringSsl: (domains: string[]) =>
+    request<any>('/api/secopsagents/warn-expiring-ssl', { method: 'POST', body: JSON.stringify({ domains }) }),
+  scanLeakedKeys: (scanPath: string) =>
+    request<any>('/api/secopsagents/scan-leaked-keys', { method: 'POST', body: JSON.stringify({ scanPath }) }),
+  suggestPatches: (vulnerabilities: string[]) =>
+    request<any>('/api/secopsagents/suggest-patches', { method: 'POST', body: JSON.stringify({ vulnerabilities }) }),
+  vpnStatus: () => request<any>('/api/secopsagents/vpn-status', { method: 'GET' }),
+}
+
+// -------------------- SecOps Scripts --------------------
+export const secopsscripts = {
+  quickScan: (targetPath?: string) =>
+    request<{ output: string }>('/api/secopsscripts/quick-scan', { method: 'POST', body: JSON.stringify({ targetPath }) }),
+  panicButton: (reason?: string) =>
+    request<{ output: string }>('/api/secopsscripts/panic-button', { method: 'POST', body: JSON.stringify({ reason }) }),
+  clearDns: () => request<{ output: string }>('/api/secopsscripts/clear-dns', { method: 'POST' }),
+  firewallLockdown: (allowedIps: string[]) =>
+    request<{ output: string }>('/api/secopsscripts/firewall-lockdown', { method: 'POST', body: JSON.stringify({ allowedIps }) }),
+}
+
+// -------------------- Design Insights --------------------
+export const designinsights = {
+  assetsOptimized: () => request<any>('/api/designinsights/assets-optimized', { method: 'GET' }),
+  handoffs: (from?: string, to?: string) =>
+    request<any>(`/api/designinsights/handoffs${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  colorTrends: () => request<any>('/api/designinsights/color-trends', { method: 'GET' }),
+  designDebt: () => request<any>('/api/designinsights/design-debt', { method: 'GET' }),
+}
+
+// -------------------- Design Utilities --------------------
+export const designutilities = {
+  compressImage: (imageUrl: string, quality = 80) =>
+    request<any>('/api/designutilities/compress-image', { method: 'POST', body: JSON.stringify({ imageUrl, quality }) }),
+  extractCss: (designTokens: Record<string, string>) =>
+    request<{ css: string }>('/api/designutilities/extract-css', { method: 'POST', body: JSON.stringify({ designTokens }) }),
+  optimizeSvg: (svgContent: string) =>
+    request<any>('/api/designutilities/optimize-svg', { method: 'POST', body: JSON.stringify({ svgContent }) }),
+  checkContrast: (foreground: string, background: string) =>
+    request<any>('/api/designutilities/check-contrast', { method: 'POST', body: JSON.stringify({ foreground, background }) }),
+  aspectRatio: (width: number, height: number) =>
+    request<{ ratio: string; decimal: number }>(`/api/designutilities/aspect-ratio?width=${width}&height=${height}`, { method: 'GET' }),
+  dummyData: (type: string, count = 5) =>
+    request<any[]>(`/api/designutilities/dummy-data?type=${encodeURIComponent(type)}&count=${count}`, { method: 'GET' }),
+}
+
+// -------------------- Palettes --------------------
+export const palettes = {
+  list: () => request<any[]>('/api/palettes', { method: 'GET' }),
+  create: (name: string) => request<{ id: string }>('/api/palettes', { method: 'POST', body: JSON.stringify({ name }) }),
+  addColor: (id: string, payload: { hex: string; name: string; order?: number }) =>
+    request<{ id: string }>(`/api/palettes/${id}/colors`, { method: 'POST', body: JSON.stringify({ paletteId: id, ...payload }) }),
+}
+
+// -------------------- Figma --------------------
+export const figmaApi = {
+  comments: (integrationId: string, fileKey: string) =>
+    request<any>(`/api/figma/${integrationId}/comments?fileKey=${encodeURIComponent(fileKey)}`, { method: 'GET' }),
+  resolveComment: (integrationId: string, fileKey: string, commentId: string) =>
+    request<void>('/api/figma/comments/resolve', { method: 'POST', body: JSON.stringify({ integrationId, fileKey, commentId }) }),
+}
+
+// -------------------- Marketer Insights --------------------
+export const marketerinsights = {
+  totalRoas: (from?: string, to?: string) =>
+    request<any>(`/api/marketerinsights/total-roas${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  leadsGenerated: (from?: string, to?: string) =>
+    request<any>(`/api/marketerinsights/leads-generated${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  peakEngagement: (from?: string, to?: string) =>
+    request<any>(`/api/marketerinsights/peak-engagement${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+  audienceSentiment: (from?: string, to?: string) =>
+    request<any>(`/api/marketerinsights/audience-sentiment${from ? `?from=${from}` : ''}${to ? `${from ? '&' : '?'}to=${to}` : ''}`, { method: 'GET' }),
+}
+
+// -------------------- Marketer Utilities --------------------
+export const marketerutilities = {
+  seoCheck: (payload: { url: string; title?: string; description?: string; keywords?: string[] }) =>
+    request<any>('/api/marketerutilities/seo-check', { method: 'POST', body: JSON.stringify(payload) }),
+  copywriting: (payload: { prompt: string; tone?: string; maxLength?: number }) =>
+    request<{ copy: string }>('/api/marketerutilities/copywriting', { method: 'POST', body: JSON.stringify(payload) }),
+  markdownToHtml: (markdown: string) =>
+    request<{ html: string }>('/api/marketerutilities/markdown-to-html', { method: 'POST', body: JSON.stringify({ markdown }) }),
+  keywordDensity: (text: string, keywords: string[]) =>
+    request<any>('/api/marketerutilities/keyword-density', { method: 'POST', body: JSON.stringify({ text, keywords }) }),
+  readability: (text: string) => request<any>('/api/marketerutilities/readability', { method: 'POST', body: JSON.stringify({ text }) }),
+}
+
+// -------------------- Marketer Agents --------------------
+export const marketeragents = {
+  viralTrends: (keywords: string[], platform?: string) =>
+    request<any>('/api/marketeragents/viral-trends', { method: 'POST', body: JSON.stringify({ keywords, platform }) }),
+  brokenLinks: (urls: string[]) =>
+    request<any>('/api/marketeragents/broken-links', { method: 'POST', body: JSON.stringify({ urls }) }),
+  cartAbandonment: () => request<any>('/api/marketeragents/cart-abandonment', { method: 'GET' }),
+  autoUtm: (url: string, campaignName: string) =>
+    request<{ utmUrl: string }>('/api/marketeragents/auto-utm', { method: 'POST', body: JSON.stringify({ url, campaignName }) }),
+}
+
+// -------------------- Marketer Scripts --------------------
+export const marketerscripts = {
+  utmLink: (payload: { baseUrl: string; source?: string; medium?: string; campaign?: string }) =>
+    request<{ utmUrl: string }>('/api/marketerscripts/utm-link', { method: 'POST', body: JSON.stringify(payload) }),
+  socialBlast: (payload: { message: string; platforms: string[]; scheduleAt?: string }) =>
+    request<{ output: string }>('/api/marketerscripts/social-blast', { method: 'POST', body: JSON.stringify(payload) }),
+  weeklyReport: () => request<{ output: string }>('/api/marketerscripts/weekly-report', { method: 'POST' }),
+  verifyEmails: (emails: string[]) =>
+    request<any>('/api/marketerscripts/verify-emails', { method: 'POST', body: JSON.stringify({ emails }) }),
+  pauseCampaigns: (campaignIds: string[], reason?: string) =>
+    request<{ output: string }>('/api/marketerscripts/pause-campaigns', { method: 'POST', body: JSON.stringify({ campaignIds, reason }) }),
+}
+
+// -------------------- Leader Scripts --------------------
+export const leaderscripts = {
+  sprintStarter: (payload: { teamId: string; sprintName: string; goals: string[] }) =>
+    request<{ output: string }>('/api/leaderscripts/sprint-starter', { method: 'POST', body: JSON.stringify(payload) }),
+  releaseNotes: (payload: { teamId: string; from?: string; to?: string; version?: string }) =>
+    request<{ notes: string }>('/api/leaderscripts/release-notes', { method: 'POST', body: JSON.stringify(payload) }),
+  weekSummary: (teamId: string) =>
+    request<{ output: string }>('/api/leaderscripts/week-summary', { method: 'POST', body: JSON.stringify({ teamId }) }),
+  standupPing: (teamId: string, message?: string) =>
+    request<{ output: string }>('/api/leaderscripts/standup-ping', { method: 'POST', body: JSON.stringify({ teamId, message }) }),
+  meetingMode: () => request<{ output: string }>('/api/leaderscripts/meeting-mode', { method: 'POST' }),
+}
+
+// -------------------- Leader Utilities --------------------
+export const leaderutilities = {
+  timezones: (payload: { time: string; fromTimezone: string; toTimezones: string[] }) =>
+    request<any>('/api/leaderutilities/timezones', { method: 'POST', body: JSON.stringify(payload) }),
+  quickPoll: (payload: { question: string; options: string[]; teamId: string }) =>
+    request<any>('/api/leaderutilities/quick-poll', { method: 'POST', body: JSON.stringify(payload) }),
+  capacity: (payload: { teamId: string; sprintDays: number; membersOnLeave?: number }) =>
+    request<any>('/api/leaderutilities/capacity', { method: 'POST', body: JSON.stringify(payload) }),
+  costEstimate: (payload: { features: { name: string; estimatedHours: number }[]; hourlyRate: number }) =>
+    request<any>('/api/leaderutilities/cost-estimate', { method: 'POST', body: JSON.stringify(payload) }),
+  riskMatrix: (payload: { risks: { name: string; probability: string; impact: string }[] }) =>
+    request<any>('/api/leaderutilities/risk-matrix', { method: 'POST', body: JSON.stringify(payload) }),
+  markdown: (markdown: string) =>
+    request<{ html: string }>('/api/leaderutilities/markdown', { method: 'POST', body: JSON.stringify({ markdown }) }),
+  decisionLog: (payload: any) =>
+    request<any>('/api/leaderutilities/decision-log', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+// -------------------- Leader Agents (extended) --------------------
+export const leaderagentsAll = {
+  bottleneck: (teamId: string) => request<any>(`/api/leaderagents/bottleneck/${teamId}`, { method: 'GET' }),
+  burnoutRisk: (teamId: string) => request<any>(`/api/leaderagents/burnout-risk/${teamId}`, { method: 'GET' }),
+  scopeCreep: (teamId: string, sprintId?: string) =>
+    request<any>(`/api/leaderagents/scope-creep/${teamId}${sprintId ? `?sprintId=${sprintId}` : ''}`, { method: 'GET' }),
+  unassignedBugs: (teamId: string) => request<any>(`/api/leaderagents/unassigned-bugs/${teamId}`, { method: 'GET' }),
+  ghostMembers: (teamId: string, inactiveDays = 7) =>
+    request<any>('/api/leaderagents/ghost-members', { method: 'POST', body: JSON.stringify({ teamId, inactiveDays }) }),
+  milestone: (teamId: string) => request<any>(`/api/leaderagents/milestone/${teamId}`, { method: 'GET' }),
+  prReviewNag: (teamId: string, integrationId: string) =>
+    request<any>('/api/leaderagents/pr-review-nag', { method: 'POST', body: JSON.stringify({ teamId, integrationId }) }),
+}
+
+// -------------------- Leader Insights (extended) --------------------
+export const leaderinsightsAll = {
+  sprintVelocity: (teamId: string, from?: string, to?: string) =>
+    request<any>(`/api/leaderinsights/sprint-velocity?teamId=${encodeURIComponent(teamId)}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}`, { method: 'GET' }),
+  teamMood: (teamId: string, from?: string, to?: string) =>
+    request<any>(`/api/leaderinsights/team-mood?teamId=${encodeURIComponent(teamId)}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}`, { method: 'GET' }),
+  topContributor: (teamId: string, from?: string, to?: string) =>
+    request<any>(`/api/leaderinsights/top-contributor?teamId=${encodeURIComponent(teamId)}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}`, { method: 'GET' }),
+  blockedTime: (teamId: string, from?: string, to?: string) =>
+    request<any>(`/api/leaderinsights/blocked-time?teamId=${encodeURIComponent(teamId)}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}`, { method: 'GET' }),
+  reviewTurnaround: (teamId: string, from?: string, to?: string) =>
+    request<any>(`/api/leaderinsights/review-turnaround?teamId=${encodeURIComponent(teamId)}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}`, { method: 'GET' }),
+}
+
+// -------------------- Gmail --------------------
+export const gmail = {
+  unread: () => request<any[]>('/api/gmail/unread', { method: 'GET' }),
+}
+
+// -------------------- Knowledge (Notion) --------------------
+export const knowledge = {
+  notion: () => request<any[]>('/api/knowledge/notion', { method: 'GET' }),
+}
+
+export default {
+  accounts,
+  onboarding,
+  getTokens,
+  setTokens,
+  clearTokens,
+  workspaces,
+  integrations,
+  teams,
+  leaderagents,
+  omnifeed,
+  squadarena,
+  squadradar,
+  resourcehub,
+  leadermodals,
+  leaderinsights,
+  profiles,
+  focus,
+  hotkeys,
+  snippets,
+  subscriptions,
+  globalshortcuts,
+  greeting,
+  devinsights,
+  devutilities,
+  docker,
+  git,
+  networktools,
+  jsontools,
+  sentryApi,
+  proactiveagents,
+  secopsinsights,
+  secopsutilities,
+  secopsagents,
+  secopsscripts,
+  designinsights,
+  designutilities,
+  palettes,
+  figmaApi,
+  marketerinsights,
+  marketerutilities,
+  marketeragents,
+  marketerscripts,
+  leaderscripts,
+  leaderutilities,
+  leaderagentsAll,
+  leaderinsightsAll,
+  gmail,
+  knowledge,
+}

@@ -5,8 +5,11 @@ import { useAuth } from '@/context/AuthContext'
 interface Props { children: ReactNode }
 
 export default function RequireAuth({ children }: Props) {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, initializing } = useAuth()
   const location = useLocation()
+
+  // While auth is initializing (checking tokens / restoring session) avoid redirecting.
+  if (initializing) return null
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
@@ -19,4 +22,3 @@ export default function RequireAuth({ children }: Props) {
 
   return <>{children}</>
 }
-
