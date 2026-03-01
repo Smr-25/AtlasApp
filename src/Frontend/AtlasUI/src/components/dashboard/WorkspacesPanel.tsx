@@ -65,18 +65,23 @@ const WorkspacesPanel = ({
   const activeIntegrations = integrations.filter((i) => i.status === "Active");
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-foreground">Workspaces</h2>
-          <p className="text-sm text-muted-foreground">Manage your project workspaces and their integrations</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/10 flex items-center justify-center">
+            <FolderOpen className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Workspaces</h2>
+            <p className="text-xs text-muted-foreground">Manage your project workspaces and their integrations</p>
+          </div>
         </div>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onCreateWorkspace}
-          className="flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-md shadow-primary/20"
+          className="flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 transition-shadow"
         >
           <Plus className="w-4 h-4" />
           New Workspace
@@ -91,11 +96,12 @@ const WorkspacesPanel = ({
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            whileHover={{ y: -3, boxShadow: "0 12px 40px -15px hsl(var(--primary) / 0.12)" }}
-            className={`relative bg-card rounded-xl border p-5 cursor-pointer transition-all ${
-              ws.id === activeWorkspace?.id ? "border-primary/40 shadow-sm shadow-primary/5" : "border-border hover:border-primary/20"
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
+            className={`relative overflow-hidden bg-gradient-to-br from-card to-card/60 rounded-xl border p-5 cursor-pointer transition-all group ${
+              ws.id === activeWorkspace?.id ? "border-primary/30 shadow-sm" : "border-border hover:border-primary/15"
             }`}
           >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/[0.015] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.03] transition-colors duration-500" />
             {/* Menu */}
             <div className="absolute top-3 right-3 flex items-center gap-1">
               <button

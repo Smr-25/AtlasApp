@@ -44,6 +44,11 @@ public class WorkspaceIntegrationConfiguration : IEntityTypeConfiguration<Worksp
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");
         
+        builder.HasOne(wi => wi.Workspace)
+            .WithMany(w => w.WorkspaceIntegrations)
+            .HasForeignKey(wi => wi.WorkspaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
         builder.HasOne(wi => wi.Integration)
             .WithMany()
             .HasForeignKey(wi => wi.IntegrationId)

@@ -9,6 +9,7 @@ import {
 import {
   authApi,
   onboardingApi,
+  profileApi,
   TokenService,
   AuthResponseDto,
   ExternalLoginResponseDto,
@@ -31,6 +32,19 @@ export const professionToRole: Record<number, UserRole> = {
   3: "cybersecurity",
   4: "marketer",
   5: "team-leader",
+};
+
+/** Maps backend string profession → frontend role key */
+export const professionStringToRole: Record<string, UserRole> = {
+  developer: "developer",
+  designer: "designer",
+  cybersecurity: "cybersecurity",
+  digitalmarketing: "marketer",
+  productmanager: "team-leader",
+  // Also handle role names returned by login endpoint
+  secops: "cybersecurity",
+  marketer: "marketer",
+  teamleader: "team-leader",
 };
 
 export const roleToProfession: Record<UserRole, number> = {
@@ -181,11 +195,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const profileRes = await authApi.getProfile();
           if (profileRes.data.isSuccess && profileRes.data.data) {
             const p = profileRes.data.data;
-            const role = p.profession
+            let role = p.profession
               ? professionToRole[p.profession]
               : storedUser.role;
-            // Profile fetch successful = active user = onboarding done
-            const onboardingComplete = storedUser.onboardingComplete || true;
+
+            // If still no role, try /api/profiles/me
+            if (!role) {
+              try {
+                const profMeRes = await profileApi.getMe();
+                if (profMeRes.data.isSuccess && profMeRes.data.data?.profession) {
+                  const lower = String(profMeRes.data.data.profession).toLowerCase().replace(/[\s_-]/g, "");
+                  role = professionStringToRole[lower] || storedUser.role;
+                }
+              } catch {
+                role = storedUser.role;
+              }
+            }
+
+            // Profile fetch successful = active user
+            // Onboarding is complete if user has a role (profession set) or was previously marked complete
+            const onboardingComplete = !!role || storedUser.onboardingComplete;
             const u: User = {
               userId: p.id || storedUser.userId,
               fullName: p.fullName || storedUser.fullName,
@@ -274,14 +303,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ── Helper: resolve role from profession (number or string) ───────
+  const resolveRole = useCallback(
+    (profession: number | string | null | undefined): UserRole | undefined => {
+      if (!profession) return undefined;
+      if (typeof profession === "number") {
+        return professionToRole[profession];
+      }
+      // String profession from /api/profiles/me
+      const lower = String(profession).toLowerCase().replace(/[\s_-]/g, "");
+      return professionStringToRole[lower] || undefined;
+    },
+    []
+  );
+
   // ── Helper: build user from profile ──────────────────────────────
   const buildUserFromProfile = useCallback(
-    (profile: AccountDto): User => {
-      const role = profile.profession
-        ? professionToRole[profile.profession]
-        : undefined;
+    (profile: AccountDto, fallbackRole?: UserRole): User => {
+      const role = resolveRole(profile.profession) || fallbackRole;
       // Onboarding is complete if profession is set (bio may still be null/generating)
-      const onboardingComplete = !!profile.profession;
+      const onboardingComplete = !!profile.profession || !!role;
       return {
         userId: profile.id,
         fullName: profile.fullName,
@@ -292,8 +333,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         onboardingComplete,
       };
     },
-    []
+    [resolveRole]
   );
+
+  // ── Helper: fetch role from /api/profiles/me ─────────────────────
+  const fetchRoleFromProfilesMe = useCallback(async (): Promise<UserRole | undefined> => {
+    try {
+      const res = await profileApi.getMe();
+      if (res.data.isSuccess && res.data.data) {
+        const prof = res.data.data;
+        return resolveRole(prof.profession) || undefined;
+      }
+    } catch {
+      // profiles/me may not be available
+    }
+    return undefined;
+  }, [resolveRole]);
 
   // ── LOGIN ───────────────────────────────────────────────────────
   const login = async (
@@ -312,11 +367,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const dto = res.data.data;
         TokenService.setTokens(dto);
 
-        // Fetch full profile to determine role
+        // Try to get role directly from login response first (backend returns it)
+        let roleFromLogin = dto.role ? resolveRole(dto.role) : undefined;
+
+        // Fetch full profile for complete user data
         try {
           const profileRes = await authApi.getProfile();
           if (profileRes.data.isSuccess && profileRes.data.data) {
-            const u = buildUserFromProfile(profileRes.data.data);
+            // If login didn't return role, try from profile
+            if (!roleFromLogin) {
+              roleFromLogin = resolveRole(profileRes.data.data.profession);
+            }
+            // If still no role, try /api/profiles/me
+            if (!roleFromLogin) {
+              roleFromLogin = await fetchRoleFromProfilesMe();
+            }
+
+            const u = buildUserFromProfile(profileRes.data.data, roleFromLogin);
             // Login success = user already passed onboarding
             u.onboardingComplete = true;
             setUser(u);
@@ -326,11 +393,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return [];
           }
         } catch {
-          // Profile fetch failed — use token data
+          // Profile fetch failed — use token data + role from login
         }
 
         // Fallback: use auth response data — login success means onboarding is done
-        handleAuthResponse(dto, true);
+        const u = handleAuthResponse(dto, true);
+        if (roleFromLogin && u) {
+          setUser(prev => prev ? { ...prev, role: roleFromLogin } : prev);
+        }
         setEmailVerified(true);
         setPhoneVerified(true);
         return [];
@@ -392,11 +462,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: dto.email,
           onboardingComplete: !dto.isNewUser,
         };
-        setUser(u);
+
         if (!dto.isNewUser) {
+          // Existing user — try to get role from profile
+          try {
+            const profMeRes = await profileApi.getMe();
+            if (profMeRes.data.isSuccess && profMeRes.data.data?.profession) {
+              const lower = String(profMeRes.data.data.profession).toLowerCase().replace(/[\s_-]/g, "");
+              u.role = professionStringToRole[lower] || undefined;
+            }
+          } catch {
+            // profiles/me not available
+          }
           setIsAuthenticated(true);
           setEmailVerified(true);
         }
+        setUser(u);
         return { errors: [], isNewUser: dto.isNewUser };
       }
       return {
@@ -439,9 +520,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const profileRes = await authApi.getProfile();
         if (profileRes.data.isSuccess && profileRes.data.data) {
           const p = profileRes.data.data;
-          const role = p.profession
+          let role = p.profession
             ? professionToRole[p.profession]
             : undefined;
+
+          // If accounts/profile doesn't have profession, try /api/profiles/me
+          if (!role) {
+            try {
+              const profMeRes = await profileApi.getMe();
+              if (profMeRes.data.isSuccess && profMeRes.data.data?.profession) {
+                const lower = String(profMeRes.data.data.profession).toLowerCase().replace(/[\s_-]/g, "");
+                role = professionStringToRole[lower] || undefined;
+              }
+            } catch {
+              // profiles/me not available
+            }
+          }
+
           // Existing OAuth user (isNewUser=false) = onboarding already done
           const u: User = {
             userId: p.id || "",
@@ -491,6 +586,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const res = await authApi.verifyEmail(email, code);
       if (res.data.isSuccess) {
         setEmailVerified(true);
+        // After email verification, user should be authenticated to proceed to onboarding
+        setIsAuthenticated(true);
         return [];
       }
       return res.data.errors || ["Verification failed"];

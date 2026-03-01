@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth, UserRole } from "@/context/AuthContext";
+import { AuthProvider, useAuth, UserRole, professionStringToRole } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -16,6 +16,8 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import OAuthCallback from "./pages/auth/OAuthCallback";
 import { Loader2 } from "lucide-react";
+import { profileApi } from "@/services/api";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -70,8 +72,30 @@ const OnboardingRoute = ({ children }: { children: React.ReactNode }) => {
 
 /** RoleRouter — redirect /dashboard to role-specific path */
 const RoleRouter = () => {
-  const { user, isLoading } = useAuth();
-  if (isLoading) return <FullLoader />;
+  const { user, isLoading, setUserRole } = useAuth();
+  const [fetching, setFetching] = useState(false);
+  const [resolved, setResolved] = useState(false);
+
+  useEffect(() => {
+    // If user exists but has no role, try to fetch it from profiles/me
+    if (user && !user.role && !fetching && !resolved) {
+      setFetching(true);
+      profileApi.getMe().then((res) => {
+        if (res.data.isSuccess && res.data.data?.profession) {
+          const lower = String(res.data.data.profession).toLowerCase().replace(/[\s_-]/g, "");
+          const role = professionStringToRole[lower];
+          if (role) {
+            setUserRole(role);
+          }
+        }
+      }).catch(() => {}).finally(() => {
+        setFetching(false);
+        setResolved(true);
+      });
+    }
+  }, [user, fetching, resolved, setUserRole]);
+
+  if (isLoading || fetching) return <FullLoader />;
   if (!user) return <Navigate to="/login" replace />;
   if (!user.onboardingComplete) return <Navigate to="/onboarding" replace />;
 

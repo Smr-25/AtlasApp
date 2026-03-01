@@ -18,9 +18,16 @@ public class MapProfile : Profile
 
         CreateMap<Integration, IntegrationDto>();
 
+        CreateMap<WorkspaceIntegration, WorkspaceIntegrationDto>()
+            .ForMember(d => d.IntegrationId, opt => opt.MapFrom(s => s.IntegrationId))
+            .ForMember(d => d.IntegrationName, opt => opt.MapFrom(s => s.Integration.Name))
+            .ForMember(d => d.Provider, opt => opt.MapFrom(s => s.Integration.Provider))
+            .ForMember(d => d.Enabled, opt => opt.MapFrom(s => s.Enabled))
+            .ForMember(d => d.ConnectedAt, opt => opt.MapFrom(s => s.CreatedAt));
+
         CreateMap<Workspace, WorkspaceDto>()
             .ForMember(d => d.ActiveIntegrations, opt => opt.MapFrom(s => 
-                s.WorkspaceIntegrations.Where(wi => wi.Enabled).Select(wi => wi.Integration)))
+                s.WorkspaceIntegrations.Where(wi => wi.Enabled)))
             .ForMember(d => d.LocalFolderPath, opt => opt.MapFrom(s => s.LocalFolderPath))
             .ForMember(d => d.IsShared, opt => opt.MapFrom(s => s.IsShared));
     }

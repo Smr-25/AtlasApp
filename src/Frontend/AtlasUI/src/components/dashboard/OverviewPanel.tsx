@@ -8,7 +8,6 @@ import {
   Star,
   Clock,
   AlertCircle,
-  Activity,
 } from "lucide-react";
 import { WorkspaceDto, IntegrationDto } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
@@ -53,14 +52,16 @@ const OverviewPanel = ({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 p-6"
+        className="relative overflow-hidden rounded-2xl border border-primary/8 p-6 md:p-8"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-primary/[0.03]" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/[0.04] rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/[0.03] rounded-full blur-[60px] translate-y-1/3 -translate-x-1/4" />
         <div className="relative">
-          <h1 className="text-2xl font-bold text-foreground mb-1">
+          <h1 className="text-2xl font-bold text-foreground mb-1.5 tracking-tight">
             {greeting}, {displayName}! 👋
           </h1>
-          <p className="text-sm text-muted-foreground max-w-lg">
+          <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
             You have <span className="text-foreground font-medium">{workspaces.length} workspace{workspaces.length !== 1 ? "s" : ""}</span> and{" "}
             <span className="text-foreground font-medium">{activeCount} active integration{activeCount !== 1 ? "s" : ""}</span>.
             {pendingIntegrations.length > 0 && (
@@ -73,27 +74,23 @@ const OverviewPanel = ({
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Workspaces", value: workspaces.length, icon: FolderOpen, color: "text-blue-500 bg-blue-500/10" },
-          { label: "Integrations", value: allIntegrations.length, icon: Plug, color: "text-purple-500 bg-purple-500/10" },
-          { label: "Active", value: activeCount, icon: Zap, color: "text-emerald-500 bg-emerald-500/10" },
-          { label: "Pending Setup", value: pendingIntegrations.length, icon: AlertCircle, color: "text-amber-500 bg-amber-500/10" },
+          { label: "Workspaces", value: workspaces.length, icon: FolderOpen, gradient: "from-blue-500/12 to-cyan-500/5", iconColor: "text-blue-400" },
+          { label: "Integrations", value: allIntegrations.length, icon: Plug, gradient: "from-violet-500/12 to-purple-500/5", iconColor: "text-violet-400" },
+          { label: "Active", value: activeCount, icon: Zap, gradient: "from-emerald-500/12 to-green-500/5", iconColor: "text-emerald-400" },
+          { label: "Pending Setup", value: pendingIntegrations.length, icon: AlertCircle, gradient: "from-amber-500/12 to-orange-500/5", iconColor: "text-amber-400" },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 + i * 0.05 }}
-            whileHover={{ y: -2, boxShadow: "0 8px 30px -12px hsl(var(--primary) / 0.15)" }}
-            className="bg-card rounded-xl border border-border p-4 cursor-pointer transition-all"
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
+            className={`relative overflow-hidden rounded-xl border border-border bg-gradient-to-br ${stat.gradient} p-4 cursor-pointer group`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.color}`}>
-                <stat.icon className="w-4 h-4" />
-              </div>
-              <Activity className="w-3.5 h-3.5 text-muted-foreground/40" />
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{stat.label}</p>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.03] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.05] transition-colors duration-500" />
+            <stat.icon className={`w-4 h-4 ${stat.iconColor} mb-3`} />
+            <p className="text-2xl font-bold text-foreground tracking-tight">{stat.value}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
           </motion.div>
         ))}
       </div>
@@ -105,9 +102,10 @@ const OverviewPanel = ({
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-card rounded-xl border border-border overflow-hidden"
+          className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/60"
         >
-          <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
+          <div className="flex items-center justify-between p-4 border-b border-border relative">
             <div className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-semibold text-foreground">Workspaces</h3>
@@ -157,8 +155,9 @@ const OverviewPanel = ({
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-card rounded-xl border border-border overflow-hidden"
+          className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/60"
         >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center gap-2">
               <Plug className="w-4 h-4 text-primary" />
@@ -221,23 +220,24 @@ const OverviewPanel = ({
         className="grid grid-cols-1 sm:grid-cols-3 gap-3"
       >
         {[
-          { label: "New Workspace", desc: "Create a project workspace", icon: FolderOpen, action: onCreateWorkspace },
-          { label: "Connect Tool", desc: "Add a new integration", icon: Plug, action: () => onTabChange("integrations") },
-          { label: "AI Assistant", desc: "Get help from Atlas AI", icon: Zap, action: () => onTabChange("ai") },
+          { label: "New Workspace", desc: "Create a project workspace", icon: FolderOpen, action: onCreateWorkspace, gradient: "from-blue-500/8 to-transparent" },
+          { label: "Connect Tool", desc: "Add a new integration", icon: Plug, action: () => onTabChange("integrations"), gradient: "from-violet-500/8 to-transparent" },
+          { label: "AI Assistant", desc: "Get help from Atlas AI", icon: Zap, action: () => onTabChange("ai"), gradient: "from-emerald-500/8 to-transparent" },
         ].map((qa) => (
           <motion.button
             key={qa.label}
-            whileHover={{ y: -2, boxShadow: "0 8px 30px -12px hsl(var(--primary) / 0.1)" }}
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
             whileTap={{ scale: 0.98 }}
             onClick={qa.action}
-            className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/20 transition-all text-left"
+            className={`relative overflow-hidden flex items-center gap-3 p-4 rounded-xl border border-border bg-gradient-to-br ${qa.gradient} hover:border-primary/15 transition-all text-left group`}
           >
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <qa.icon className="w-5 h-5 text-primary" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.04] transition-colors duration-500" />
+            <div className="w-10 h-10 rounded-lg bg-card/80 border border-border/50 flex items-center justify-center shrink-0 group-hover:border-primary/20 transition-colors">
+              <qa.icon className="w-5 h-5 text-foreground/70 group-hover:text-primary transition-colors" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">{qa.label}</p>
-              <p className="text-[11px] text-muted-foreground">{qa.desc}</p>
+              <p className="text-[10px] text-muted-foreground">{qa.desc}</p>
             </div>
           </motion.button>
         ))}

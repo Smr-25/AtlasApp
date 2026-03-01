@@ -105,33 +105,41 @@ const FocusPanel = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Timer className="w-5 h-5 text-primary" /> Focus Sessions
-        </h2>
-        <p className="text-sm text-muted-foreground">Deep work with pomodoro technique</p>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/10 flex items-center justify-center">
+          <Timer className="w-5 h-5 text-emerald-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Focus Sessions</h2>
+          <p className="text-xs text-muted-foreground">Deep work with pomodoro technique</p>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Today", value: `${stats?.todaySessions || 0} sessions`, icon: Target, color: "text-blue-400 bg-blue-500/10" },
-          { label: "Today Focus", value: `${stats?.todayMinutes || 0}m`, icon: Clock, color: "text-emerald-400 bg-emerald-500/10" },
-          { label: "Avg Duration", value: `${stats?.averageDuration || 0}m`, icon: Coffee, color: "text-amber-400 bg-amber-500/10" },
-          { label: "Streak", value: `${stats?.streak || 0} days`, icon: Flame, color: "text-orange-400 bg-orange-500/10" },
+          { label: "Today", value: `${stats?.todaySessions || 0} sessions`, icon: Target, gradient: "from-blue-500/15 to-cyan-500/5", iconColor: "text-blue-400" },
+          { label: "Today Focus", value: `${stats?.todayMinutes || 0}m`, icon: Clock, gradient: "from-emerald-500/15 to-green-500/5", iconColor: "text-emerald-400" },
+          { label: "Avg Duration", value: `${stats?.averageDuration || 0}m`, icon: Coffee, gradient: "from-amber-500/15 to-orange-500/5", iconColor: "text-amber-400" },
+          { label: "Streak", value: `${stats?.streak || 0} days`, icon: Flame, gradient: "from-orange-500/15 to-red-500/5", iconColor: "text-orange-400" },
         ].map((s) => (
-          <div key={s.label} className="bg-card rounded-xl border border-border p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${s.color}`}><s.icon className="w-3.5 h-3.5" /></div>
-              <span className="text-[11px] text-muted-foreground">{s.label}</span>
-            </div>
-            <p className="text-lg font-bold text-foreground">{s.value}</p>
-          </div>
+          <motion.div
+            key={s.label}
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
+            className={`relative overflow-hidden rounded-xl border border-border bg-gradient-to-br ${s.gradient} p-4 group`}
+          >
+            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.03] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.05] transition-colors duration-500" />
+            <s.icon className={`w-4 h-4 ${s.iconColor} mb-3`} />
+            <p className="text-xl font-bold text-foreground tracking-tight">{s.value}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+          </motion.div>
         ))}
       </div>
 
       {/* Timer */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-8 text-center">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-2xl border border-border p-8 text-center bg-gradient-to-br from-card to-card/60">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
         {/* Circular Progress */}
         <div className="relative w-48 h-48 mx-auto mb-6">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">

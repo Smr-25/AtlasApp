@@ -99,52 +99,52 @@
 
   /* ═══════════════════════════════════════════════════════════
      🖥️ DEVELOPER — "The Hacker Vibe"
-     Deep dark, electric blue, monospace, VS Code feel
+     Deep refined dark, elegant blue accents, premium feel
      ═══════════════════════════════════════════════════════════ */
   .theme-developer {
-    --font-family: "IBM Plex Sans", sans-serif;
-    --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
+    --font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
-    /* Always force dark mode for developers */
-    --background: 220 25% 6%;
-    --foreground: 210 30% 88%;
+    /* Refined dark — not pitch black, elegant charcoal */
+    --background: 222 25% 7%;
+    --foreground: 215 25% 90%;
 
-    --card: 220 25% 8%;
-    --card-foreground: 210 30% 88%;
+    --card: 222 22% 9.5%;
+    --card-foreground: 215 25% 90%;
 
-    --popover: 220 25% 8%;
-    --popover-foreground: 210 30% 88%;
+    --popover: 222 22% 9.5%;
+    --popover-foreground: 215 25% 90%;
 
-    --primary: 210 100% 56%;
+    --primary: 213 94% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 25% 12%;
-    --secondary-foreground: 210 30% 80%;
+    --secondary: 222 20% 13%;
+    --secondary-foreground: 215 20% 82%;
 
-    --muted: 220 20% 12%;
-    --muted-foreground: 210 15% 50%;
+    --muted: 222 16% 13%;
+    --muted-foreground: 215 12% 52%;
 
-    --accent: 210 50% 14%;
-    --accent-foreground: 210 100% 68%;
+    --accent: 213 35% 15%;
+    --accent-foreground: 213 90% 72%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 62% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 14%;
-    --input: 220 20% 14%;
-    --ring: 210 100% 56%;
+    --border: 222 16% 15%;
+    --input: 222 16% 15%;
+    --ring: 213 94% 58%;
 
-    --sidebar-background: 220 28% 5%;
-    --sidebar-foreground: 210 15% 55%;
-    --sidebar-primary: 210 100% 56%;
+    --sidebar-background: 222 28% 6%;
+    --sidebar-foreground: 215 12% 56%;
+    --sidebar-primary: 213 94% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 12%;
-    --sidebar-accent-foreground: 210 100% 68%;
-    --sidebar-border: 220 20% 10%;
-    --sidebar-ring: 210 100% 56%;
+    --sidebar-accent: 213 30% 13%;
+    --sidebar-accent-foreground: 213 90% 72%;
+    --sidebar-border: 222 18% 11%;
+    --sidebar-ring: 213 94% 58%;
 
-    --momentum-green: 145 70% 45%;
-    --momentum-red: 0 72% 51%;
+    --momentum-green: 152 60% 48%;
+    --momentum-red: 0 65% 52%;
 
     color-scheme: dark;
   }
@@ -467,3 +467,99 @@
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Premium Glassmorphism & Glow Utilities
+   ═══════════════════════════════════════════════════════════ */
+@layer utilities {
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(12px) saturate(1.5);
+    -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  }
+
+  .glass-subtle {
+    background: hsl(var(--card) / 0.35);
+    backdrop-filter: blur(8px) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  }
+
+  .glow-primary {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.08),
+      0 4px 24px -4px hsl(var(--primary) / 0.12),
+      0 0 48px -12px hsl(var(--primary) / 0.08);
+  }
+
+  .glow-sm {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.06),
+      0 2px 12px -2px hsl(var(--primary) / 0.08);
+  }
+
+  .gradient-border {
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    background-image: linear-gradient(hsl(var(--card)), hsl(var(--card))),
+      linear-gradient(135deg, hsl(var(--primary) / 0.2), transparent, hsl(var(--primary) / 0.1));
+    background-origin: border-box;
+  }
+
+  /* Premium scrollbar for developer theme */
+  .theme-developer ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .theme-developer ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .theme-developer ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+  .theme-developer ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.3);
+  }
+
+  /* Premium scrollbar for all dark themes */
+  .theme-cybersecurity ::-webkit-scrollbar,
+  .theme-marketer ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .theme-cybersecurity ::-webkit-scrollbar-track,
+  .theme-marketer ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .theme-cybersecurity ::-webkit-scrollbar-thumb,
+  .theme-marketer ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  /* Scrollbar thin utility */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 2px;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Subtle noise texture overlay for premium feel */
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.015;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+

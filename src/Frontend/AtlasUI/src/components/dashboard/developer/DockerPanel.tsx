@@ -55,13 +55,18 @@ const DockerPanel = () => {
   const stopped = containers.filter((c) => c.state !== "running");
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2"><Container className="w-5 h-5 text-primary" /> Docker Containers</h2>
-          <p className="text-sm text-muted-foreground">{running.length} running · {stopped.length} stopped</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-500/5 border border-sky-500/10 flex items-center justify-center">
+            <Container className="w-5 h-5 text-sky-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Docker Containers</h2>
+            <p className="text-xs text-muted-foreground">{running.length} running · {stopped.length} stopped</p>
+          </div>
         </div>
-        <motion.button whileTap={{ scale: 0.98 }} onClick={fetchContainers} disabled={loading} className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border text-xs text-foreground hover:bg-muted transition-colors">
+        <motion.button whileTap={{ scale: 0.98 }} onClick={fetchContainers} disabled={loading} className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border text-xs text-foreground hover:bg-muted/50 transition-colors">
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
         </motion.button>
       </div>
@@ -84,8 +89,9 @@ const DockerPanel = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/15 transition-all group"
+                className="relative overflow-hidden flex items-center gap-4 p-4 bg-gradient-to-br from-card to-card/60 rounded-xl border border-border hover:border-primary/15 transition-all group"
               >
+                <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.015] rounded-full -translate-y-1/2 translate-x-1/3" />
                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.bg}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">

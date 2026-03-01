@@ -58,7 +58,8 @@ public class RegisterCommandHandler(
             UserId: user.Id.ToString(),
             UserName: user.UserName!,
             Email: user.Email!,
-            FullName: user.FullName
+            FullName: user.FullName,
+            Role: user.Role
         );
 
 

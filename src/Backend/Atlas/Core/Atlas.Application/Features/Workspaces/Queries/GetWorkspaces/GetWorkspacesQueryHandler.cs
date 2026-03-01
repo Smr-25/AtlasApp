@@ -20,8 +20,7 @@ public class GetWorkspacesQueryHandler(
         var userId = currentUserService.GetRequiredUserId();
         logger.LogDebug("Fetching workspaces for user {UserId}", userId);
         
-        var workspaces = await context.Workspaces.Include(w => w.WorkspaceIntegrations)
-            .ThenInclude(wi => wi.Integration)
+        var workspaces = await context.Workspaces
             .Where(w => w.UserProfileId == userId && !w.IsDeleted)
             .OrderByDescending(w => w.IsDefault) 
             .ThenBy(w => w.Name)

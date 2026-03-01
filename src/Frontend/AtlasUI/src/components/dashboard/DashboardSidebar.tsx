@@ -20,6 +20,8 @@ import {
   Bug,
   FileCode,
   TrendingUp,
+  SquareKanban,
+  User,
 } from "lucide-react";
 import { WorkspaceDto, IntegrationDto } from "@/services/api";
 import { useAuth, UserRole } from "@/context/AuthContext";
@@ -76,6 +78,7 @@ const DashboardSidebar = ({
     { id: "overview", icon: LayoutDashboard, label: "Overview" },
     { id: "workspaces", icon: FolderOpen, label: "Workspaces", badge: workspaces.length.toString() },
     { id: "integrations", icon: Plug, label: "Integrations", badge: allIntegrations.length.toString() },
+    { id: "profile", icon: User, label: "Profile" },
   ];
 
   // Developer-specific nav items
@@ -88,7 +91,8 @@ const DashboardSidebar = ({
     { id: "snippets", icon: FileCode, label: "Snippets" },
     { id: "focus", icon: Coffee, label: "Focus Timer" },
     { id: "docker", icon: Container, label: "Docker" },
-    { id: "git-jira", icon: GitBranch, label: "Git & Jira" },
+    { id: "github", icon: GitBranch, label: "GitHub" },
+    { id: "jira", icon: SquareKanban, label: "Jira" },
     { id: "monitoring", icon: Bug, label: "Monitoring" },
   ] : [];
 
@@ -100,7 +104,7 @@ const DashboardSidebar = ({
     <motion.aside
       animate={{ width: collapsed ? 60 : 240 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="shrink-0 border-r border-border bg-card/50 flex flex-col h-full overflow-hidden relative"
+      className="shrink-0 border-r border-border bg-sidebar-background/80 backdrop-blur-xl flex flex-col h-full overflow-hidden relative"
     >
       {/* Collapse Toggle */}
       <button

@@ -91,15 +91,18 @@ const SnippetsPanel = () => {
   const inputClass = "w-full h-10 px-3.5 rounded-lg bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <Code2 className="w-5 h-5 text-primary" /> Code Snippets
-          </h2>
-          <p className="text-sm text-muted-foreground">{snippets.length} snippets saved</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border border-cyan-500/10 flex items-center justify-center">
+            <Code2 className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Code Snippets</h2>
+            <p className="text-xs text-muted-foreground">{snippets.length} snippets saved</p>
+          </div>
         </div>
-        <motion.button whileTap={{ scale: 0.98 }} onClick={() => { closeForm(); setShowCreate(true); }} className="flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-md shadow-primary/20">
+        <motion.button whileTap={{ scale: 0.98 }} onClick={() => { closeForm(); setShowCreate(true); }} className="flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 transition-shadow">
           <Plus className="w-4 h-4" /> New Snippet
         </motion.button>
       </div>
@@ -178,8 +181,9 @@ const SnippetCard = ({ snippet, index, onEdit, onDelete, onFavorite, onCopy, act
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.03 }}
-    className="bg-card rounded-xl border border-border hover:border-primary/15 transition-all group overflow-hidden"
+    className="relative overflow-hidden bg-gradient-to-br from-card to-card/60 rounded-xl border border-border hover:border-primary/15 transition-all group"
   >
+    <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.015] rounded-full -translate-y-1/2 translate-x-1/3" />
     <div className="flex items-center justify-between p-3 pb-0">
       <div className="flex items-center gap-2 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">{snippet.title}</p>

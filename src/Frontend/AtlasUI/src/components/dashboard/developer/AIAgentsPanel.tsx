@@ -53,27 +53,32 @@ const AIAgentsPanel = () => {
   };
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" /> AI Agents
-        </h2>
-        <p className="text-sm text-muted-foreground">Proactive AI assistants for your development workflow</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/5 border border-violet-500/10 flex items-center justify-center shadow-lg shadow-violet-500/5">
+          <Sparkles className="w-5 h-5 text-violet-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">AI Agents</h2>
+          <p className="text-xs text-muted-foreground">Proactive AI assistants for your development workflow</p>
+        </div>
       </div>
 
       {/* Agent Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
         {agents.map((agent) => (
           <motion.button
             key={agent.id}
-            whileHover={{ y: -1 }}
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
             whileTap={{ scale: 0.98 }}
             onClick={() => { setActiveAgent(agent.id); setInput(""); setResult(null); setError(""); }}
-            className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
-              activeAgent === agent.id ? "bg-primary/5 border-primary/25 shadow-sm shadow-primary/10" : "bg-card border-border hover:border-primary/15"
+            className={`relative overflow-hidden flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+              activeAgent === agent.id ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-gradient-to-br from-card to-card/60 border-border hover:border-primary/15"
             }`}
           >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${agent.color}`}>
+            <div className="absolute top-0 right-0 w-12 h-12 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${agent.color} border border-current/10`}>
               <agent.icon className="w-4 h-4" />
             </div>
             <div className="min-w-0">

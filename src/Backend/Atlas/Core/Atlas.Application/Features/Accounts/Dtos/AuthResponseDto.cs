@@ -1,3 +1,5 @@
+using Atlas.Domain.Enums;
+
 namespace Atlas.Application.Features.Accounts.Dtos;
 
 public record AuthResponseDto(
@@ -8,5 +10,6 @@ public record AuthResponseDto(
     string UserId,
     string UserName,
     string Email,
-    string FullName
+    string FullName,
+    UserRole Role
 );

@@ -16,7 +16,7 @@ const SkeletonBlock = ({ className }: { className?: string }) => (
   <div className={`rounded-lg bg-muted/50 animate-pulse ${className}`} />
 );
 
-const SkeletonView = ({ name }: { name: string }) => (
+const SkeletonView = ({ name: _name }: { name: string }) => (
   <div className="flex h-full">
     <div className="w-64 border-r border-border p-4 space-y-3">
       <SkeletonBlock className="h-6 w-32" />
@@ -45,7 +45,7 @@ const SkeletonView = ({ name }: { name: string }) => (
 );
 
 // ─── Left Context Panel ──────────────────────────────────────────
-const ContextPanel = ({ workspace, integrations }: { workspace: WorkspaceDto; integrations: IntegrationDto[] }) => {
+const ContextPanel = ({ workspace, integrations: _integrations }: { workspace: WorkspaceDto; integrations: IntegrationDto[] }) => {
   const wsIntegrations = workspace.activeIntegrations || [];
 
   return (
@@ -117,33 +117,39 @@ const CenterStage = ({ workspace }: { workspace: WorkspaceDto }) => {
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Workspace Header */}
-        <div>
-          <h2 className="text-xl font-bold text-foreground">{workspace.name}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {workspace.description || "Your workspace is ready. Start building."}
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-2xl border border-primary/8 p-6"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-primary/[0.02]" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/[0.03] rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4" />
+          <div className="relative">
+            <h2 className="text-xl font-bold text-foreground tracking-tight">{workspace.name}</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {workspace.description || "Your workspace is ready. Start building."}
+            </p>
+          </div>
+        </motion.div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Integrations", value: workspace.activeIntegrations?.length || 0, icon: Plug, color: "text-blue-400 bg-blue-500/10" },
-            { label: "Status", value: workspace.isDefault ? "Default" : "Active", icon: FolderOpen, color: "text-emerald-400 bg-emerald-500/10" },
-            { label: "Shared", value: workspace.isShared ? "Yes" : "Private", icon: Users, color: "text-purple-400 bg-purple-500/10" },
-          ].map((stat) => (
+            { label: "Integrations", value: workspace.activeIntegrations?.length || 0, icon: Plug, gradient: "from-blue-500/12 to-cyan-500/5" },
+            { label: "Status", value: workspace.isDefault ? "Default" : "Active", icon: FolderOpen, gradient: "from-emerald-500/12 to-green-500/5" },
+            { label: "Shared", value: workspace.isShared ? "Yes" : "Private", icon: Users, gradient: "from-violet-500/12 to-purple-500/5" },
+          ].map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border p-4"
+              transition={{ delay: 0.1 + i * 0.06 }}
+              className={`relative overflow-hidden rounded-xl border border-border bg-gradient-to-br ${stat.gradient} p-4 group`}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.color}`}>
-                  <stat.icon className="w-4 h-4" />
-                </div>
-                <span className="text-xs text-muted-foreground">{stat.label}</span>
-              </div>
-              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.03] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.05] transition-colors duration-500" />
+              <stat.icon className="w-4 h-4 text-muted-foreground mb-2" />
+              <p className="text-xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
             </motion.div>
           ))}
         </div>
@@ -153,25 +159,26 @@ const CenterStage = ({ workspace }: { workspace: WorkspaceDto }) => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-card rounded-xl border border-border p-6"
+          className="relative overflow-hidden rounded-xl border border-border p-6 bg-gradient-to-br from-card to-card/60"
         >
-          <h3 className="text-sm font-semibold text-foreground mb-3">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
+          <h3 className="text-sm font-semibold text-foreground mb-4 relative">
             {user?.role === "developer" ? "🖥 Active Tasks & Code" :
              user?.role === "designer" ? "🎨 Design Files & Assets" :
              user?.role === "cybersecurity" ? "🛡 Security Scans & Alerts" :
              user?.role === "marketer" ? "📊 Campaign Metrics" :
              "📋 Project Board"}
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 relative">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="p-4 rounded-lg bg-muted/30 border border-border/50">
-                <div className="w-20 h-3 bg-muted/50 rounded mb-2" />
-                <div className="w-full h-2 bg-muted/40 rounded mb-1" />
-                <div className="w-3/4 h-2 bg-muted/40 rounded" />
+              <div key={i} className="p-4 rounded-lg bg-muted/20 border border-border/50 hover:bg-muted/30 transition-colors">
+                <div className="w-20 h-3 bg-muted/40 rounded mb-2.5 animate-pulse" />
+                <div className="w-full h-2 bg-muted/30 rounded mb-1.5" />
+                <div className="w-3/4 h-2 bg-muted/30 rounded" />
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-4 text-center">
+          <p className="text-[11px] text-muted-foreground mt-5 text-center relative">
             Workspace-specific content will populate as you connect integrations and start working.
           </p>
         </motion.div>
@@ -293,7 +300,7 @@ const WorkspaceImmersiveView = ({ workspace, integrations, onExit }: WorkspaceIm
       className="fixed inset-0 z-40 bg-background flex flex-col"
     >
       {/* Top Bar */}
-      <div className="h-12 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 shrink-0">
+      <div className="h-12 border-b border-border bg-card/60 backdrop-blur-2xl flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
           <motion.button
             whileHover={{ x: -2 }}

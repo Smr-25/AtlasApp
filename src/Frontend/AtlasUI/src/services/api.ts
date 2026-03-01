@@ -149,6 +149,7 @@ export interface AuthResponseDto {
   userName: string;
   email: string;
   fullName: string;
+  role?: string;
 }
 
 export interface ExternalLoginResponseDto {
@@ -258,10 +259,10 @@ export const authApi = {
     );
   },
 
-  resendPhoneVerificationCode(phoneNumber: string) {
+  resendPhoneVerificationCode(phoneNumber: string, channel: "Sms" | "WhatsApp" = "Sms") {
     return api.post<ApiResponse<null>>(
       "/accounts/resend-phone-verification-code",
-      { phoneNumber }
+      { phoneNumber, channel }
     );
   },
 
@@ -283,13 +284,14 @@ export const authApi = {
     return api.put<ApiResponse<null>>("/accounts/profile", body);
   },
 
-  changePassword(body: { currentPassword: string; newPassword: string }) {
+  changePassword(body: { currentPassword: string; newPassword: string; confirmPassword: string }) {
     return api.put<ApiResponse<null>>("/accounts/change-password", body);
   },
 
-  addPhoneNumber(phoneNumber: string) {
+  addPhoneNumber(phoneNumber: string, verificationChannel: "Sms" | "WhatsApp" = "Sms") {
     return api.post<ApiResponse<null>>("/accounts/add-phone-number", {
       phoneNumber,
+      verificationChannel,
     });
   },
 
@@ -674,10 +676,270 @@ export const modalsApi = {
   dismiss(modalId: string) { return api.post<ApiResponse<null>>(`/modals/${modalId}/dismiss`); },
 };
 
-// ─── System API ─────────────────────────────────────────────────────
+// ─── System API ─────────────────────────────────────────────────
 export const systemApi = {
   getIdes() { return api.get<ApiResponse<any>>("/system/ides"); },
   analyze() { return api.get<ApiResponse<any>>("/system/analyze"); },
+};
+
+// ─── TeamInfo API ───────────────────────────────────────────────
+export interface TeamInfoDto { teamId: string; objective?: string; armory?: any; vaultLinks?: any[]; members?: any[]; }
+
+export const teamInfoApi = {
+  getInfo(teamId: string) { return api.get<ApiResponse<TeamInfoDto>>(`/team-info/${teamId}`); },
+  setObjective(teamId: string, body: { objective: string }) { return api.post<ApiResponse<null>>(`/team-info/${teamId}/objective`, body); },
+  updateMyFocus(teamId: string, body: { focus: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/my-focus`, body); },
+  updateArmory(teamId: string, body: { tools: string[] }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/armory`, body); },
+  addVaultLink(teamId: string, body: { name: string; url: string; category?: string }) { return api.post<ApiResponse<any>>(`/team-info/${teamId}/vault-links`, body); },
+  updateVaultLink(teamId: string, linkId: string, body: { name: string; url: string; category?: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`, body); },
+  deleteVaultLink(teamId: string, linkId: string) { return api.delete<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`); },
+};
+
+// ─── OmniFeed API ───────────────────────────────────────────────
+export interface OmniFeedItemDto { id: string; source: string; content: string; author?: string; timestamp: string; read: boolean; emojis?: any[]; }
+
+export const omniFeedApi = {
+  getFeed(teamId: string, params?: { source?: string; page?: number; pageSize?: number }) { return api.get<ApiResponse<OmniFeedItemDto[]>>(`/omni-feed/${teamId}`, { params }); },
+  publish(body: { teamId: string; content: string; source?: string }) { return api.post<ApiResponse<OmniFeedItemDto>>("/omni-feed/publish", body); },
+  markRead(itemId: string) { return api.post<ApiResponse<null>>(`/omni-feed/${itemId}/read`); },
+  addEmoji(itemId: string, body: { emoji: string }) { return api.post<ApiResponse<null>>(`/omni-feed/${itemId}/emoji`, body); },
+};
+
+// ─── SquadRadar API ─────────────────────────────────────────────
+export interface SquadRadarDto { userId: string; fullName: string; status: string; currentTask?: string; lastActive: string; }
+
+export const squadRadarApi = {
+  getRadar(teamId: string) { return api.get<ApiResponse<SquadRadarDto[]>>(`/squad-radar/${teamId}`); },
+  updatePresence(body: { status: string; currentTask?: string }) { return api.put<ApiResponse<null>>("/squad-radar/presence", body); },
+};
+
+// ─── SquadArena API ─────────────────────────────────────────────
+export interface LeaderboardEntryDto { userId: string; fullName: string; xp: number; rank: number; badges: any[]; }
+export interface BountyDto { id: string; title: string; description?: string; xpReward: number; status: string; claimedBy?: string; }
+
+export const squadArenaApi = {
+  getLeaderboard(teamId: string) { return api.get<ApiResponse<LeaderboardEntryDto[]>>(`/squad-arena/leaderboard/${teamId}`); },
+  getBounties(teamId: string) { return api.get<ApiResponse<BountyDto[]>>(`/squad-arena/bounties/${teamId}`); },
+  giveBadge(body: { userId: string; badge: string; reason?: string }) { return api.post<ApiResponse<null>>("/squad-arena/badge", body); },
+  createBounty(body: { teamId: string; title: string; description?: string; xpReward: number }) { return api.post<ApiResponse<BountyDto>>("/squad-arena/bounty", body); },
+  claimBounty(id: string) { return api.post<ApiResponse<null>>(`/squad-arena/bounty/${id}/claim`); },
+  completeBounty(id: string) { return api.post<ApiResponse<null>>(`/squad-arena/bounty/${id}/complete`); },
+};
+
+// ─── ResourceHub API ────────────────────────────────────────────
+export interface ResourceDto { id: string; title: string; url: string; category: string; description?: string; isPinned: boolean; createdAt: string; }
+
+export const resourceHubApi = {
+  getResources(teamId: string, category?: string) { return api.get<ApiResponse<ResourceDto[]>>(`/resource-hub/${teamId}`, { params: { category } }); },
+  create(body: { teamId: string; title: string; url: string; category: string; description?: string }) { return api.post<ApiResponse<ResourceDto>>("/resource-hub", body); },
+  update(body: { resourceId: string; title: string; url: string; category: string; description?: string }) { return api.put<ApiResponse<null>>("/resource-hub", body); },
+  remove(resourceId: string) { return api.delete<ApiResponse<null>>(`/resource-hub/${resourceId}`); },
+  togglePin(resourceId: string) { return api.post<ApiResponse<null>>(`/resource-hub/${resourceId}/pin`); },
+};
+
+// ─── Projects API ───────────────────────────────────────────────
+export interface ProjectDto { id: string; name: string; path: string; framework?: string; createdAt: string; }
+
+export const projectsApi = {
+  create(body: { name: string; path: string; framework?: string }) { return api.post<ApiResponse<ProjectDto>>("/projects", body); },
+  runMigration(id: string, body?: { migrationName?: string }) { return api.post<ApiResponse<any>>(`/projects/${id}/migration`, body); },
+  databaseUpdate(id: string) { return api.post<ApiResponse<any>>(`/projects/${id}/database-update`); },
+};
+
+// ─── Knowledge API ──────────────────────────────────────────────
+export const knowledgeApi = {
+  getNotionDocs() { return api.get<ApiResponse<any>>("/knowledge/notion"); },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// 🎨 DESIGNER DASHBOARD APIs
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── DesignInsights API ─────────────────────────────────────────
+export interface AssetsOptimizedDto { totalSavedMb: number; totalOptimized: number; }
+export interface HandoffsDto { count: number; }
+export interface DesignDebtDto { count: number; }
+
+export const designInsightsApi = {
+  assetsOptimized() { return api.get<ApiResponse<AssetsOptimizedDto>>("/design-insights/assets-optimized"); },
+  handoffs(from?: string, to?: string) { return api.get<ApiResponse<HandoffsDto>>("/design-insights/handoffs", { params: { from, to } }); },
+  colorTrends() { return api.get<ApiResponse<Record<string, number>>>("/design-insights/color-trends"); },
+  designDebt() { return api.get<ApiResponse<DesignDebtDto>>("/design-insights/design-debt"); },
+};
+
+// ─── DesignUtilities API ────────────────────────────────────────
+export interface CompressResultDto { outputPath: string; originalSize: number; compressedSize: number; savedPercent: number; }
+export interface OptimizeSvgDto { optimizedSvg: string; originalLength: number; optimizedLength: number; }
+export interface ExtractCssDto { css: string; }
+export interface ContrastCheckDto { ratio: number; passesAA: boolean; passesAAA: boolean; level: string; }
+export interface AspectRatioDto { ratio: string; simplifiedWidth: number; simplifiedHeight: number; }
+export interface PaletteDto { id: string; name: string; colors: PaletteColorDto[]; }
+export interface PaletteColorDto { id?: string; name: string; hexCode: string; }
+
+export const designUtilitiesApi = {
+  compressImage(body: { filePath: string; quality: number }) {
+    return api.post<ApiResponse<CompressResultDto>>("/design-utilities/compress-image", body);
+  },
+  convertAsset(file: File, targetFormat: string) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("targetFormat", targetFormat);
+    return api.post("/design-utilities/convert-asset", fd, { responseType: "blob" });
+  },
+  optimizeSvg(svgContent: string) {
+    return api.post<ApiResponse<OptimizeSvgDto>>("/design-utilities/optimize-svg", { svgContent });
+  },
+  extractCss(colors: Array<{ name: string; hexCode: string }>, format: "css" | "scss" | "less" = "css") {
+    return api.post<ApiResponse<ExtractCssDto>>("/design-utilities/extract-css", { colors, format });
+  },
+  checkContrast(foregroundHex: string, backgroundHex: string) {
+    return api.post<ApiResponse<ContrastCheckDto>>("/design-utilities/check-contrast", { foregroundHex, backgroundHex });
+  },
+  aspectRatio(width: number, height: number) {
+    return api.get<ApiResponse<AspectRatioDto>>("/design-utilities/aspect-ratio", { params: { width, height } });
+  },
+  dummyData(type: string, count: number) {
+    return api.get<ApiResponse<any[]>>("/design-utilities/dummy-data", { params: { type, count } });
+  },
+  getPalettes() { return api.get<ApiResponse<PaletteDto[]>>("/design-utilities/palettes"); },
+  createPalette(name: string) { return api.post<ApiResponse<string>>("/design-utilities/palettes", { name }); },
+  addColorToPalette(paletteId: string, body: { paletteId: string; name: string; hexCode: string }) {
+    return api.post<ApiResponse<string>>(`/design-utilities/palettes/${paletteId}/colors`, body);
+  },
+};
+
+// ─── Figma API ──────────────────────────────────────────────────
+export interface FigmaCommentDto { id: string; message: string; authorName: string; authorAvatarUrl?: string; createdAt: string; isResolved: boolean; parentId?: string | null; }
+
+export const figmaApi = {
+  getComments(integrationId: string, fileKey: string) {
+    return api.get<ApiResponse<FigmaCommentDto[]>>(`/figma/${integrationId}/comments`, { params: { fileKey } });
+  },
+  resolveComment(body: { integrationId: string; fileKey: string; commentId: string }) {
+    return api.post<ApiResponse<null>>("/figma/comments/resolve", body);
+  },
+};
+
+// ─── Miro API ───────────────────────────────────────────────────
+export interface MiroBoardDto { id: string; name: string; description?: string; viewLink: string; modifiedAt: string; stickyNoteCount: number; }
+
+export const miroApi = {
+  getBoards(integrationId: string) {
+    return api.get<ApiResponse<MiroBoardDto[]>>(`/miro/${integrationId}/boards`);
+  },
+  createSticky(body: { integrationId: string; boardId: string; content: string }) {
+    return api.post<ApiResponse<null>>("/miro/sticky", body);
+  },
+};
+
+// ─── LottieFiles API ────────────────────────────────────────────
+export interface LottieAnimDto { id: string; name: string; previewUrl: string; downloadUrl: string; authorName: string; likesCount: number; }
+
+export const lottieFilesApi = {
+  search(integrationId: string, query: string) {
+    return api.get<ApiResponse<LottieAnimDto[]>>(`/lottie-files/${integrationId}/search`, { params: { query } });
+  },
+};
+
+// ─── Dribbble API ───────────────────────────────────────────────
+export interface DribbbleShotDto { id: string; title: string; htmlUrl: string; imageUrl: string; authorName: string; authorAvatarUrl?: string; likesCount: number; viewsCount: number; publishedAt: string; }
+
+export const dribbbleApi = {
+  inspiration(integrationId: string, query: string) {
+    return api.get<ApiResponse<DribbbleShotDto[]>>(`/dribbble/${integrationId}/inspiration`, { params: { query } });
+  },
+};
+
+// ─── Zeplin API ─────────────────────────────────────────────────
+export interface ZeplinScreenDto { id: string; name: string; imageUrl: string; width: number; height: number; updatedAt: string; }
+export interface ZeplinStyleGuideDto {
+  projectId: string;
+  colors: Array<{ name: string; hexCode: string; opacity: number }>;
+  fonts: Array<{ family: string; size: number; weight: string }>;
+  spacings: Array<{ name: string; value: number }>;
+}
+
+export const zeplinApi = {
+  getScreens(integrationId: string, projectId: string) {
+    return api.get<ApiResponse<ZeplinScreenDto[]>>(`/zeplin/${integrationId}/screens`, { params: { projectId } });
+  },
+  getStyleGuide(integrationId: string, projectId: string) {
+    return api.get<ApiResponse<ZeplinStyleGuideDto>>(`/zeplin/${integrationId}/style-guide`, { params: { projectId } });
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// 🛡️ SECOPS DASHBOARD APIs
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── SecOpsInsights API ─────────────────────────────────────────
+export interface ThreatsBlockedDto { totalBlocked: number; ddosBlocked: number; malwareBlocked: number; bruteForceBlocked: number; }
+export interface VulnsPatchedDto { totalPatched: number; critical: number; high: number; medium: number; low: number; }
+export interface AvgResponseTimeDto { averageMinutes: number; fastestMinutes: number; slowestMinutes: number; }
+export interface SecurityScoreDto { score: number; grade: string; recommendations: string[]; }
+export interface ZeroIncidentDto { days: number; lastIncidentDate: string; }
+export interface ScannedBytesDto { totalBytes: number; formattedSize: string; }
+export interface OpenPortsGraphDto { dataPoints: Record<string, number>; }
+
+export const secOpsInsightsApi = {
+  threatsBlocked(from?: string, to?: string) { return api.get<ApiResponse<ThreatsBlockedDto>>("/sec-ops-insights/threats-blocked", { params: { from, to } }); },
+  vulnerabilitiesPatched(from?: string, to?: string) { return api.get<ApiResponse<VulnsPatchedDto>>("/sec-ops-insights/vulnerabilities-patched", { params: { from, to } }); },
+  avgResponseTime(from?: string, to?: string) { return api.get<ApiResponse<AvgResponseTimeDto>>("/sec-ops-insights/avg-response-time", { params: { from, to } }); },
+  securityScore() { return api.get<ApiResponse<SecurityScoreDto>>("/sec-ops-insights/security-score"); },
+  zeroIncidentStreak() { return api.get<ApiResponse<ZeroIncidentDto>>("/sec-ops-insights/zero-incident-streak"); },
+  scannedBytes(from?: string, to?: string) { return api.get<ApiResponse<ScannedBytesDto>>("/sec-ops-insights/scanned-bytes", { params: { from, to } }); },
+  openPortsGraph(from?: string, to?: string) { return api.get<ApiResponse<OpenPortsGraphDto>>("/sec-ops-insights/open-ports-graph", { params: { from, to } }); },
+};
+
+// ─── SecOpsUtilities API ────────────────────────────────────────
+export interface HashResultDto { hash: string; }
+export interface IpDnsResultDto { ip: string; hostname: string; country: string; isp: string; organization: string; }
+export interface EncodeResultDto { encoded: string; }
+export interface PasswordEntropyDto { entropy: number; strength: string; estimatedCrackTime: string; }
+export interface SslCheckDto { subject: string; issuer: string; notBefore: string; notAfter: string; daysRemaining: number; isValid: boolean; }
+export interface PortScanResultDto { port: number; protocol: string; serviceName: string; }
+export interface SpoofMacDto { result: string; }
+
+export const secOpsUtilitiesApi = {
+  hash(body: { input: string; algorithm: string }) { return api.post<ApiResponse<HashResultDto>>("/sec-ops-utilities/hash", body); },
+  ipDns(body: { target: string }) { return api.post<ApiResponse<IpDnsResultDto>>("/sec-ops-utilities/ip-dns", body); },
+  encodePayload(body: { input: string; encoding: string }) { return api.post<ApiResponse<EncodeResultDto>>("/sec-ops-utilities/encode-payload", body); },
+  passwordEntropy(body: { password: string }) { return api.post<ApiResponse<PasswordEntropyDto>>("/sec-ops-utilities/password-entropy", body); },
+  sslCheck(body: { hostname: string }) { return api.post<ApiResponse<SslCheckDto>>("/sec-ops-utilities/ssl-check", body); },
+  portScan(body: { target: string; startPort: number; endPort: number }) { return api.post<ApiResponse<PortScanResultDto[]>>("/sec-ops-utilities/port-scan", body); },
+  spoofMac(body: { interfaceName: string }) { return api.post<ApiResponse<SpoofMacDto>>("/sec-ops-utilities/spoof-mac", body); },
+};
+
+// ─── SecOpsAgents API ───────────────────────────────────────────
+export interface RoguePortDto { port: number; processName: string; processId: number; status: string; }
+export interface ExpiringSslDto { domain: string; expiresAt: string; daysRemaining: number; }
+export interface SuspiciousTrafficDto { isSuspicious: boolean; requestCount: number; originCountry: string; summary: string; }
+export interface LeakedKeyDto { keyType: string; snippet: string; lineNumber: number; }
+export interface PatchSuggestionDto { packageName: string; currentVersion: string; suggestedVersion: string; severity: string; }
+export interface ZombieProcessDto { processId: number; processName: string; memoryMb: number; status: string; }
+export interface VpnStatusDto { isConnected: boolean; publicIp: string; vpnIp: string | null; isLeaking: boolean; }
+
+export const secOpsAgentsApi = {
+  detectRoguePorts() { return api.post<ApiResponse<RoguePortDto[]>>("/sec-ops-agents/detect-rogue-ports", {}); },
+  warnExpiringSsl(body: { domains: string[] }) { return api.post<ApiResponse<ExpiringSslDto[]>>("/sec-ops-agents/warn-expiring-ssl", body); },
+  detectSuspiciousTraffic(body: { targetUrl: string }) { return api.post<ApiResponse<SuspiciousTrafficDto>>("/sec-ops-agents/detect-suspicious-traffic", body); },
+  scanLeakedKeys(body: { content: string }) { return api.post<ApiResponse<LeakedKeyDto[]>>("/sec-ops-agents/scan-leaked-keys", body); },
+  suggestPatches(body: { projectPath: string }) { return api.post<ApiResponse<PatchSuggestionDto[]>>("/sec-ops-agents/suggest-patches", body); },
+  killZombieProcesses() { return api.post<ApiResponse<ZombieProcessDto[]>>("/sec-ops-agents/kill-zombie-processes", {}); },
+  vpnStatus() { return api.get<ApiResponse<VpnStatusDto>>("/sec-ops-agents/vpn-status"); },
+};
+
+// ─── SecOpsScripts API ──────────────────────────────────────────
+export interface ScriptOutputDto { output: string; }
+
+export const secOpsScriptsApi = {
+  quickScan(body: { networkRange: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/quick-scan", body); },
+  panicButton(body: { interfaceName: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/panic-button", body); },
+  localWipe(body: { wipeHistory: boolean; wipeCredentials: boolean }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/local-wipe", body); },
+  phishingAlert(body: { emailHeaders: string; senderAddress: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/phishing-alert", body); },
+  rotateSsh(body: { keyComment: string; keySize: number }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/rotate-ssh", body); },
+  firewallLockdown(body: { allowedPorts: number[] }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/firewall-lockdown", body); },
+  clearDns() { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/clear-dns", {}); },
 };
 
 export default api;

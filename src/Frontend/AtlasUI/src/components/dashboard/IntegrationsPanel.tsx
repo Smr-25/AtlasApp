@@ -148,19 +148,24 @@ const IntegrationsPanel = ({ integrations, pendingIntegrations, activeWorkspace,
   const inputClass = "w-full h-10 px-3.5 rounded-lg bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-foreground">Integrations</h2>
-          <p className="text-sm text-muted-foreground">
-            {allConnected.length} connected · {roleProviders.length} available for your role
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/5 border border-violet-500/10 flex items-center justify-center">
+            <Plug className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground tracking-tight">Integrations</h2>
+            <p className="text-xs text-muted-foreground">
+              {allConnected.length} connected · {roleProviders.length} available for your role
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex gap-1.5 p-1 bg-muted/40 rounded-lg w-fit">
+      <div className="flex gap-1 p-1 bg-muted/30 border border-border rounded-xl w-fit">
         <button
           onClick={() => setView("connected")}
           className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -228,9 +233,10 @@ const IntegrationsPanel = ({ integrations, pendingIntegrations, activeWorkspace,
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/15 transition-all group"
+                  className="relative overflow-hidden flex items-center gap-4 p-4 bg-gradient-to-br from-card to-card/60 rounded-xl border border-border hover:border-primary/15 transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-primary/[0.015] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.03] transition-colors duration-500" />
+                  <div className="w-10 h-10 rounded-lg bg-muted/40 border border-border/50 flex items-center justify-center shrink-0">
                     {ProviderSvg ? <ProviderSvg size={22} /> : <Plug className="w-5 h-5 text-muted-foreground" />}
                   </div>
                   <div className="flex-1 min-w-0">

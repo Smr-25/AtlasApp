@@ -1,4 +1,4 @@
-import { Search, Settings, Bell, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
+import { Search, Settings, Bell, Sun, Moon, LogOut, ChevronDown, User } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,9 +10,10 @@ interface DashboardTopNavProps {
   activeWorkspace: WorkspaceDto | null;
   workspaces: WorkspaceDto[];
   onSwitchWorkspace: (ws: WorkspaceDto) => void;
+  onTabChange?: (tab: string) => void;
 }
 
-const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace }: DashboardTopNavProps) => {
+const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace, onTabChange }: DashboardTopNavProps) => {
   const { theme, toggleTheme, currentRole, clearRole } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -172,6 +173,21 @@ const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace }: Das
                   <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
                 </div>
                 <div className="p-1.5">
+                  <button
+                    onClick={() => { onTabChange?.("profile"); setUserOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => { onTabChange?.("profile"); setUserOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </button>
+                  <div className="my-1 h-px bg-border" />
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/10 transition-colors"

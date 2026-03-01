@@ -22,8 +22,6 @@ public class GetWorkspaceByIdQueryHandler(
         logger.LogDebug("Fetching workspace {WorkspaceId} for user {UserId}", request.WorkspaceId, userId);
 
         var workspace = await context.Workspaces
-            .Include(w => w.WorkspaceIntegrations)
-            .ThenInclude(wi => wi.Integration)
             .Where(w => w.Id == request.WorkspaceId && w.UserProfileId == userId && !w.IsDeleted)
             .ProjectTo<WorkspaceDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(cancellationToken);

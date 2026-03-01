@@ -67,24 +67,28 @@ const UtilitiesPanel = () => {
   const inputClass = "w-full rounded-lg bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all font-mono";
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Terminal className="w-5 h-5 text-primary" /> Developer Utilities
-        </h2>
-        <p className="text-sm text-muted-foreground">Essential dev tools at your fingertips</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/10 flex items-center justify-center">
+          <Terminal className="w-5 h-5 text-blue-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Developer Utilities</h2>
+          <p className="text-xs text-muted-foreground">Essential dev tools at your fingertips</p>
+        </div>
       </div>
 
       <div className="flex gap-4">
         {/* Tool Sidebar */}
-        <div className="w-48 shrink-0 space-y-0.5">
+        <div className="w-48 shrink-0 space-y-0.5 p-1 rounded-xl bg-muted/20 border border-border">
           {tools.map((tool) => (
             <motion.button
               key={tool.id}
               whileHover={{ x: 2 }}
               onClick={() => handleToolChange(tool.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
-                activeTool === tool.id ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                activeTool === tool.id ? "bg-card text-primary font-medium shadow-sm border border-border/50" : "text-muted-foreground hover:bg-card/50 hover:text-foreground"
               }`}
             >
               <tool.icon className="w-3.5 h-3.5 shrink-0" />
@@ -101,11 +105,11 @@ const UtilitiesPanel = () => {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="bg-card rounded-xl border border-border overflow-hidden"
+              className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card to-card/60"
             >
               {/* Header */}
               <div className="flex items-center gap-3 p-4 border-b border-border">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${currentTool.color}`}>
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${currentTool.color} border border-current/10`}>
                   <currentTool.icon className="w-4.5 h-4.5" />
                 </div>
                 <div>

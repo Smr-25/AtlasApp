@@ -44,23 +44,28 @@ const ScriptsPanel = () => {
   };
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Code2 className="w-5 h-5 text-primary" /> Scripts & Automation
-        </h2>
-        <p className="text-sm text-muted-foreground">One-click developer automations</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/10 flex items-center justify-center">
+          <Code2 className="w-5 h-5 text-amber-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Scripts & Automation</h2>
+          <p className="text-xs text-muted-foreground">One-click developer automations</p>
+        </div>
       </div>
 
       {/* Project Path */}
-      <div className="bg-card rounded-xl border border-border p-4">
-        <label className="text-xs font-medium text-foreground mb-1.5 block">Project Path</label>
+      <div className="relative overflow-hidden rounded-xl border border-border p-4 bg-gradient-to-br from-card to-card/60">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
+        <label className="text-xs font-medium text-foreground mb-1.5 block relative">Project Path</label>
         <input
           type="text"
           value={projectPath}
           onChange={(e) => setProjectPath(e.target.value)}
           placeholder="/path/to/your/project (optional — defaults to current dir)"
-          className="w-full h-10 px-3.5 rounded-lg bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-mono transition-all"
+          className="w-full h-10 px-3.5 rounded-lg bg-muted/30 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/20 font-mono transition-all relative"
         />
       </div>
 
@@ -72,20 +77,21 @@ const ScriptsPanel = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.03 }}
-            whileHover={{ y: -2, boxShadow: "0 8px 30px -12px hsl(var(--primary) / 0.1)" }}
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
             whileTap={{ scale: 0.97 }}
             onClick={() => handleQuickAction(action)}
             disabled={runningId !== null}
-            className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/20 transition-all text-left disabled:opacity-60 group"
+            className="relative overflow-hidden flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-card to-card/60 border border-border hover:border-primary/15 transition-all text-left disabled:opacity-60 group"
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${action.color}`}>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3 group-hover:bg-primary/[0.04] transition-colors duration-500" />
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${action.color} border border-current/10`}>
               {runningId === action.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <action.icon className="w-5 h-5" />}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 relative">
               <p className="text-sm font-medium text-foreground">{action.name}</p>
-              <p className="text-[11px] text-muted-foreground">{action.desc}</p>
+              <p className="text-[10px] text-muted-foreground">{action.desc}</p>
             </div>
-            <Play className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0 mt-1" />
+            <Play className="w-3.5 h-3.5 text-muted-foreground/20 group-hover:text-primary/50 transition-colors shrink-0 mt-1 ml-auto" />
           </motion.button>
         ))}
       </div>

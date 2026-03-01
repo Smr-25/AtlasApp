@@ -45,16 +45,23 @@ const MonitoringPanel = ({ integrations }: MonitoringPanelProps) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2"><Bug className="w-5 h-5 text-primary" /> Monitoring</h2>
-        <p className="text-sm text-muted-foreground">Error tracking & code quality</p>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-red-500/5 border border-red-500/10 flex items-center justify-center">
+          <Bug className="w-5 h-5 text-red-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Monitoring</h2>
+          <p className="text-xs text-muted-foreground">Error tracking & code quality</p>
+        </div>
       </div>
 
       {/* SonarQube Quality Gate */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-5">
-        <div className="flex items-center gap-2 mb-4">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl border border-border p-5 bg-gradient-to-br from-card to-card/60">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/[0.02] rounded-full -translate-y-1/2 translate-x-1/3" />
+        <div className="flex items-center gap-2 mb-4 relative">
           <Shield className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Code Quality {!sonarInt && <span className="text-muted-foreground font-normal">(SonarQube not connected)</span>}</h3>
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Code Quality {!sonarInt && <span className="text-muted-foreground font-normal">(SonarQube not connected)</span>}</h3>
         </div>
         {sonarData ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -79,18 +86,18 @@ const MonitoringPanel = ({ integrations }: MonitoringPanelProps) => {
       {/* Sentry Issues */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Bug className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Sentry Issues {!sentryInt && <span className="text-muted-foreground font-normal">(not connected)</span>}</h3>
-          {sentryIssues.length > 0 && <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-full font-medium">{sentryIssues.length}</span>}
+          <Bug className="w-4 h-4 text-red-400" />
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Sentry Issues {!sentryInt && <span className="text-muted-foreground font-normal">(not connected)</span>}</h3>
+          {sentryIssues.length > 0 && <span className="text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-full font-medium border border-red-500/15">{sentryIssues.length}</span>}
         </div>
 
         {!sentryInt ? (
-          <div className="py-8 text-center bg-card rounded-xl border border-border">
+          <div className="py-8 text-center rounded-xl border border-border bg-gradient-to-br from-card to-card/60">
             <Bug className="w-10 h-10 text-muted-foreground/20 mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">Connect Sentry integration to track errors</p>
           </div>
         ) : sentryIssues.length === 0 ? (
-          <div className="py-8 text-center bg-card rounded-xl border border-border">
+          <div className="py-8 text-center rounded-xl border border-border bg-gradient-to-br from-emerald-500/[0.03] to-card/60">
             <Check className="w-10 h-10 text-emerald-500/30 mx-auto mb-2" />
             <p className="text-sm font-medium text-foreground">All clear! 🎉</p>
             <p className="text-xs text-muted-foreground">No unresolved issues</p>
@@ -101,8 +108,9 @@ const MonitoringPanel = ({ integrations }: MonitoringPanelProps) => {
               const cfg = levelConfig[issue.level] || levelConfig.info;
               const LevelIcon = cfg.icon;
               return (
-                <motion.div key={issue.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="flex items-start gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/15 transition-all group">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${cfg.bg}`}>
+                <motion.div key={issue.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="relative overflow-hidden flex items-start gap-3 p-3.5 bg-gradient-to-br from-card to-card/60 rounded-xl border border-border hover:border-primary/15 transition-all group">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/[0.015] rounded-full -translate-y-1/2 translate-x-1/3" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${cfg.bg} border border-current/10`}>
                     <LevelIcon className={`w-4 h-4 ${cfg.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
