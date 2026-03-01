@@ -42,7 +42,7 @@ public class IntegrationConfiguration : IEntityTypeConfiguration<Integration>
             .HasMaxLength(50);
 
         builder.Property(i => i.EncryptedAccessToken)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(2000);
 
         builder.Property(i => i.EncryptedRefreshToken)

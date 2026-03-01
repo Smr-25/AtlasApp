@@ -1,4 +1,5 @@
 using Atlas.Application.Features.Accounts.Dtos;
+using Atlas.Application.Features.Integrations.Dtos;
 using Atlas.Application.Features.Profiles.Dtos;
 using Atlas.Application.Features.Workspaces.Dtos;
 using Atlas.Domain.Entities;
@@ -14,6 +15,8 @@ public class MapProfile : Profile
         
         CreateMap<AppUserProfile, UserProfileDetailDto>()
             .ForMember(d => d.Profession, opt => opt.MapFrom(s => s.Profession.ToString()));
+
+        CreateMap<Integration, IntegrationDto>();
 
         CreateMap<Workspace, WorkspaceDto>()
             .ForMember(d => d.ActiveIntegrations, opt => opt.MapFrom(s => 

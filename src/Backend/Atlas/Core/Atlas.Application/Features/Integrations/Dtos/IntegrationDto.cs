@@ -2,10 +2,11 @@ using Atlas.Domain.Enums;
 
 namespace Atlas.Application.Features.Integrations.Dtos;
 
-public record IntegrationDto(
-    Guid Id,
-    string Name,
-    IntegrationProvider Provider,
-    IntegrationStatus Status,
-    string? MetadataJson 
-);
+public class IntegrationDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public IntegrationProvider Provider { get; set; }
+    public IntegrationStatus Status { get; set; }
+    public string? MetadataJson { get; set; }
+}

@@ -40,18 +40,24 @@ public class ToggleWorkspaceIntegrationCommandHandler(
                 link = new WorkspaceIntegration
                 {
                     WorkspaceId = request.WorkspaceId,
-                    IntegrationId = request.IntegrationId
+                    IntegrationId = request.IntegrationId,
+                    Enabled = true
                 };
                 await applicationDbContext.WorkspaceIntegrations.AddAsync(link, cancellationToken);
                 logger.LogDebug("Created new workspace-integration link");
             }
+            else if (!link.Enabled)
+            {
+                link.Enabled = true;
+                logger.LogDebug("Re-enabled existing workspace-integration link");
+            }
         }
         else
         {
-            if (link != null)
+            if (link != null && link.Enabled)
             {
-                applicationDbContext.WorkspaceIntegrations.Remove(link);
-                logger.LogDebug("Removed workspace-integration link");
+                link.Enabled = false;
+                logger.LogDebug("Disabled workspace-integration link");
             }
         }
 

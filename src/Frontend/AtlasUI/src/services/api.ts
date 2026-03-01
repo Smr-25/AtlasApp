@@ -433,5 +433,251 @@ export const integrationApi = {
   },
 };
 
-export default api;
+// ─── Profile Types & API ────────────────────────────────────────────
+export interface ProfileDto {
+  id: string;
+  profession: string;
+  jobTitle: string;
+  bio?: string | null;
+  tags?: string[] | null;
+}
 
+export const profileApi = {
+  getMe() { return api.get<ApiResponse<ProfileDto>>("/profiles/me"); },
+  updateMe(body: { jobTitle?: string; bio?: string }) {
+    return api.put<ApiResponse<ProfileDto>>("/profiles/me", body);
+  },
+};
+
+// ─── Subscription Types & API ───────────────────────────────────────
+export interface SubscriptionDto {
+  tier: string;
+  status: string;
+  currentPeriodEnd?: string;
+}
+export interface UsageDto {
+  workspacesUsed: number;
+  workspacesLimit: number;
+  integrationsUsed: number;
+  integrationsLimit: number;
+}
+
+export const subscriptionApi = {
+  getCurrent() { return api.get<ApiResponse<SubscriptionDto>>("/subscriptions/current"); },
+  getUsage() { return api.get<ApiResponse<UsageDto>>("/subscriptions/usage"); },
+  checkout(body: { tier: string }) { return api.post<ApiResponse<{ url: string }>>("/subscriptions/checkout", body); },
+  portal() { return api.post<ApiResponse<{ url: string }>>("/subscriptions/portal"); },
+  cancel() { return api.post<ApiResponse<null>>("/subscriptions/cancel"); },
+};
+
+// ─── Greeting API ───────────────────────────────────────────────────
+export interface GreetingDto {
+  greeting: string;
+  emoji?: string;
+  tip?: string;
+}
+
+export const greetingApi = {
+  get(userName?: string, lang?: string) {
+    const offset = new Date().getTimezoneOffset();
+    return api.get<ApiResponse<GreetingDto>>("/greeting", {
+      params: { userName, timezoneOffsetMinutes: offset, lang },
+    });
+  },
+};
+
+// ─── Hotkeys API ────────────────────────────────────────────────────
+export interface HotkeyDto { id: string; action: string; keys: string; category?: string; }
+
+export const hotkeysApi = {
+  getAll() { return api.get<ApiResponse<HotkeyDto[]>>("/hotkeys"); },
+  set(body: { action: string; keys: string }) { return api.post<ApiResponse<HotkeyDto>>("/hotkeys", body); },
+  remove(id: string) { return api.delete<ApiResponse<null>>(`/hotkeys/${id}`); },
+  seedDefaults() { return api.post<ApiResponse<null>>("/hotkeys/seed-defaults"); },
+};
+
+// ─── DevInsights API ────────────────────────────────────────────────
+export interface TimeSavedDto { totalMinutes: number; byCategory: Record<string, number>; trend: Array<{ date: string; minutes: number }>; }
+export interface FocusHeatmapDto { data: Array<{ day: number; hour: number; value: number }>; }
+export interface TechDebtDto { score: number; issues: Array<{ file: string; type: string; severity: string; message: string }>; }
+export interface DeploySuccessDto { total: number; successful: number; rate: number; trend: Array<{ date: string; rate: number }>; }
+export interface PeakHoursDto { hours: Array<{ hour: number; productivity: number }>; bestHour: number; }
+
+export const devInsightsApi = {
+  timeSaved(from?: string, to?: string) { return api.get<ApiResponse<TimeSavedDto>>("/dev-insights/time-saved", { params: { from, to } }); },
+  focusHeatmap(from?: string, to?: string) { return api.get<ApiResponse<FocusHeatmapDto>>("/dev-insights/focus-heatmap", { params: { from, to } }); },
+  techDebt(projectPath?: string) { return api.get<ApiResponse<TechDebtDto>>("/dev-insights/tech-debt", { params: { projectPath } }); },
+  deploySuccessRate(from?: string, to?: string) { return api.get<ApiResponse<DeploySuccessDto>>("/dev-insights/deployment-success-rate", { params: { from, to } }); },
+  peakHours(from?: string, to?: string) { return api.get<ApiResponse<PeakHoursDto>>("/dev-insights/peak-hours", { params: { from, to } }); },
+};
+
+// ─── DevUtilities API ───────────────────────────────────────────────
+export const devUtilitiesApi = {
+  decodeJwt(token: string) { return api.post<ApiResponse<any>>("/dev-utilities/decode-jwt", { token }); },
+  testRegex(body: { pattern: string; input: string; flags?: string }) { return api.post<ApiResponse<any>>("/dev-utilities/test-regex", body); },
+  generateCron(body: { description: string }) { return api.post<ApiResponse<any>>("/dev-utilities/generate-cron", body); },
+  base64(body: { input: string; encode: boolean }) { return api.post<ApiResponse<any>>("/dev-utilities/base64", body); },
+  sshKey(body: { type?: string; bits?: number }) { return api.post<ApiResponse<any>>("/dev-utilities/ssh-key", body); },
+  jsonFormat(body: { json: string }) { return api.post<ApiResponse<any>>("/dev-utilities/json/format", body); },
+  sendRequest(body: { method: string; url: string; headers?: Record<string, string>; body?: string }) {
+    return api.post<ApiResponse<any>>("/dev-utilities/network/send-request", body);
+  },
+  scanDependencies(body: { projectPath: string }) { return api.post<ApiResponse<any>>("/dev-utilities/security/scan-dependencies", body); },
+  checkPort(port: number) { return api.get<ApiResponse<any>>(`/dev-utilities/system/check-port/${port}`); },
+  killProcess(pid: number) { return api.delete<ApiResponse<any>>(`/dev-utilities/system/kill-process/${pid}`); },
+};
+
+// ─── ProactiveAgents API ────────────────────────────────────────────
+export const proactiveAgentsApi = {
+  explainError(body: { stackTrace: string; language?: string }) { return api.post<ApiResponse<any>>("/proactive-agents/explain-error", body); },
+  resolvePort(body: { port: number }) { return api.post<ApiResponse<any>>("/proactive-agents/resolve-port", body); },
+  killIdleContainers() { return api.post<ApiResponse<any>>("/proactive-agents/kill-idle-containers"); },
+  suggestCommit(body: { diff: string }) { return api.post<ApiResponse<any>>("/proactive-agents/suggest-commit", body); },
+  summarizePr(body: { prUrl: string }) { return api.post<ApiResponse<any>>("/proactive-agents/summarize-pr", body); },
+  watchDependencies(body: { projectPath?: string }) { return api.post<ApiResponse<any>>("/proactive-agents/watch-dependencies", body); },
+  search(body: { query: string }) { return api.post<ApiResponse<any>>("/proactive-agents/search", body); },
+};
+
+// ─── Scripts API ────────────────────────────────────────────────────
+export interface ScriptDto { id: string; name: string; description?: string; language: string; content: string; lastRun?: string; }
+export interface ScriptRunResult { output: string; exitCode: number; duration: number; }
+
+export const scriptsApi = {
+  create(body: { name: string; description?: string; language: string; content: string }) { return api.post<ApiResponse<ScriptDto>>("/scripts", body); },
+  run(id: string) { return api.post<ApiResponse<ScriptRunResult>>(`/scripts/${id}/run`); },
+  spinEnvironment(body: { projectPath: string; template?: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/spin-environment", body); },
+  resolveConflicts(body: { projectPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/resolve-conflicts", body); },
+  nukeMigrate(body: { projectPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/nuke-migrate", body); },
+  flushCache() { return api.post<ApiResponse<ScriptRunResult>>("/scripts/flush-cache"); },
+  formatLint(body: { projectPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/format-lint", body); },
+  killNodes() { return api.post<ApiResponse<ScriptRunResult>>("/scripts/kill-nodes"); },
+  generateBoilerplate(body: { template: string; name: string; outputPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/generate-boilerplate", body); },
+};
+
+// ─── Snippets API ───────────────────────────────────────────────────
+export interface SnippetDto { id: string; title: string; language: string; content: string; tags?: string[]; isFavorite: boolean; createdAt: string; updatedAt: string; }
+
+export const snippetsApi = {
+  getAll() { return api.get<ApiResponse<SnippetDto[]>>("/snippets"); },
+  create(body: { title: string; language: string; content: string; tags?: string[] }) { return api.post<ApiResponse<SnippetDto>>("/snippets", body); },
+  update(id: string, body: { title: string; language: string; content: string; tags?: string[] }) { return api.put<ApiResponse<SnippetDto>>(`/snippets/${id}`, body); },
+  remove(id: string) { return api.delete<ApiResponse<null>>(`/snippets/${id}`); },
+  toggleFavorite(id: string) { return api.patch<ApiResponse<null>>(`/snippets/${id}/favorite`); },
+  sendToNotion(body: { snippetId: string }) { return api.post<ApiResponse<null>>("/snippets/send-to-notion", body); },
+  pasteFromNotion(body: { pageId: string }) { return api.post<ApiResponse<SnippetDto>>("/snippets/paste-from-notion", body); },
+};
+
+// ─── Focus (Pomodoro) API ───────────────────────────────────────────
+export interface FocusSessionDto { id: string; task: string; duration: number; startedAt: string; endedAt?: string; status: string; breaks: number; }
+export interface FocusStatsDto { totalSessions: number; totalMinutes: number; averageDuration: number; streak: number; todaySessions: number; todayMinutes: number; }
+
+export const focusApi = {
+  start(body: { task: string; duration?: number }) { return api.post<ApiResponse<FocusSessionDto>>("/focus", body); },
+  getStats() { return api.get<ApiResponse<FocusStatsDto>>("/focus/stats"); },
+  getActive() { return api.get<ApiResponse<FocusSessionDto | null>>("/focus/active"); },
+  complete(id: string) { return api.post<ApiResponse<null>>(`/focus/${id}/complete`); },
+  pause(id: string) { return api.post<ApiResponse<null>>(`/focus/${id}/pause`); },
+  resume(id: string) { return api.post<ApiResponse<null>>(`/focus/${id}/resume`); },
+  interrupt(id: string) { return api.post<ApiResponse<null>>(`/focus/${id}/interrupt`); },
+  history(days?: number) { return api.get<ApiResponse<FocusSessionDto[]>>("/focus/history", { params: { days } }); },
+};
+
+// ─── Docker API ─────────────────────────────────────────────────────
+export interface DockerContainerDto { id: string; name: string; image: string; status: string; state: string; ports?: string; created: string; }
+
+export const dockerApi = {
+  getAll() { return api.get<ApiResponse<DockerContainerDto[]>>("/docker"); },
+  getLogs(id: string) { return api.get<ApiResponse<string>>(`/docker/${id}/logs`); },
+  start(id: string) { return api.post<ApiResponse<null>>(`/docker/${id}/start`); },
+  stop(id: string) { return api.post<ApiResponse<null>>(`/docker/${id}/stop`); },
+  restart(id: string) { return api.post<ApiResponse<null>>(`/docker/${id}/restart`); },
+};
+
+// ─── Git + Jira API ─────────────────────────────────────────────────
+export interface GitDashboardDto {
+  repos: Array<{ name: string; stars: number; forks: number; language: string; updatedAt: string }>;
+  pullRequests: Array<{ id: number; title: string; state: string; author: string; createdAt: string; url: string; repo: string }>;
+  recentCommits: Array<{ sha: string; message: string; author: string; date: string; repo: string }>;
+}
+
+export const gitApi = {
+  dashboard(integrationId: string) { return api.get<ApiResponse<GitDashboardDto>>(`/git/dashboard/${integrationId}`); },
+  approve(body: { integrationId: string; owner: string; repo: string; prNumber: number }) { return api.post<ApiResponse<null>>("/git/approve", body); },
+  reject(body: { integrationId: string; owner: string; repo: string; prNumber: number; reason?: string }) { return api.post<ApiResponse<null>>("/git/reject", body); },
+  merge(body: { integrationId: string; owner: string; repo: string; prNumber: number }) { return api.post<ApiResponse<null>>("/git/merge", body); },
+  jiraPomodoro(body: { issueKey: string; duration?: number }) { return api.post<ApiResponse<FocusSessionDto>>("/git/jira-pomodoro", body); },
+};
+
+// ─── Sentry API ─────────────────────────────────────────────────────
+export interface SentryIssueDto { id: string; title: string; culprit: string; count: number; firstSeen: string; lastSeen: string; level: string; status: string; }
+
+export const sentryApi = {
+  getIssues(integrationId: string, projectSlug?: string) {
+    return api.get<ApiResponse<SentryIssueDto[]>>(`/sentry/${integrationId}/issues`, { params: { projectSlug } });
+  },
+  getIssue(integrationId: string, issueId: string) {
+    return api.get<ApiResponse<SentryIssueDto>>(`/sentry/${integrationId}/issues/${issueId}`);
+  },
+  resolve(issueId: string) { return api.post<ApiResponse<null>>(`/sentry/issues/${issueId}/resolve`); },
+};
+
+// ─── SonarQube API ──────────────────────────────────────────────────
+export interface SonarQubeDto { status: string; bugs: number; vulnerabilities: number; codeSmells: number; coverage: number; duplications: number; }
+
+export const sonarQubeApi = {
+  getQuality(integrationId: string, projectKey?: string) {
+    return api.get<ApiResponse<SonarQubeDto>>(`/sonar-qube/${integrationId}/quality`, { params: { projectKey } });
+  },
+};
+
+// ─── AWS API ────────────────────────────────────────────────────────
+export interface AwsDeploymentDto { id: string; serviceName: string; status: string; createdAt: string; completedAt?: string; version: string; }
+
+export const awsApi = {
+  getDeployments(integrationId: string, serviceName?: string) {
+    return api.get<ApiResponse<AwsDeploymentDto[]>>(`/aws/${integrationId}/deployments`, { params: { serviceName } });
+  },
+  getDeploymentStatus(integrationId: string, deploymentId: string) {
+    return api.get<ApiResponse<AwsDeploymentDto>>(`/aws/${integrationId}/deployments/${deploymentId}/status`);
+  },
+};
+
+// ─── Teams API ──────────────────────────────────────────────────────
+export interface TeamDto { id: string; name: string; description?: string; memberCount: number; createdAt: string; }
+export interface TeamMemberDto { userId: string; fullName: string; email: string; role: string; joinedAt: string; }
+
+export const teamsApi = {
+  getMyTeams() { return api.get<ApiResponse<TeamDto[]>>("/teams/my"); },
+  create(body: { name: string; description?: string }) { return api.post<ApiResponse<TeamDto>>("/teams", body); },
+  getTeam(teamId: string) { return api.get<ApiResponse<any>>(`/teams/${teamId}`); },
+  addMember(teamId: string, body: { email: string; role?: string }) { return api.post<ApiResponse<null>>(`/teams/${teamId}/members`, body); },
+  removeMember(teamId: string, userId: string) { return api.delete<ApiResponse<null>>(`/teams/${teamId}/members/${userId}`); },
+  getRadar(teamId: string) { return api.get<ApiResponse<any>>(`/teams/${teamId}/radar`); },
+  getProductivity(teamId: string) { return api.get<ApiResponse<any>>(`/teams/${teamId}/productivity`); },
+  shareWorkspace(teamId: string, body: { workspaceId: string }) { return api.post<ApiResponse<null>>(`/teams/${teamId}/share-workspace`, body); },
+};
+
+// ─── GlobalShortcuts API ────────────────────────────────────────────
+export const globalShortcutsApi = {
+  commandPalette(search: string) { return api.get<ApiResponse<any>>("/global-shortcuts/command-palette", { params: { search } }); },
+  aiContext(body: { context: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/ai-context", body); },
+  capture(body: { content: string; type?: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/capture", body); },
+  share(body: { content: string; recipients?: string[] }) { return api.post<ApiResponse<any>>("/global-shortcuts/share", body); },
+  calendarEvent(body: { text: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/calendar-event", body); },
+};
+
+// ─── Modals API ─────────────────────────────────────────────────────
+export interface ModalDto { id: string; type: string; title: string; message: string; data?: any; }
+
+export const modalsApi = {
+  getPending() { return api.get<ApiResponse<ModalDto[]>>("/modals/pending"); },
+  dismiss(modalId: string) { return api.post<ApiResponse<null>>(`/modals/${modalId}/dismiss`); },
+};
+
+// ─── System API ─────────────────────────────────────────────────────
+export const systemApi = {
+  getIdes() { return api.get<ApiResponse<any>>("/system/ides"); },
+  analyze() { return api.get<ApiResponse<any>>("/system/analyze"); },
+};
+
+export default api;

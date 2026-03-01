@@ -25,8 +25,8 @@ public class Subscription : BaseEntity
             UserId = userId,
             Tier = SubscriptionTier.Free,
             Status = SubscriptionStatus.Active,
-            MaxWorkspaces = 3,
-            MaxIntegrations = 3,
+            MaxWorkspaces = 10,
+            MaxIntegrations = 10,
             HasCustomHotkeys = false
         };
     }

@@ -13,7 +13,7 @@ interface DashboardTopNavProps {
 }
 
 const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace }: DashboardTopNavProps) => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, currentRole, clearRole } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [wsOpen, setWsOpen] = useState(false);
@@ -31,6 +31,7 @@ const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace }: Das
   }, []);
 
   const handleLogout = async () => {
+    clearRole();
     await logout();
     navigate("/login");
   };
@@ -121,13 +122,23 @@ const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace }: Das
 
       {/* Right — Actions */}
       <div className="flex items-center gap-0.5">
-        <motion.button
-          whileTap={{ rotate: 180 }}
-          onClick={toggleTheme}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
-        >
-          {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-        </motion.button>
+        {(() => {
+          const isAlwaysDark = ["developer", "cybersecurity", "marketer"].includes(currentRole);
+          return (
+            <motion.button
+              whileTap={isAlwaysDark ? {} : { rotate: 180 }}
+              onClick={toggleTheme}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                isAlwaysDark
+                  ? "text-muted-foreground/30 cursor-not-allowed"
+                  : "text-muted-foreground hover:bg-muted hover:text-primary"
+              }`}
+              title={isAlwaysDark ? "Dark mode is native for your role" : "Toggle theme"}
+            >
+              {theme === "light" && !isAlwaysDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </motion.button>
+          );
+        })()}
 
         <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative">
           <Bell className="w-4 h-4" />

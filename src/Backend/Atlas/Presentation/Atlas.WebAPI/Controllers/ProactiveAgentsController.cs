@@ -1,3 +1,4 @@
+using Atlas.Application.Features.Perplexity.Queries.SearchError;
 using Atlas.Application.Features.ProactiveAgents.Commands.ExplainError;
 using Atlas.Application.Features.ProactiveAgents.Commands.KillIdleContainers;
 using Atlas.Application.Features.ProactiveAgents.Commands.ResolvePortConflict;
@@ -53,5 +54,11 @@ public class ProactiveAgentsController : ApiControllerBase
         var result = await Mediator.Send(query);
         return OkResponse(result);
     }
+    
+    [HttpPost("search")]
+    public async Task<IActionResult> SearchError([FromBody] SearchErrorQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return OkResponse(result);
+    }
 }
-

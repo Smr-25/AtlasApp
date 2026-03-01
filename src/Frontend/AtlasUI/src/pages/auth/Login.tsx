@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 
@@ -48,13 +48,17 @@ const Login = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {errors.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -5 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm"
           >
-            {errors.map((err, i) => (
-              <p key={i}>{err}</p>
-            ))}
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              {errors.map((err, i) => (
+                <p key={i}>{err}</p>
+              ))}
+            </div>
           </motion.div>
         )}
 

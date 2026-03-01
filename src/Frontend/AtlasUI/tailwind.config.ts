@@ -15,6 +15,13 @@ export default {
     extend: {
       fontFamily: {
         outfit: ["Outfit", "sans-serif"],
+        sans: ["var(--font-family)", "Outfit", "sans-serif"],
+        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        inter: ["Inter", "sans-serif"],
+        grotesk: ["Space Grotesk", "sans-serif"],
+        fira: ["Fira Code", "monospace"],
+        jakarta: ["Plus Jakarta Sans", "sans-serif"],
+        jetbrains: ["JetBrains Mono", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",

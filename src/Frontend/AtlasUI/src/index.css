@@ -3,7 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  /* ═══════════════════════════════════════════════════════════
+     DEFAULT / FALLBACK — ATLAS Brand Orange (Auth pages, Onboarding)
+     Login, Register, ForgotPassword, VerifyEmail etc. all use this
+     ═══════════════════════════════════════════════════════════ */
   :root {
+    --font-family: "Outfit", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+
     --background: 30 30% 97%;
     --foreground: 18 100% 4%;
 
@@ -88,13 +95,338 @@
     --sidebar-accent-foreground: 30 30% 92%;
     --sidebar-border: 18 40% 10%;
     --sidebar-ring: 19 100% 50%;
+  }
 
-    --momentum-orange: 19 100% 50%;
-    --momentum-black: 18 100% 4%;
-    --momentum-dark: 18 85% 6%;
-    --momentum-peach: 18 50% 10%;
+  /* ═══════════════════════════════════════════════════════════
+     🖥️ DEVELOPER — "The Hacker Vibe"
+     Deep dark, electric blue, monospace, VS Code feel
+     ═══════════════════════════════════════════════════════════ */
+  .theme-developer {
+    --font-family: "IBM Plex Sans", sans-serif;
+    --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
+
+    /* Always force dark mode for developers */
+    --background: 220 25% 6%;
+    --foreground: 210 30% 88%;
+
+    --card: 220 25% 8%;
+    --card-foreground: 210 30% 88%;
+
+    --popover: 220 25% 8%;
+    --popover-foreground: 210 30% 88%;
+
+    --primary: 210 100% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 25% 12%;
+    --secondary-foreground: 210 30% 80%;
+
+    --muted: 220 20% 12%;
+    --muted-foreground: 210 15% 50%;
+
+    --accent: 210 50% 14%;
+    --accent-foreground: 210 100% 68%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 14%;
+    --input: 220 20% 14%;
+    --ring: 210 100% 56%;
+
+    --sidebar-background: 220 28% 5%;
+    --sidebar-foreground: 210 15% 55%;
+    --sidebar-primary: 210 100% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 12%;
+    --sidebar-accent-foreground: 210 100% 68%;
+    --sidebar-border: 220 20% 10%;
+    --sidebar-ring: 210 100% 56%;
+
+    --momentum-green: 145 70% 45%;
+    --momentum-red: 0 72% 51%;
+
+    color-scheme: dark;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     🎨 DESIGNER — "The Canvas"
+     Clean white, soft pastels, neutral, Figma-like feel
+     ═══════════════════════════════════════════════════════════ */
+  .theme-designer {
+    --font-family: "Inter", sans-serif;
+
+    --background: 0 0% 98%;
+    --foreground: 0 0% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+
+    --primary: 340 75% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 340 30% 96%;
+    --secondary-foreground: 0 0% 20%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 340 30% 96%;
+    --accent-foreground: 340 75% 45%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 91%;
+    --input: 0 0% 91%;
+    --ring: 340 75% 55%;
+
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 0 0% 40%;
+    --sidebar-primary: 340 75% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 340 30% 97%;
+    --sidebar-accent-foreground: 340 75% 45%;
+    --sidebar-border: 0 0% 93%;
+    --sidebar-ring: 340 75% 55%;
+
+    --momentum-green: 160 60% 42%;
+    --momentum-red: 0 72% 51%;
+
+    color-scheme: light;
+  }
+
+  /* Designer dark variant */
+  .theme-designer.dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 88%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 88%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 88%;
+
+    --primary: 340 75% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 80%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 50%;
+
+    --accent: 340 25% 14%;
+    --accent-foreground: 340 75% 65%;
+
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 340 75% 58%;
+
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 55%;
+    --sidebar-primary: 340 75% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 340 20% 12%;
+    --sidebar-accent-foreground: 340 75% 65%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 340 75% 58%;
+
+    color-scheme: dark;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     📊 MARKETER — "The Wall Street"
+     Bloomberg terminal feel, bold numbers, energetic
+     ═══════════════════════════════════════════════════════════ */
+  .theme-marketer {
+    --font-family: "Space Grotesk", sans-serif;
+
+    /* Dark by default — Bloomberg terminal aesthetic */
+    --background: 220 20% 6%;
+    --foreground: 45 20% 90%;
+
+    --card: 220 18% 9%;
+    --card-foreground: 45 20% 90%;
+
+    --popover: 220 18% 9%;
+    --popover-foreground: 45 20% 90%;
+
+    --primary: 45 93% 52%;
+    --primary-foreground: 220 20% 6%;
+
+    --secondary: 220 15% 14%;
+    --secondary-foreground: 45 20% 80%;
+
+    --muted: 220 12% 14%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 45 40% 14%;
+    --accent-foreground: 45 93% 60%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 14%;
+    --input: 220 15% 14%;
+    --ring: 45 93% 52%;
+
+    --sidebar-background: 220 22% 5%;
+    --sidebar-foreground: 220 10% 55%;
+    --sidebar-primary: 45 93% 52%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 45 25% 10%;
+    --sidebar-accent-foreground: 45 93% 60%;
+    --sidebar-border: 220 15% 10%;
+    --sidebar-ring: 45 93% 52%;
+
+    --momentum-green: 145 75% 48%;
+    --momentum-red: 0 80% 55%;
+
+    color-scheme: dark;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     🛡️ CYBERSECURITY / SECOPS — "The Radar"
+     Matrix green on black, terminal feel, anomaly detection
+     ═══════════════════════════════════════════════════════════ */
+  .theme-cybersecurity {
+    --font-family: "Fira Code", monospace;
+
+    /* Always dark — security monitoring aesthetic */
+    --background: 160 15% 4%;
+    --foreground: 145 20% 78%;
+
+    --card: 160 15% 6%;
+    --card-foreground: 145 20% 78%;
+
+    --popover: 160 15% 6%;
+    --popover-foreground: 145 20% 78%;
+
+    --primary: 145 70% 45%;
+    --primary-foreground: 160 20% 4%;
+
+    --secondary: 160 12% 10%;
+    --secondary-foreground: 145 20% 70%;
+
+    --muted: 160 10% 10%;
+    --muted-foreground: 145 10% 42%;
+
+    --accent: 145 30% 10%;
+    --accent-foreground: 145 70% 55%;
+
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 160 12% 11%;
+    --input: 160 12% 11%;
+    --ring: 145 70% 45%;
+
+    --sidebar-background: 160 18% 3%;
+    --sidebar-foreground: 145 10% 45%;
+    --sidebar-primary: 145 70% 45%;
+    --sidebar-primary-foreground: 160 20% 4%;
+    --sidebar-accent: 145 20% 8%;
+    --sidebar-accent-foreground: 145 70% 55%;
+    --sidebar-border: 160 12% 8%;
+    --sidebar-ring: 145 70% 45%;
+
+    --momentum-green: 145 80% 50%;
+    --momentum-red: 0 85% 55%;
+
+    color-scheme: dark;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     👔 TEAM LEADER / PM — "The Executive"
+     Corporate blue, clean white, professional, organized
+     ═══════════════════════════════════════════════════════════ */
+  .theme-team-leader {
+    --font-family: "Plus Jakarta Sans", sans-serif;
+
+    --background: 220 30% 97%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 30% 95%;
+    --secondary-foreground: 222 47% 20%;
+
+    --muted: 220 20% 94%;
+    --muted-foreground: 222 15% 50%;
+
+    --accent: 221 40% 94%;
+    --accent-foreground: 221 83% 45%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 221 83% 53%;
+
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 220 15% 65%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 30% 14%;
+    --sidebar-accent-foreground: 221 83% 65%;
+    --sidebar-border: 222 30% 12%;
+    --sidebar-ring: 221 83% 53%;
+
     --momentum-green: 145 63% 42%;
     --momentum-red: 0 72% 51%;
+
+    color-scheme: light;
+  }
+
+  /* Team Leader dark variant */
+  .theme-team-leader.dark {
+    --background: 222 47% 6%;
+    --foreground: 220 25% 90%;
+
+    --card: 222 40% 9%;
+    --card-foreground: 220 25% 90%;
+
+    --popover: 222 40% 9%;
+    --popover-foreground: 220 25% 90%;
+
+    --primary: 221 83% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 220 25% 80%;
+
+    --muted: 222 25% 14%;
+    --muted-foreground: 220 15% 50%;
+
+    --accent: 221 30% 14%;
+    --accent-foreground: 221 83% 65%;
+
+    --border: 222 25% 14%;
+    --input: 222 25% 14%;
+    --ring: 221 83% 58%;
+
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 220 15% 55%;
+    --sidebar-primary: 221 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 25% 12%;
+    --sidebar-accent-foreground: 221 83% 65%;
+    --sidebar-border: 222 30% 10%;
+    --sidebar-ring: 221 83% 58%;
+
+    color-scheme: dark;
   }
 }
 
@@ -104,6 +436,34 @@
   }
 
   body {
-    @apply bg-background text-foreground font-outfit;
+    @apply bg-background text-foreground;
+    font-family: var(--font-family), "Outfit", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Monospace code blocks for developer & secops */
+  .theme-developer code,
+  .theme-developer pre,
+  .theme-cybersecurity code,
+  .theme-cybersecurity pre {
+    font-family: var(--font-mono, "JetBrains Mono"), monospace;
+  }
+
+  /* Bold stats numbers for marketer */
+  .theme-marketer .stat-number {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Smooth transitions between themes */
+  body,
+  .bg-background,
+  .bg-card,
+  .bg-sidebar,
+  .text-foreground,
+  .text-primary,
+  .border-border {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
 }

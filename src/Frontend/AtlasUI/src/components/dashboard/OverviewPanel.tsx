@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { WorkspaceDto, IntegrationDto } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import { getProviderInfo } from "@/lib/integration-providers";
+import { getProviderIcon } from "@/components/icons/IntegrationIcons";
 
 interface OverviewPanelProps {
   workspaces: WorkspaceDto[];
@@ -34,7 +36,6 @@ const OverviewPanel = ({
   workspaces,
   integrations,
   pendingIntegrations,
-  activeWorkspace,
   onTabChange,
   onCreateWorkspace,
 }: OverviewPanelProps) => {
@@ -178,23 +179,27 @@ const OverviewPanel = ({
                 <button onClick={() => onTabChange("integrations")} className="mt-2 text-xs text-primary hover:underline">Connect your first integration</button>
               </div>
             ) : (
-              allIntegrations.slice(0, 5).map((int) => (
-                <div key={int.id} className="flex items-center gap-3 p-3 hover:bg-muted/30 transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                    <Plug className="w-4 h-4 text-muted-foreground" />
+              allIntegrations.slice(0, 5).map((int) => {
+                const pInfo = getProviderInfo(int.provider);
+                const ProviderSvg = getProviderIcon(int.provider);
+                return (
+                  <div key={int.id} className="flex items-center gap-3 p-3 hover:bg-muted/30 transition-colors">
+                    <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                      {ProviderSvg ? <ProviderSvg size={20} /> : <Plug className="w-4 h-4 text-muted-foreground" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{int.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{pInfo?.description || int.provider}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-1.5 h-1.5 rounded-full ${statusDot[int.status] || "bg-zinc-400"}`} />
+                      <span className="text-[10px] text-muted-foreground">
+                        {int.status === "PendingSetup" ? "Needs setup" : int.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{int.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{int.provider}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-1.5 h-1.5 rounded-full ${statusDot[int.status] || "bg-zinc-400"}`} />
-                    <span className="text-[10px] text-muted-foreground">
-                      {int.status === "PendingSetup" ? "Needs setup" : int.status}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
           {pendingIntegrations.length > 0 && (

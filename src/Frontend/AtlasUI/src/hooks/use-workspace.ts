@@ -18,23 +18,38 @@ export function useWorkspaces() {
     try {
       setLoading(true);
       setError(null);
-      const [wsRes, intRes, pendRes] = await Promise.all([
+
+      // Fetch all three in parallel, catch each individually so one failure doesn't block others
+      const [wsRes, intRes, pendRes] = await Promise.allSettled([
         workspaceApi.getAll(),
         integrationApi.getAll(),
         integrationApi.getPending(),
       ]);
 
-      if (wsRes.data.isSuccess && wsRes.data.data) {
-        const ws = wsRes.data.data;
-        setWorkspaces(ws);
-        const def = ws.find((w) => w.isDefault) || ws[0] || null;
-        setActiveWorkspace(def);
+      // Workspaces
+      if (wsRes.status === "fulfilled") {
+        const d = wsRes.value.data;
+        if (d.isSuccess && Array.isArray(d.data)) {
+          setWorkspaces(d.data);
+          const def = d.data.find((w) => w.isDefault) || d.data[0] || null;
+          setActiveWorkspace(def);
+        }
       }
-      if (intRes.data.isSuccess && intRes.data.data) {
-        setIntegrations(intRes.data.data);
+
+      // Active integrations
+      if (intRes.status === "fulfilled") {
+        const d = intRes.value.data;
+        if (d.isSuccess && Array.isArray(d.data)) {
+          setIntegrations(d.data);
+        }
       }
-      if (pendRes.data.isSuccess && pendRes.data.data) {
-        setPendingIntegrations(pendRes.data.data);
+
+      // Pending integrations
+      if (pendRes.status === "fulfilled") {
+        const d = pendRes.value.data;
+        if (d.isSuccess && Array.isArray(d.data)) {
+          setPendingIntegrations(d.data);
+        }
       }
     } catch (err: any) {
       setError(err?.message || "Failed to load workspace data");

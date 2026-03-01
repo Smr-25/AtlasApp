@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -11,6 +11,19 @@ import OverviewPanel from "@/components/dashboard/OverviewPanel";
 import WorkspacesPanel from "@/components/dashboard/WorkspacesPanel";
 import IntegrationsPanel from "@/components/dashboard/IntegrationsPanel";
 import CreateWorkspaceDialog from "@/components/dashboard/CreateWorkspaceDialog";
+import WorkspaceImmersiveView from "@/components/dashboard/workspace/WorkspaceImmersiveView";
+
+// Developer-specific panels
+import DevOverviewPanel from "@/components/dashboard/developer/DevOverviewPanel";
+import InsightsPanel from "@/components/dashboard/developer/InsightsPanel";
+import UtilitiesPanel from "@/components/dashboard/developer/UtilitiesPanel";
+import AIAgentsPanel from "@/components/dashboard/developer/AIAgentsPanel";
+import ScriptsPanel from "@/components/dashboard/developer/ScriptsPanel";
+import SnippetsPanel from "@/components/dashboard/developer/SnippetsPanel";
+import FocusPanel from "@/components/dashboard/developer/FocusPanel";
+import DockerPanel from "@/components/dashboard/developer/DockerPanel";
+import GitJiraPanel from "@/components/dashboard/developer/GitJiraPanel";
+import MonitoringPanel from "@/components/dashboard/developer/MonitoringPanel";
 
 const AiPlaceholder = () => (
   <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -27,8 +40,11 @@ const AiPlaceholder = () => (
 const Dashboard = () => {
   const { user } = useAuth();
   const { setRole } = useTheme();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(user?.role === "developer" ? "dev-overview" : "overview");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [enteredWorkspace, setEnteredWorkspace] = useState<import("@/services/api").WorkspaceDto | null>(null);
+  const [zenMode, setZenMode] = useState(false);
 
   const {
     workspaces,
@@ -39,6 +55,7 @@ const Dashboard = () => {
     createWorkspace,
     deleteWorkspace,
     setDefaultWorkspace,
+    toggleIntegration,
     loading,
     refresh,
   } = useWorkspaces();
@@ -81,6 +98,8 @@ const Dashboard = () => {
           onCreateWorkspace={() => setCreateDialogOpen(true)}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-6">
@@ -98,20 +117,43 @@ const Dashboard = () => {
               <WorkspacesPanel
                 workspaces={workspaces}
                 activeWorkspace={activeWorkspace}
+                integrations={integrations}
                 onSwitchWorkspace={switchWorkspace}
                 onCreateWorkspace={() => setCreateDialogOpen(true)}
                 onDeleteWorkspace={deleteWorkspace}
                 onSetDefault={setDefaultWorkspace}
+                onToggleIntegration={toggleIntegration}
+                onEnterWorkspace={(ws) => setEnteredWorkspace(ws)}
               />
             )}
             {activeTab === "integrations" && (
               <IntegrationsPanel
                 integrations={integrations}
                 pendingIntegrations={pendingIntegrations}
+                activeWorkspace={activeWorkspace}
+                workspaces={workspaces}
                 onRefresh={refresh}
               />
             )}
             {activeTab === "ai" && <AiPlaceholder />}
+
+            {/* Developer-specific panels */}
+            {activeTab === "dev-overview" && (
+              <DevOverviewPanel onTabChange={setActiveTab} />
+            )}
+            {activeTab === "insights" && <InsightsPanel />}
+            {activeTab === "utilities" && <UtilitiesPanel />}
+            {activeTab === "ai-agents" && <AIAgentsPanel />}
+            {activeTab === "scripts" && <ScriptsPanel />}
+            {activeTab === "snippets" && <SnippetsPanel />}
+            {activeTab === "focus" && <FocusPanel />}
+            {activeTab === "docker" && <DockerPanel />}
+            {activeTab === "git-jira" && (
+              <GitJiraPanel integrations={integrations} />
+            )}
+            {activeTab === "monitoring" && (
+              <MonitoringPanel integrations={integrations} />
+            )}
           </div>
         </main>
       </div>
@@ -121,6 +163,17 @@ const Dashboard = () => {
         onClose={() => setCreateDialogOpen(false)}
         onCreate={createWorkspace}
       />
+
+      {/* Immersive Workspace View */}
+      <AnimatePresence>
+        {enteredWorkspace && (
+          <WorkspaceImmersiveView
+            workspace={enteredWorkspace}
+            integrations={integrations}
+            onExit={() => setEnteredWorkspace(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

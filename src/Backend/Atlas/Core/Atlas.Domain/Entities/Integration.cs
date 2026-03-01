@@ -9,7 +9,7 @@ public class Integration : BaseEntity
     public IntegrationProvider Provider { get; private set; }
     public IntegrationStatus Status { get; private set; }
     public string? ApiUrl { get; private set; }
-    public string EncryptedAccessToken { get; private set; } = null!;
+    public string? EncryptedAccessToken { get; private set; }
     public string? EncryptedRefreshToken { get; private set; }
     public DateTime? TokenExpiresAt { get; private set; }
     public string? MetadataJson { get; private set; }

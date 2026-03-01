@@ -137,6 +137,9 @@ function extractErrors(err: unknown): string[] {
     if (err.response?.status === 429)
       return ["Too many requests. Please try again later."];
 
+    if (err.response?.status === 401)
+      return ["Invalid username or password. Please try again."];
+
     if (err.response?.status === 409)
       return ["This email or username is already in use."];
 
@@ -181,8 +184,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const role = p.profession
               ? professionToRole[p.profession]
               : storedUser.role;
-            const profileSaysComplete = !!p.profession;
-            const onboardingComplete = storedUser.onboardingComplete || profileSaysComplete;
+            // Profile fetch successful = active user = onboarding done
+            const onboardingComplete = storedUser.onboardingComplete || true;
             const u: User = {
               userId: p.id || storedUser.userId,
               fullName: p.fullName || storedUser.fullName,
@@ -309,11 +312,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const dto = res.data.data;
         TokenService.setTokens(dto);
 
-        // Fetch full profile to determine role & onboarding status
+        // Fetch full profile to determine role
         try {
           const profileRes = await authApi.getProfile();
           if (profileRes.data.isSuccess && profileRes.data.data) {
             const u = buildUserFromProfile(profileRes.data.data);
+            // Login success = user already passed onboarding
+            u.onboardingComplete = true;
             setUser(u);
             setIsAuthenticated(true);
             setEmailVerified(true);
@@ -324,7 +329,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Profile fetch failed — use token data
         }
 
-        // Fallback: use auth response data
+        // Fallback: use auth response data — login success means onboarding is done
         handleAuthResponse(dto, true);
         setEmailVerified(true);
         setPhoneVerified(true);
@@ -345,6 +350,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTempEmail(identifier);
           return ["EMAIL_NOT_VERIFIED"];
         }
+        // Check if backend sent specific error messages
+        if (msgs.length > 0) {
+          return msgs;
+        }
+        // Generic invalid credentials
+        return ["Invalid username or password. Please check your credentials and try again."];
       }
       return extractErrors(err);
     } finally {
@@ -431,7 +442,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const role = p.profession
             ? professionToRole[p.profession]
             : undefined;
-          const onboardingComplete = !!p.profession;
+          // Existing OAuth user (isNewUser=false) = onboarding already done
           const u: User = {
             userId: p.id || "",
             fullName: p.fullName || "",
@@ -439,7 +450,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: p.email || "",
             phone: p.phoneNumber || undefined,
             role,
-            onboardingComplete,
+            onboardingComplete: true,
           };
           setUser(u);
           setIsAuthenticated(true);
@@ -450,8 +461,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch {
         // Profile fetch failed — set minimal user from token
       }
-      // Fallback: set authenticated with minimal info
+      // Fallback: existing user — set onboarding complete
       setIsAuthenticated(true);
+      setUser({ userId: "", fullName: "", userName: "", email: "", onboardingComplete: true });
     },
     []
   );
