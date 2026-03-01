@@ -50,6 +50,9 @@ public class IntegrationConfiguration : IEntityTypeConfiguration<Integration>
 
         builder.Property(i => i.TokenExpiresAt);
 
+        builder.Property(i => i.ApiUrl)
+            .IsRequired(false);
+
         builder.Property(i => i.MetadataJson)
             .HasColumnType("jsonb");
 

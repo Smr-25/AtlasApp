@@ -39,9 +39,9 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
             className="flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/40">
-              <span className="text-primary-foreground font-bold text-lg">M</span>
+              <span className="text-primary-foreground font-bold text-lg">A</span>
             </div>
-            <span className="text-white font-semibold text-xl tracking-tight">Momentum</span>
+            <span className="text-white font-semibold text-xl tracking-tight">Atlas</span>
           </motion.div>
 
           {/* Center text */}
@@ -56,7 +56,7 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
               <span className="text-primary">team's potential</span>
             </h2>
             <p className="text-white/60 text-lg max-w-sm">
-              Replace all your software. Every app, AI agent, and human in one place.
+              The ultimate SaaS platform for team productivity. AI agents, dashboards, and tools — all in one place.
             </p>
           </motion.div>
 
@@ -68,7 +68,7 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
             className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
           >
             <p className="text-white/80 text-sm italic mb-4">
-              "Momentum transformed how our team collaborates. We've seen a 40% increase in productivity since switching."
+              "Atlas transformed how our team collaborates. We've seen a 40% increase in productivity since switching."
             </p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/30 flex items-center justify-center">
@@ -94,9 +94,9 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30">
-              <span className="text-primary-foreground font-semibold text-sm">M</span>
+              <span className="text-primary-foreground font-semibold text-sm">A</span>
             </div>
-            <span className="text-foreground font-semibold text-lg">Momentum</span>
+            <span className="text-foreground font-semibold text-lg">Atlas</span>
           </div>
 
           <div className="mb-8">

@@ -18,10 +18,10 @@ const TopNav = () => {
           whileHover={{ rotate: 6, scale: 1.05 }}
           className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30"
         >
-          <span className="text-primary-foreground font-semibold text-sm">M</span>
+          <span className="text-primary-foreground font-semibold text-sm">A</span>
         </motion.div>
         <div>
-          <h1 className="text-sm font-semibold text-foreground leading-tight">Momentum</h1>
+          <h1 className="text-sm font-semibold text-foreground leading-tight">Atlas</h1>
           <p className="text-[11px] text-muted-foreground leading-tight">Team's workspace</p>
         </div>
       </div>

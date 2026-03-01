@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
-import { useAuth, UserRole } from "@/context/AuthContext";
+import { ArrowRight, ArrowLeft, Check, Sparkles, Loader2 } from "lucide-react";
+import { useAuth, UserRole, roleToProfession } from "@/context/AuthContext";
 import { onboardingQuestions, roleLabels, roleDescriptions, roleIcons } from "@/lib/onboarding-data";
 
 const roles: UserRole[] = ["developer", "designer", "cybersecurity", "marketer", "team-leader"];
@@ -33,10 +33,11 @@ const roleAccentSelected: Record<UserRole, string> = {
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { user, setUserRole, completeOnboarding } = useAuth();
+  const { user, setUserRole, completeOnboarding, isLoading } = useAuth();
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(user?.role || null);
   const [currentStep, setCurrentStep] = useState(0); // 0 = role selection, 1+ = questions
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [error, setError] = useState("");
 
   const questions = selectedRole ? onboardingQuestions[selectedRole] : [];
   const totalSteps = questions.length + 1;
@@ -48,15 +49,15 @@ const Onboarding = () => {
     setAnswers({});
   };
 
-  const handleAnswer = (questionId: string, option: string, multiSelect?: boolean) => {
+  const handleAnswer = (questionId: string, optionId: string, multiSelect?: boolean) => {
     if (multiSelect) {
       const current = (answers[questionId] as string[]) || [];
-      const updated = current.includes(option)
-        ? current.filter((o) => o !== option)
-        : [...current, option];
+      const updated = current.includes(optionId)
+        ? current.filter((o) => o !== optionId)
+        : [...current, optionId];
       setAnswers({ ...answers, [questionId]: updated });
     } else {
-      setAnswers({ ...answers, [questionId]: option });
+      setAnswers({ ...answers, [questionId]: optionId });
     }
   };
 
@@ -66,10 +67,10 @@ const Onboarding = () => {
     return !!answer;
   };
 
-  const isOptionSelected = (questionId: string, option: string) => {
+  const isOptionSelected = (questionId: string, optionId: string) => {
     const answer = answers[questionId];
-    if (Array.isArray(answer)) return answer.includes(option);
-    return answer === option;
+    if (Array.isArray(answer)) return answer.includes(optionId);
+    return answer === optionId;
   };
 
   const handleNext = async () => {
@@ -79,14 +80,31 @@ const Onboarding = () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Complete onboarding
-      const flatAnswers: Record<string, string> = {};
-      Object.entries(answers).forEach(([key, val]) => {
-        flatAnswers[key] = Array.isArray(val) ? val.join(", ") : val;
-      });
-      flatAnswers.role = selectedRole!;
-      const ok = await completeOnboarding(flatAnswers);
-      if (ok) navigate('/dashboard');
+      // Complete onboarding — send to real API
+      setError("");
+      const profession = roleToProfession[selectedRole!];
+
+      // Build answers in the backend expected format (UUID questionId + UUID optionId)
+      const formattedAnswers: Array<{ questionId: string; optionId: string; customValue?: string }> = [];
+      for (const [questionId, val] of Object.entries(answers)) {
+        if (Array.isArray(val)) {
+          // Multi-select: each selected option is a separate answer entry
+          for (const optionId of val) {
+            formattedAnswers.push({ questionId, optionId });
+          }
+        } else {
+          formattedAnswers.push({ questionId, optionId: val });
+        }
+      }
+
+      const jobTitle = roleLabels[selectedRole!];
+
+      const errs = await completeOnboarding(profession, jobTitle, formattedAnswers);
+      if (errs.length === 0) {
+        navigate("/dashboard");
+      } else {
+        setError(errs[0]);
+      }
     }
   };
 
@@ -103,9 +121,9 @@ const Onboarding = () => {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30">
-              <span className="text-primary-foreground font-semibold text-sm">M</span>
+              <span className="text-primary-foreground font-semibold text-sm">A</span>
             </div>
-            <span className="text-foreground font-semibold">Momentum</span>
+            <span className="text-foreground font-semibold">Atlas</span>
           </div>
           <span className="text-xs text-muted-foreground">
             Step {currentStep + 1} of {totalSteps}
@@ -126,6 +144,16 @@ const Onboarding = () => {
       {/* Content */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-2xl">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center mb-6"
+            >
+              {error}
+            </motion.div>
+          )}
+
           <AnimatePresence mode="wait">
             {currentStep === 0 ? (
               <motion.div
@@ -208,13 +236,13 @@ const Onboarding = () => {
                       <div className="grid grid-cols-2 gap-3">
                         {q.options.map((option, i) => (
                           <motion.button
-                            key={option}
+                            key={option.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            onClick={() => handleAnswer(q.id, option, q.multiSelect)}
+                            onClick={() => handleAnswer(q.id, option.id, q.multiSelect)}
                             className={`p-4 rounded-xl border-2 text-left text-sm font-medium transition-all ${
-                              isOptionSelected(q.id, option)
+                              isOptionSelected(q.id, option.id)
                                 ? selectedRole
                                   ? roleAccentSelected[selectedRole] + " shadow-lg"
                                   : "bg-primary text-primary-foreground border-primary"
@@ -222,8 +250,8 @@ const Onboarding = () => {
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className={isOptionSelected(q.id, option) ? "text-white" : ""}>{option}</span>
-                              {isOptionSelected(q.id, option) && (
+                              <span className={isOptionSelected(q.id, option.id) ? "text-white" : ""}>{option.label}</span>
+                              {isOptionSelected(q.id, option.id) && (
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                                   <Check className="w-4 h-4" />
                                 </motion.div>
@@ -250,16 +278,30 @@ const Onboarding = () => {
               Back
             </button>
             <motion.button
-              whileHover={{ scale: canProceed ? 1.02 : 1 }}
-              whileTap={{ scale: canProceed ? 0.98 : 1 }}
+              whileHover={{ scale: canProceed && !isLoading ? 1.02 : 1 }}
+              whileTap={{ scale: canProceed && !isLoading ? 0.98 : 1 }}
               onClick={handleNext}
-              disabled={!canProceed}
+              disabled={!canProceed || isLoading}
               className={`flex items-center gap-2 px-6 h-11 rounded-xl font-medium text-sm shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r text-white ${
                 selectedRole ? roleColors[selectedRole] : "from-primary to-primary"
               }`}
             >
-              {currentStep === totalSteps - 1 ? "Get Started" : "Continue"}
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Completing...
+                </>
+              ) : currentStep === totalSteps - 1 ? (
+                <>
+                  Get Started
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </motion.button>
           </div>
         </div>

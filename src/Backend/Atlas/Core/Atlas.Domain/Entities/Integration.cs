@@ -8,7 +8,7 @@ public class Integration : BaseEntity
     public string Name { get; private set; } = null!; 
     public IntegrationProvider Provider { get; private set; }
     public IntegrationStatus Status { get; private set; }
-    public string ApiUrl { get; private set; } = null!;
+    public string? ApiUrl { get; private set; }
     public string EncryptedAccessToken { get; private set; } = null!;
     public string? EncryptedRefreshToken { get; private set; }
     public DateTime? TokenExpiresAt { get; private set; }
@@ -27,13 +27,15 @@ public class Integration : BaseEntity
         string encryptedAccessToken, 
         string? encryptedRefreshToken,
         DateTime? expiresAt,
-        string? metadataJson)
+        string? metadataJson,
+        string? apiUrl = null)
     {
         return new Integration
         {
             UserProfileId = userProfileId,
             Name = name,
             Provider = provider,
+            ApiUrl = apiUrl ?? GetDefaultApiUrl(provider),
             EncryptedAccessToken = encryptedAccessToken,
             EncryptedRefreshToken = encryptedRefreshToken,
             TokenExpiresAt = expiresAt,
@@ -41,6 +43,18 @@ public class Integration : BaseEntity
             Status = IntegrationStatus.Active
         };
     }
+
+    private static string GetDefaultApiUrl(IntegrationProvider provider) => provider switch
+    {
+        IntegrationProvider.GitHub => "https://api.github.com",
+        IntegrationProvider.Figma => "https://api.figma.com",
+        IntegrationProvider.Jira => "https://api.atlassian.com",
+        IntegrationProvider.Miro => "https://api.miro.com",
+        IntegrationProvider.Zeplin => "https://api.zeplin.dev",
+        IntegrationProvider.Sentry => "https://sentry.io/api",
+        IntegrationProvider.SonarQube => "https://sonarcloud.io/api",
+        _ => string.Empty
+    };
 
     public void UpdateTokens(string encryptedAccessToken, string? encryptedRefreshToken, DateTime? expiresAt)
     {
@@ -77,6 +91,7 @@ public class Integration : BaseEntity
             UserProfileId = userId,
             Name = name,
             Provider = provider,
+            ApiUrl = GetDefaultApiUrl(provider),
             Status = IntegrationStatus.PendingSetup
         };
     }

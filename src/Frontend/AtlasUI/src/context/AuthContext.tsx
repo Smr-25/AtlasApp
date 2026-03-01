@@ -1,78 +1,158 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import api, { ApiError } from '@/lib/apiClient'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
+import {
+  authApi,
+  onboardingApi,
+  TokenService,
+  AuthResponseDto,
+  ExternalLoginResponseDto,
+  AccountDto,
+} from "@/services/api";
+import { AxiosError } from "axios";
 
-export type UserRole = "developer" | "designer" | "cybersecurity" | "marketer" | "team-leader";
+// ─── Types ──────────────────────────────────────────────────────────
+export type UserRole =
+  | "developer"
+  | "designer"
+  | "cybersecurity"
+  | "marketer"
+  | "team-leader";
 
-// Map backend profession integer to frontend role string
-function professionToRole(profession: any): UserRole {
-  const map: Record<number | string, UserRole> = {
-    1: 'developer',
-    2: 'designer',
-    3: 'cybersecurity',
-    4: 'marketer',
-    5: 'team-leader',
-    Developer: 'developer',
-    designer: 'designer',
-    Designer: 'designer',
-    CyberSecurity: 'cybersecurity',
-    cybersecurity: 'cybersecurity',
-    DigitalMarketing: 'marketer',
-    marketer: 'marketer',
-    ProductManager: 'team-leader',
-    'team-leader': 'team-leader',
-    TeamLeader: 'team-leader',
-  }
-  if (profession && map[profession]) return map[profession]
-  if (typeof profession === 'string') {
-    const lower = profession.toLowerCase()
-    if (lower.includes('developer') || lower === '1') return 'developer'
-    if (lower.includes('designer') || lower === '2') return 'designer'
-    if (lower.includes('cyber') || lower.includes('security') || lower.includes('secops') || lower === '3') return 'cybersecurity'
-    if (lower.includes('market') || lower === '4') return 'marketer'
-    if (lower.includes('leader') || lower.includes('manager') || lower === '5') return 'team-leader'
-  }
-  return 'developer'
-}
+/** Maps backend enum (UserProfession) → frontend role key */
+export const professionToRole: Record<number, UserRole> = {
+  1: "developer",
+  2: "designer",
+  3: "cybersecurity",
+  4: "marketer",
+  5: "team-leader",
+};
 
-interface User {
+export const roleToProfession: Record<UserRole, number> = {
+  developer: 1,
+  designer: 2,
+  cybersecurity: 3,
+  marketer: 4,
+  "team-leader": 5,
+};
+
+export interface User {
+  userId: string;
   fullName: string;
-  username: string;
+  userName: string;
   email: string;
   phone?: string;
   phoneContact?: "sms" | "telegram";
   role?: UserRole;
   onboardingComplete: boolean;
   onboardingAnswers?: Record<string, string>;
-  tags?: string[];
-  bio?: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  // new flag: auth restoration in progress
-  initializing: boolean;
-  register: (data: Omit<User, "onboardingComplete"> & { password: string; confirmPassword: string }) => Promise<boolean>;
-  // login now returns a detailed result so UI can react (email verification required, locked, etc.)
-  login: (identifier: string, password: string) => Promise<{ ok: boolean; reason?: 'email_not_verified' | 'locked' | 'invalid_credentials' | 'profile_fetch_failed' | 'other'; message?: string }>;
-  externalLogin: (provider: 'google' | 'github', idToken: string) => Promise<boolean>;
-  // Explicit refresh helper: attempts to exchange stored refresh token for new tokens and finalize auth
-  refreshTokens: () => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+
+  register: (data: {
+    fullName: string;
+    userName: string;
+    email: string;
+    password: string;
+  }) => Promise<string[]>;
+
+  login: (identifier: string, password: string) => Promise<string[]>;
+  externalLogin: (
+    provider: string,
+    accessToken: string,
+    authorizationCode: string
+  ) => Promise<{ errors: string[]; isNewUser?: boolean }>;
+  finalizeAuthFromTokens: (tokens: {
+    AccessToken: string;
+    RefreshToken: string;
+  }, isNewUser?: boolean) => Promise<void>;
+  logout: () => Promise<void>;
+
   setUserRole: (role: UserRole) => void;
-  completeOnboarding: (answers: Record<string, string>) => Promise<boolean>;
-  verifyEmail: (code: string, email?: string) => Promise<boolean>;
-  verifyPhone: (code: string) => Promise<boolean>;
-  resendEmailVerification: () => Promise<boolean>;
-  resendPhoneVerification: () => Promise<boolean>;
+  completeOnboarding: (
+    profession: number,
+    jobTitle: string,
+    answers: Array<{
+      questionId: string;
+      optionId: string;
+      customValue?: string;
+    }>
+  ) => Promise<string[]>;
+
+  forgotPassword: (email: string) => Promise<string[]>;
+  verifyResetCode: (email: string, code: string) => Promise<{ errors: string[]; resetToken?: string }>;
+  resetPassword: (
+    email: string,
+    resetToken: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => Promise<string[]>;
+
+  verifyEmail: (code: string) => Promise<string[]>;
+  verifyPhone: (code: string) => Promise<string[]>;
+  resendEmailCode: () => Promise<string[]>;
+  resendPhoneCode: () => Promise<string[]>;
+
   emailVerified: boolean;
   phoneVerified: boolean;
   setEmailVerified: (v: boolean) => void;
   setPhoneVerified: (v: boolean) => void;
-  // allow other components to finalize tokens received from external login flows
-  finalizeAuthFromTokens: (tokenPayload: { AccessToken: string; RefreshToken: string } | null) => Promise<boolean>;
+
+  /** Temporary email kept between pages (forgot password flow) */
+  tempEmail: string;
+  setTempEmail: (e: string) => void;
 }
 
+// ─── Helper: extract errors from API or Axios ───────────────────────
+function extractErrors(err: unknown): string[] {
+  if (err instanceof AxiosError) {
+    const body = err.response?.data as
+      | { errors?: string[] | Record<string, string[]>; isSuccess?: boolean }
+      | undefined;
+
+    if (body?.errors) {
+      // Standard ResponseModel format: errors is string[]
+      if (Array.isArray(body.errors) && body.errors.length > 0) {
+        return body.errors;
+      }
+      // ASP.NET ModelState validation format: errors is { FieldName: ["msg"] }
+      if (typeof body.errors === "object" && !Array.isArray(body.errors)) {
+        const msgs: string[] = [];
+        for (const field of Object.values(body.errors)) {
+          if (Array.isArray(field)) msgs.push(...field);
+        }
+        if (msgs.length > 0) return msgs;
+      }
+    }
+
+    if (err.response?.status === 429)
+      return ["Too many requests. Please try again later."];
+
+    if (err.response?.status === 409)
+      return ["This email or username is already in use."];
+
+    if (err.response?.status === 400)
+      return ["Invalid request. Please check your inputs."];
+
+    if (err.response?.status === 404)
+      return ["Service not found. Please try again later."];
+
+    return [err.message || "Network error"];
+  }
+  if (err instanceof Error) return [err.message];
+  return ["An unexpected error occurred"];
+}
+
+// ─── Context ────────────────────────────────────────────────────────
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const useAuth = () => useContext(AuthContext);
@@ -80,403 +160,491 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
-  const [pendingPassword, setPendingPassword] = useState<string | null>(null);
-  // new state to indicate initial auth restoration is running
-  const [initializing, setInitializing] = useState(true);
+  const [tempEmail, setTempEmail] = useState("");
 
-  const register = async (data: Omit<User, 'onboardingComplete'> & { password: string; confirmPassword: string }) => {
-    try {
-      // map UI user shape to backend RegisterRequest
-      const payload = {
-        FullName: data.fullName,
-        UserName: data.username,
-        Email: data.email,
-        Password: data.password,
-      }
-
-      // Call register and apply returned tokens so frontend treats user as authenticated
-      const res = await api.accounts.register(payload)
-
-      // If server returned tokens, finalize auth from tokens (this will store tokens, fetch profile and set authenticated state)
-      if (res?.AccessToken && res?.RefreshToken) {
-        const ok = await finalizeAuthFromTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
-        if (!ok) {
-          // If finalizing failed, clear tokens and return false
-          api.clearTokens()
-          return false
-        }
-      }
-
-      // Store minimal user info in case profile fetch didn't set it fully
-      if (!user) setUser({ fullName: data.fullName, username: data.username, email: data.email, onboardingComplete: false })
-      setEmailVerified(false)
-      setPhoneVerified(false)
-
-      return true
-    } catch (e) {
-      // If server returned ApiError, rethrow so UI can display server-side validation messages
-      if (e instanceof ApiError) throw e
-      return false
-    }
-  };
-
-  // Helper to finish auth after tokens are set: fetch profile and only on success mark authenticated
-  const finalizeAuthFromTokens = async (tokenPayload: { AccessToken: string; RefreshToken: string } | null) => {
-    if (!tokenPayload || !tokenPayload.AccessToken) return false
-    api.setTokens({ AccessToken: tokenPayload.AccessToken, RefreshToken: tokenPayload.RefreshToken })
-    try {
-      const profile = await api.accounts.getProfile()
-      setUser({
-        fullName: profile.FullName,
-        username: profile.UserName,
-        email: profile.Email,
-        phone: profile.PhoneNumber || undefined,
-        role: professionToRole((profile as any).Profession ?? (profile as any).profession ?? profile.Status),
-        onboardingComplete: true,
-      })
-      setEmailVerified(profile.EmailConfirmed)
-      setPhoneVerified(Boolean(profile.PhoneNumberConfirmed))
-      setIsAuthenticated(true)
-      return true
-    } catch (e) {
-      // profile fetch failed -> clear tokens and don't authenticate
-      api.clearTokens()
-      setUser(null)
-      setIsAuthenticated(false)
-      return false
-    } finally {
-      // ensure initializing flag is cleared after any finalize attempt
-      try { setInitializing(false) } catch {}
-    }
-  }
-
-  const login: AuthContextType['login'] = async (_identifier: string, _password: string) => {
-    try {
-      const payload: any = {}
-      if (_identifier.includes('@')) payload.Email = _identifier
-      else payload.UserName = _identifier
-      payload.Password = _password
-
-      const res = await api.accounts.login(payload)
-      // Some backends may return the DTO directly, or may return a wrapper like { data: { ... } } or different casing.
-      // Recursively unwrap nested `data` fields up to a few levels to tolerate different envelopes.
-      let raw: any = res as any
-      for (let i = 0; i < 3; i++) {
-        if (raw && raw.data && typeof raw.data === 'object') raw = raw.data
-        else break
-      }
-      // tolerate different casing and token key names from backend
-      const accessToken = raw?.AccessToken ?? raw?.accessToken ?? raw?.access_token ?? raw?.token ?? raw?.jwt ?? raw?.idToken ?? raw?.id_token ?? raw?.access
-      const refreshToken = raw?.RefreshToken ?? raw?.refreshToken ?? raw?.refresh_token ?? raw?.refresh ?? raw?.refreshTokenValue
-      if (!accessToken || !refreshToken) {
-        // Log the unexpected server response to console to help debugging.
-        try {
-          console.error('Login: server returned invalid token payload:', res)
-        } catch (logErr) {}
-        return { ok: false, reason: 'other', message: 'Invalid token payload (server returned unexpected response). Check backend logs or inspect network response.' }
-      }
-
-      // normalize tokens object for finalizeAuthFromTokens
-      const normalized = { AccessToken: accessToken, RefreshToken: refreshToken }
-
-      // finalize auth and directly return result
-      if (!(await finalizeAuthFromTokens(normalized))) {
-        return { ok: false, reason: 'profile_fetch_failed', message: 'Failed to fetch profile after login' }
-      }
-      return { ok: true }
-    } catch (e) {
-      if (e instanceof ApiError) {
-        // Map common server-side statuses/messages to friendly reasons
-        if (e.status === 401) {
-          const rawMsg = e.errors?.join(', ') || e.message || ''
-          const msg = rawMsg.toLowerCase()
-
-          // Email not verified
-          if (msg.includes('email not verified') || msg.includes('email not confirmed')) {
-            try {
-              const maybeEmail = _identifier.includes('@') ? _identifier : undefined
-              const maybeUserName = !_identifier.includes('@') ? _identifier : ''
-              if (maybeEmail) setUser({ fullName: '', username: maybeUserName ?? '', email: maybeEmail, onboardingComplete: false })
-            } catch {}
-            return {
-              ok: false,
-              reason: 'email_not_verified',
-              message: 'Your email address is not verified. Please check your email for the verification code or resend the code.'
-            }
-          }
-
-          // Deleted / unauthorized account
-          if (msg.includes('deleted') || msg.includes('this account has been deleted')) {
-            return {
-              ok: false,
-              reason: 'other',
-              message: 'This account has been deleted. If you believe this is an error, please contact support.'
-            }
-          }
-
-          // Locked mention in 401 message (fallback)
-          if (msg.includes('locked') || msg.includes('too many failed')) {
-            // Surface server message only in logs; show friendly message to user
-            return {
-              ok: false,
-              reason: 'locked',
-              message: 'Your account is temporarily locked due to multiple failed sign-in attempts. Please try again later or contact support.'
-            }
-          }
-
-          // Invalid credentials — try to produce a friendly localized message.
-          // If server provided remaining attempts info, include it when safe.
-          let friendly = 'Invalid email/username or password. Please try again.'
-          // attempt to extract a remaining attempts number from server message (e.g., "2 attempts remaining")
-          const attemptsMatch = rawMsg.match(/(\d+)\s*(?:attempts?|cəhd|tries)/i)
-          if (attemptsMatch && attemptsMatch[1]) {
-            friendly = `Invalid email/username or password. ${attemptsMatch[1]} attempts remaining before account lockout.`
-          }
-          return { ok: false, reason: 'invalid_credentials', message: friendly }
-        }
-        // 423 Locked -> account locked
-        if (e.status === 423) {
-          // If backend provided a human-readable duration/minutes in errors, prefer it for logs; show friendly message to user
-          const serverMsg = e.errors?.join(', ') || e.message || ''
-          try { console.warn('Account locked details from server:', serverMsg) } catch {}
-          return { ok: false, reason: 'locked', message: 'Your account is locked. Please try again later or contact support.' }
-        }
-        // Generic server error: log detailed server message, but return friendly message to user
-        try { console.error('Login ApiError details:', e.status, e.errors) } catch {}
-        return { ok: false, reason: 'other', message: 'Sign in failed due to a server error. Please try again later.' }
-      }
-      // Non-ApiError fallback
-      return { ok: false, reason: 'other', message: e instanceof Error ? e.message : String(e) }
-    }
-  };
-
-  const externalLogin = async (provider: 'google' | 'github', idToken: string) => {
-    try {
-      const res = await api.accounts.externalLogin({ Provider: provider, IdToken: idToken })
-      if (!res?.AccessToken || !res?.RefreshToken) return false
-      // If backend marks this as a new user, tokens are still provided — finalize auth the same way.
-      return finalizeAuthFromTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
-    } catch (e) {
-      // Rethrow ApiError so UI can display backend validation messages (e.g., 400 invalid token)
-      if (e instanceof ApiError) throw e
-      return false
-    }
-  }
-
-  // Attempt to refresh tokens using the current stored refresh token.
-  const refreshTokens = async () => {
-    const { refreshToken } = api.getTokens()
-    if (!refreshToken) throw new ApiError(401, ['No refresh token available'])
-    const res = await api.accounts.refreshToken(refreshToken)
-    // res should be TokenDto
-    if (!res?.AccessToken || !res?.RefreshToken) throw new ApiError(500, ['Invalid token payload'])
-    // finalizeAuthFromTokens will store tokens and fetch profile
-    return finalizeAuthFromTokens({ AccessToken: res.AccessToken, RefreshToken: res.RefreshToken })
-  }
-
-  // On mount: if tokens exist try to load profile
+  // ── Restore session on mount ────────────────────────────────────
   useEffect(() => {
-    const tryLoad = async () => {
-      const { accessToken } = api.getTokens()
-      if (!accessToken) {
-        // no token -> still mark initialization complete
-        setInitializing(false)
-        return
-      }
-      try {
-        const profile = await api.accounts.getProfile()
-        setUser({
-          fullName: profile.FullName,
-          username: profile.UserName,
-          email: profile.Email,
-          phone: profile.PhoneNumber || undefined,
-          role: professionToRole((profile as any).Profession ?? (profile as any).profession ?? profile.Status),
-          onboardingComplete: true,
-        })
-        setIsAuthenticated(true)
-        setEmailVerified(profile.EmailConfirmed)
-        setPhoneVerified(Boolean(profile.PhoneNumberConfirmed))
-      } catch (e) {
-        // tokens invalid or profile fetch failed: clear tokens
-        api.clearTokens()
-        setUser(null)
-        setIsAuthenticated(false)
-      } finally {
-        // initialization done regardless of success
-        setInitializing(false)
-      }
-    }
-    tryLoad()
-  }, [])
+    const restoreSession = async () => {
+      const stored = TokenService.getUser();
+      const token = TokenService.getAccessToken();
+      if (stored && token) {
+        const storedUser = stored as User;
 
-  const logout = () => {
-    // Attempt to revoke refresh tokens on the server for the current user.
-    // This endpoint requires Authorization header; apiClient will attach access token if present.
-    (async () => {
-      try {
-        await api.accounts.revokeRefreshToken()
-      } catch (e) {
-        // If revoke fails (e.g., 401 unauthorized), continue with local cleanup.
-        // Re-throwing is not desired for a logout action — we want logout to succeed client-side.
-        // We could show a toast here, but keep silent to avoid blocking logout flow.
-      } finally {
-        api.clearTokens()
-        setUser(null);
-        setIsAuthenticated(false);
-        setEmailVerified(false);
-        setPhoneVerified(false);
+        // Validate session by fetching profile
+        try {
+          const profileRes = await authApi.getProfile();
+          if (profileRes.data.isSuccess && profileRes.data.data) {
+            const p = profileRes.data.data;
+            const role = p.profession
+              ? professionToRole[p.profession]
+              : storedUser.role;
+            const profileSaysComplete = !!p.profession;
+            const onboardingComplete = storedUser.onboardingComplete || profileSaysComplete;
+            const u: User = {
+              userId: p.id || storedUser.userId,
+              fullName: p.fullName || storedUser.fullName,
+              userName: p.userName || storedUser.userName,
+              email: p.email || storedUser.email,
+              phone: p.phoneNumber || undefined,
+              role,
+              onboardingComplete,
+            };
+            setUser(u);
+            setIsAuthenticated(true);
+            setEmailVerified(p.emailConfirmed);
+            setPhoneVerified(p.phoneNumberConfirmed);
+          } else {
+            // Profile not successful — don't authenticate
+            // Keep tokens in case user needs to verify email
+            setUser(storedUser);
+          }
+        } catch {
+          // Profile fetch failed (401 = email not verified, or network error)
+          // Keep user info for verify-email page but don't mark as authenticated
+          setUser(storedUser);
+          setTempEmail(storedUser.email);
+        }
       }
-    })()
+      setIsLoading(false);
+    };
+    restoreSession();
+  }, []);
+
+  // ── Persist user whenever it changes ─────────────────────────────
+  useEffect(() => {
+    if (user) {
+      TokenService.saveUser(user as unknown as Record<string, unknown>);
+    }
+  }, [user]);
+
+  // ── Auth helpers ────────────────────────────────────────────────
+  const handleAuthResponse = useCallback(
+    (dto: AuthResponseDto, onboardingDone = false) => {
+      TokenService.setTokens(dto);
+      const u: User = {
+        userId: dto.userId,
+        fullName: dto.fullName,
+        userName: dto.userName,
+        email: dto.email,
+        onboardingComplete: onboardingDone,
+      };
+      setUser(u);
+      setIsAuthenticated(true);
+      return u;
+    },
+    []
+  );
+
+  // ── REGISTER ────────────────────────────────────────────────────
+  const register = async (data: {
+    fullName: string;
+    userName: string;
+    email: string;
+    password: string;
+  }): Promise<string[]> => {
+    try {
+      setIsLoading(true);
+      const res = await authApi.register(data);
+      if (res.data.isSuccess && res.data.data) {
+        const dto = res.data.data;
+        TokenService.setTokens(dto);
+        const u: User = {
+          userId: dto.userId,
+          fullName: dto.fullName,
+          userName: dto.userName,
+          email: dto.email,
+          onboardingComplete: false,
+        };
+        setUser(u);
+        setTempEmail(data.email);
+        // Don't set isAuthenticated yet — needs email verification + onboarding
+        return [];
+      }
+      return res.data.errors || ["Registration failed"];
+    } catch (err) {
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // ── Helper: build user from profile ──────────────────────────────
+  const buildUserFromProfile = useCallback(
+    (profile: AccountDto): User => {
+      const role = profile.profession
+        ? professionToRole[profile.profession]
+        : undefined;
+      // Onboarding is complete if profession is set (bio may still be null/generating)
+      const onboardingComplete = !!profile.profession;
+      return {
+        userId: profile.id,
+        fullName: profile.fullName,
+        userName: profile.userName || "",
+        email: profile.email,
+        phone: profile.phoneNumber || undefined,
+        role,
+        onboardingComplete,
+      };
+    },
+    []
+  );
+
+  // ── LOGIN ───────────────────────────────────────────────────────
+  const login = async (
+    identifier: string,
+    password: string
+  ): Promise<string[]> => {
+    try {
+      setIsLoading(true);
+      const isEmail = identifier.includes("@");
+      const res = await authApi.login({
+        email: isEmail ? identifier : null,
+        userName: isEmail ? null : identifier,
+        password,
+      });
+      if (res.data.isSuccess && res.data.data) {
+        const dto = res.data.data;
+        TokenService.setTokens(dto);
+
+        // Fetch full profile to determine role & onboarding status
+        try {
+          const profileRes = await authApi.getProfile();
+          if (profileRes.data.isSuccess && profileRes.data.data) {
+            const u = buildUserFromProfile(profileRes.data.data);
+            setUser(u);
+            setIsAuthenticated(true);
+            setEmailVerified(true);
+            setPhoneVerified(profileRes.data.data.phoneNumberConfirmed);
+            return [];
+          }
+        } catch {
+          // Profile fetch failed — use token data
+        }
+
+        // Fallback: use auth response data
+        handleAuthResponse(dto, true);
+        setEmailVerified(true);
+        setPhoneVerified(true);
+        return [];
+      }
+      return res.data.errors || ["Login failed"];
+    } catch (err) {
+      // Detect "Email not verified" 401 response
+      if (err instanceof AxiosError && err.response?.status === 401) {
+        const body = err.response?.data as
+          | { errors?: string[]; isSuccess?: boolean }
+          | undefined;
+        const msgs = body?.errors || [];
+        const notVerified = msgs.some(
+          (m) => m.toLowerCase().includes("email") && m.toLowerCase().includes("not verified")
+        );
+        if (notVerified) {
+          setTempEmail(identifier);
+          return ["EMAIL_NOT_VERIFIED"];
+        }
+      }
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── EXTERNAL LOGIN ──────────────────────────────────────────────
+  const externalLogin = async (
+    provider: string,
+    accessToken: string,
+    authorizationCode: string
+  ): Promise<{ errors: string[]; isNewUser?: boolean }> => {
+    try {
+      setIsLoading(true);
+      const res = await authApi.externalLogin({
+        provider,
+        idToken: "",
+        accessToken,
+        authorizationCode,
+      });
+      if (res.data.isSuccess && res.data.data) {
+        const dto = res.data.data as ExternalLoginResponseDto;
+        TokenService.setTokens({
+          accessToken: dto.accessToken,
+          refreshToken: dto.refreshToken,
+          refreshTokenExpiration: dto.refreshTokenExpiration,
+          userId: dto.userId,
+        });
+        const u: User = {
+          userId: dto.userId,
+          fullName: dto.fullName,
+          userName: dto.email.split("@")[0],
+          email: dto.email,
+          onboardingComplete: !dto.isNewUser,
+        };
+        setUser(u);
+        if (!dto.isNewUser) {
+          setIsAuthenticated(true);
+          setEmailVerified(true);
+        }
+        return { errors: [], isNewUser: dto.isNewUser };
+      }
+      return {
+        errors: res.data.errors || ["External login failed"],
+      };
+    } catch (err) {
+      return { errors: extractErrors(err) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── FINALIZE AUTH FROM TOKENS (OAuth callback redirect flow) ────
+  const finalizeAuthFromTokens = useCallback(
+    async (tokens: { AccessToken: string; RefreshToken: string }, isNewUser?: boolean) => {
+      TokenService.setTokens({
+        accessToken: tokens.AccessToken,
+        refreshToken: tokens.RefreshToken,
+        refreshTokenExpiration: "",
+        userId: "",
+      });
+
+      // New user — skip profile fetch, needs onboarding
+      if (isNewUser) {
+        const u: User = {
+          userId: "",
+          fullName: "",
+          userName: "",
+          email: "",
+          onboardingComplete: false,
+        };
+        setUser(u);
+        setIsAuthenticated(true);
+        setEmailVerified(true);
+        return;
+      }
+
+      // Existing user — fetch profile to get full info
+      try {
+        const profileRes = await authApi.getProfile();
+        if (profileRes.data.isSuccess && profileRes.data.data) {
+          const p = profileRes.data.data;
+          const role = p.profession
+            ? professionToRole[p.profession]
+            : undefined;
+          const onboardingComplete = !!p.profession;
+          const u: User = {
+            userId: p.id || "",
+            fullName: p.fullName || "",
+            userName: p.userName || "",
+            email: p.email || "",
+            phone: p.phoneNumber || undefined,
+            role,
+            onboardingComplete,
+          };
+          setUser(u);
+          setIsAuthenticated(true);
+          setEmailVerified(p.emailConfirmed);
+          setPhoneVerified(p.phoneNumberConfirmed);
+          return;
+        }
+      } catch {
+        // Profile fetch failed — set minimal user from token
+      }
+      // Fallback: set authenticated with minimal info
+      setIsAuthenticated(true);
+    },
+    []
+  );
+
+  // ── LOGOUT ──────────────────────────────────────────────────────
+  const logout = async () => {
+    try {
+      const rt = TokenService.getRefreshToken();
+      if (rt) await authApi.logout(rt).catch(() => {});
+    } finally {
+      TokenService.clear();
+      setUser(null);
+      setIsAuthenticated(false);
+      setEmailVerified(false);
+      setPhoneVerified(false);
+    }
+  };
+
+  // ── VERIFY EMAIL ────────────────────────────────────────────────
+  const verifyEmailFn = async (code: string): Promise<string[]> => {
+    try {
+      setIsLoading(true);
+      const email = user?.email || tempEmail;
+      if (!email) return ["Email not found"];
+      const res = await authApi.verifyEmail(email, code);
+      if (res.data.isSuccess) {
+        setEmailVerified(true);
+        return [];
+      }
+      return res.data.errors || ["Verification failed"];
+    } catch (err) {
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── VERIFY PHONE ────────────────────────────────────────────────
+  const verifyPhoneFn = async (code: string): Promise<string[]> => {
+    try {
+      setIsLoading(true);
+      const phone = user?.phone;
+      if (!phone) return ["Phone number not found"];
+      const res = await authApi.verifyPhone(phone, code);
+      if (res.data.isSuccess) {
+        setPhoneVerified(true);
+        return [];
+      }
+      return res.data.errors || ["Verification failed"];
+    } catch (err) {
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── RESEND CODES ────────────────────────────────────────────────
+  const resendEmailCode = async (): Promise<string[]> => {
+    try {
+      const email = user?.email || tempEmail;
+      if (!email) return ["Email not found"];
+      const res = await authApi.resendEmailVerificationCode(email);
+      if (res.data.isSuccess) return [];
+      return res.data.errors || ["Failed to resend code"];
+    } catch (err) {
+      return extractErrors(err);
+    }
+  };
+
+  const resendPhoneCode = async (): Promise<string[]> => {
+    try {
+      const phone = user?.phone;
+      if (!phone) return ["Phone number not found"];
+      const res = await authApi.resendPhoneVerificationCode(phone);
+      if (res.data.isSuccess) return [];
+      return res.data.errors || ["Failed to resend code"];
+    } catch (err) {
+      return extractErrors(err);
+    }
+  };
+
+  // ── FORGOT / RESET PASSWORD ─────────────────────────────────────
+  const forgotPassword = async (email: string): Promise<string[]> => {
+    try {
+      setIsLoading(true);
+      const res = await authApi.forgotPassword(email);
+      if (res.data.isSuccess) {
+        setTempEmail(email);
+        return [];
+      }
+      return res.data.errors || ["Failed to send reset code"];
+    } catch (err) {
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyResetCode = async (
+    email: string,
+    code: string
+  ): Promise<{ errors: string[]; resetToken?: string }> => {
+    try {
+      setIsLoading(true);
+      const res = await authApi.verifyResetCode(email, code);
+      if (res.data.isSuccess && res.data.data) {
+        return { errors: [], resetToken: res.data.data.resetToken };
+      }
+      return { errors: res.data.errors || ["Invalid reset code"] };
+    } catch (err) {
+      return { errors: extractErrors(err) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPasswordFn = async (
+    email: string,
+    resetToken: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<string[]> => {
+    try {
+      setIsLoading(true);
+      const res = await authApi.resetPassword(email, resetToken, newPassword, confirmPassword);
+      if (res.data.isSuccess) return [];
+      return res.data.errors || ["Failed to reset password"];
+    } catch (err) {
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── ROLE / ONBOARDING ──────────────────────────────────────────
   const setUserRole = (role: UserRole) => {
     if (user) setUser({ ...user, role });
   };
 
-  const completeOnboarding = async (answers: Record<string, string>) => {
+  const completeOnboarding = async (
+    profession: number,
+    jobTitle: string,
+    answers: Array<{
+      questionId: string;
+      optionId: string;
+      customValue?: string;
+    }>
+  ): Promise<string[]> => {
     try {
-      // Build payload similar to apiClient.complete normalization
-      const skipKeys = new Set(['Profession', 'JobTitle', 'role', 'Role'])
-      const answerArray: any[] = []
-      Object.entries(answers).forEach(([k, v]) => {
-        if (!v || skipKeys.has(k)) return
-        // comma-separated multi-select
-        if (typeof v === 'string' && v.includes(',')) {
-          v.split(',').map(s => s.trim()).filter(Boolean).forEach(val => answerArray.push({ QuestionId: k, OptionId: String(val) }))
-        } else {
-          answerArray.push({ QuestionId: k, OptionId: String(v) })
+      setIsLoading(true);
+      const res = await onboardingApi.complete({ profession, jobTitle, answers });
+      if (res.data.isSuccess) {
+        const role = professionToRole[profession] || "developer";
+        if (user) {
+          setUser({ ...user, onboardingComplete: true, role });
         }
-      })
-
-      // Profession mapping: support role strings like 'developer'
-      let professionVal: any = answers['Profession'] ?? answers['profession'] ?? answers['role'] ?? answers['Role'] ?? 1
-      if (typeof professionVal === 'string' && isNaN(Number(professionVal))) {
-        const roleMap: Record<string, number> = { developer: 1, designer: 2, cybersecurity: 3, marketer: 4, 'team-leader': 5 }
-        professionVal = roleMap[professionVal] ?? roleMap[professionVal?.toLowerCase?.()] ?? 1
+        setIsAuthenticated(true);
+        return [];
       }
-
-      const payload = {
-        Profession: Number(professionVal) || 1,
-        JobTitle: (answers['JobTitle'] ?? answers['jobTitle']) || null,
-        Answers: answerArray,
-      }
-
-      await api.onboarding.complete(payload as any)
-
-      // After successful onboarding, update local user: mark onboardingComplete and store answers
-      if (user) {
-        // generate tags from selected options: collect OptionId strings
-        const tagsSet = new Set<string>()
-        answerArray.forEach((a: any) => {
-          if (a && a.OptionId) tagsSet.add(String(a.OptionId))
-        })
-        const tags = Array.from(tagsSet)
-
-        // generate a lightweight bio: use role and experience if provided
-        const roleStr = (answers['role'] ?? user.role) as string | undefined
-        const experience = answers['experience'] || answers['Experience'] || undefined
-        const jobTitle = answers['JobTitle'] || answers['jobTitle'] || undefined
-        let bioParts: string[] = []
-        if (jobTitle) bioParts.push(String(jobTitle))
-        if (roleStr) bioParts.push(String(roleStr))
-        if (experience) bioParts.push(String(experience))
-        const bio = bioParts.length ? bioParts.join(' — ') : null
-
-        setUser({ ...user, onboardingComplete: true, onboardingAnswers: answers, tags, bio })
-      }
-
-      setIsAuthenticated(true)
-      return true
-    } catch (e) {
-      return false
+      return res.data.errors || ["Onboarding failed"];
+    } catch (err) {
+      return extractErrors(err);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const verifyEmail = async (code: string, emailParam?: string) => {
-    if (code.length !== 6) return false
-    const emailToUse = emailParam ?? user?.email
-    if (!emailToUse) return false
-    try {
-      await api.accounts.verifyEmail({ Email: emailToUse, VerificationCode: code })
-      setEmailVerified(true)
-      // after successful verification, if we have a pending password, attempt to login and fetch profile
-      if (pendingPassword && emailToUse) {
-        try {
-          const loginRes = await api.accounts.login({ Email: emailToUse, Password: pendingPassword })
-          if (loginRes?.AccessToken && loginRes?.RefreshToken) {
-            if (!(await finalizeAuthFromTokens({ AccessToken: loginRes.AccessToken, RefreshToken: loginRes.RefreshToken }))) {
-              // auto-login failed; clear pending and return true (verification itself succeeded)
-            }
-          }
-        } catch (loginErr) {
-          // ignore auto-login failure; user can manually login
-        }
-        setPendingPassword(null)
-      }
-      return true
-    } catch (e) {
-      // Rethrow ApiError so UI can show server-provided messages
-      if (e instanceof ApiError) throw e
-      return false
-    }
-  }
-
-  const verifyPhone = async (code: string) => {
-    if (code.length !== 6) return false
-    try {
-      if (!user?.phone) return false
-      await api.accounts.verifyPhone({ PhoneNumber: user.phone, VerificationCode: code })
-      setPhoneVerified(true)
-      return true
-    } catch (e) {
-      // Rethrow ApiError so UI can show server-provided messages
-      if (e instanceof ApiError) throw e
-      return false
-    }
-  }
-
-  const resendEmailVerification = async () => {
-    try {
-      if (!user?.email) return false
-      await api.accounts.resendEmailVerification({ Email: user.email })
-      return true
-    } catch (e) { return false }
-  }
-
-  const resendPhoneVerification = async () => {
-    try {
-      if (!user?.phone) return false
-      const channel = user.phoneContact === 'telegram' ? 2 : 1
-      await api.accounts.resendPhoneVerification({ PhoneNumber: user.phone, Channel: channel })
-      return true
-    } catch (e) { return false }
-  }
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated,
+        isLoading,
         register,
         login,
         externalLogin,
+        finalizeAuthFromTokens,
         logout,
         setUserRole,
         completeOnboarding,
-        verifyEmail,
-        verifyPhone,
-        resendEmailVerification,
-        resendPhoneVerification,
+        verifyEmail: verifyEmailFn,
+        verifyPhone: verifyPhoneFn,
+        resendEmailCode,
+        resendPhoneCode,
+        forgotPassword,
+        verifyResetCode,
+        resetPassword: resetPasswordFn,
         emailVerified,
         phoneVerified,
         setEmailVerified,
         setPhoneVerified,
-        refreshTokens,
-        finalizeAuthFromTokens,
-        // expose initialization flag
-        initializing,
+        tempEmail,
+        setTempEmail,
       }}
     >
       {children}

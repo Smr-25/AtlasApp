@@ -1,30 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Phone } from "lucide-react";
+import { Phone, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from '@/hooks/use-toast'
-import { ApiError } from '@/lib/apiClient'
 
 const VerifyPhone = () => {
   const navigate = useNavigate();
-  const { user, verifyPhone, resendPhoneVerification } = useAuth();
-  const { toast } = useToast();
+  const { user, verifyPhone, resendPhoneCode, isLoading } = useAuth();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
-  const [resendCooldown, setResendCooldown] = useState<number>(0)
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return
-    const id = setInterval(() => {
-      setResendCooldown(s => {
-        if (s <= 1) { clearInterval(id); return 0 }
-        return s - 1
-      })
-    }, 1000)
-    return () => clearInterval(id)
-  }, [resendCooldown])
+  const [resendMsg, setResendMsg] = useState("");
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -42,58 +28,46 @@ const VerifyPhone = () => {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6);
+    if (pasted.length > 0) {
+      const newCode = [...code];
+      for (let i = 0; i < pasted.length && i < 6; i++) {
+        newCode[i] = pasted[i];
+      }
+      setCode(newCode);
+      const focusIndex = Math.min(pasted.length, 5);
+      document.getElementById(`phone-code-${focusIndex}`)?.focus();
+    }
+  };
+
   const handleVerify = async () => {
     const fullCode = code.join("");
     if (fullCode.length < 6) {
       setError("Please enter the full 6-digit code");
       return;
     }
-    try {
-      const success = await verifyPhone(fullCode);
-      if (success) {
-        toast({ title: 'Phone verified', description: 'Verified — redirecting to onboarding...' })
-        navigate("/onboarding");
-      } else {
-        setError("Invalid verification code");
-        toast({ title: 'Verification failed', description: 'Invalid verification code', variant: 'destructive' })
-      }
-    } catch (e: any) {
-      if (e instanceof ApiError) {
-        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
-        setError(msg)
-        toast({ title: 'Verification failed', description: msg, variant: 'destructive' })
-      } else {
-        setError('Invalid verification code')
-        toast({ title: 'Verification failed', description: 'Invalid verification code', variant: 'destructive' })
-      }
+    setError("");
+    const errs = await verifyPhone(fullCode);
+    if (errs.length === 0) {
+      navigate("/onboarding");
+    } else {
+      setError(errs[0]);
     }
   };
 
   const handleResend = async () => {
-    try {
-      if (!user?.phone) return setError('No phone available')
-      // validate E.164-ish format
-      if (!/^\+\d{7,15}$/.test(user.phone)) return setError('Phone number must be in E.164 format')
-      if (resendCooldown > 0) return
-      const ok = await resendPhoneVerification()
-      if (ok) {
-        toast({ title: 'Verification sent', description: `A new verification code was sent via ${user.phoneContact === 'telegram' ? 'Telegram' : 'SMS'}` })
-        setResendCooldown(60)
-      } else {
-        setError('Failed to resend code.')
-        toast({ title: 'Resend failed', description: 'Failed to resend code.', variant: 'destructive' })
-      }
-    } catch (e) {
-      if (e instanceof ApiError) {
-        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
-        setError(msg)
-        toast({ title: 'Resend failed', description: msg, variant: 'destructive' })
-      } else {
-        setError('Failed to resend code.')
-        toast({ title: 'Resend failed', description: 'Failed to resend code.', variant: 'destructive' })
-      }
+    setResendMsg("");
+    setError("");
+    const errs = await resendPhoneCode();
+    if (errs.length === 0) {
+      setResendMsg("Verification code resent successfully!");
+      setTimeout(() => setResendMsg(""), 3000);
+    } else {
+      setError(errs[0]);
     }
-  }
+  };
 
   const contactMethod = user?.phoneContact === "telegram" ? "Telegram" : "SMS";
 
@@ -114,7 +88,13 @@ const VerifyPhone = () => {
           </motion.div>
         )}
 
-        <div className="flex justify-center gap-3">
+        {resendMsg && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-sm text-center">
+            {resendMsg}
+          </motion.div>
+        )}
+
+        <div className="flex justify-center gap-3" onPaste={handlePaste}>
           {code.map((digit, i) => (
             <motion.input
               key={i}
@@ -128,25 +108,37 @@ const VerifyPhone = () => {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value.replace(/[^0-9]/g, ""))}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className="w-12 h-14 text-center text-xl font-semibold rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+              disabled={isLoading}
+              className="w-12 h-14 text-center text-xl font-semibold rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all disabled:opacity-50"
             />
           ))}
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+          whileHover={{ scale: isLoading ? 1 : 1.01 }}
+          whileTap={{ scale: isLoading ? 1 : 0.99 }}
           onClick={handleVerify}
-          disabled={code.join("").length < 6}
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-lg shadow-primary/25 transition-all disabled:opacity-50"
+          disabled={code.join("").length < 6 || isLoading}
+          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-lg shadow-primary/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          Verify Phone
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Verifying...
+            </>
+          ) : (
+            "Verify Phone"
+          )}
         </motion.button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Didn't receive the code?{' '}
-          <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-primary font-medium hover:underline ${resendCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
-            {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : `Resend via ${contactMethod}`}
+          Didn't receive the code?{" "}
+          <button
+            onClick={handleResend}
+            disabled={isLoading}
+            className="text-primary font-medium hover:underline disabled:opacity-50"
+          >
+            Resend via {contactMethod}
           </button>
         </p>
       </div>

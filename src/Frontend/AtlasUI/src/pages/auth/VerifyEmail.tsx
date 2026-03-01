@@ -1,41 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
-import api, { ApiError } from '@/lib/apiClient'
-import { useToast } from '@/hooks/use-toast'
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
-  const { user, verifyEmail } = useAuth();
-  const { toast } = useToast();
+  const { user, verifyEmail, resendEmailCode, isLoading, tempEmail } = useAuth();
+  const displayEmail = user?.email || tempEmail || "your email";
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
-  const [resendCooldown, setResendCooldown] = useState<number>(0)
-
-  // If there's no email in context, redirect to login (we expect email to be known from auth flow)
-  useEffect(() => {
-    if (!user?.email) {
-      navigate('/login')
-    }
-  }, [user?.email, navigate])
-
-  // countdown effect for resend cooldown
-  useEffect(() => {
-    if (resendCooldown <= 0) return
-    const id = setInterval(() => {
-      setResendCooldown((s) => {
-        if (s <= 1) {
-          clearInterval(id)
-          return 0
-        }
-        return s - 1
-      })
-    }, 1000)
-    return () => clearInterval(id)
-  }, [resendCooldown])
+  const [resendMsg, setResendMsg] = useState("");
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -54,57 +30,53 @@ const VerifyEmail = () => {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6);
+    if (pasted.length > 0) {
+      const newCode = [...code];
+      for (let i = 0; i < pasted.length && i < 6; i++) {
+        newCode[i] = pasted[i];
+      }
+      setCode(newCode);
+      const focusIndex = Math.min(pasted.length, 5);
+      document.getElementById(`email-code-${focusIndex}`)?.focus();
+    }
+  };
+
   const handleVerify = async () => {
     const fullCode = code.join("");
     if (fullCode.length < 6) {
       setError("Please enter the full 6-digit code");
       return;
     }
-    const emailToUse = user?.email
-    if (!emailToUse) return setError('No email available to verify')
-    try {
-      // Use context.verifyEmail which may auto-login using pendingPassword
-      await verifyEmail(fullCode, emailToUse)
-      toast({ title: 'Email verified', description: 'Verified — redirecting to onboarding...' })
-      navigate('/onboarding')
-      return
-    } catch (e) {
-      if (e instanceof ApiError) {
-        // show server-provided messages
-        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
-        setError(msg)
-        toast({ title: 'Verification failed', description: msg, variant: 'destructive' })
+    setError("");
+    const errs = await verifyEmail(fullCode);
+    if (errs.length === 0) {
+      if (user?.phone) {
+        navigate("/verify-phone");
       } else {
-        setError('Invalid verification code')
-        toast({ title: 'Verification failed', description: 'Invalid verification code', variant: 'destructive' })
+        navigate("/onboarding");
       }
-      return
+    } else {
+      setError(errs[0]);
     }
   };
 
   const handleResend = async () => {
-    try {
-      const emailToUse = user?.email
-      if (!emailToUse) return setError('No email available to resend to')
-      if (resendCooldown > 0) return
-      await api.accounts.resendEmailVerification({ Email: emailToUse })
-      toast({ title: 'Verification sent', description: `A new verification code was sent to ${emailToUse}` })
-      // start cooldown (60 seconds)
-      setResendCooldown(60)
-    } catch (e) {
-      if (e instanceof ApiError) {
-        const msg = e.errors && e.errors.length ? e.errors.join(', ') : e.message
-        setError(msg)
-        toast({ title: 'Resend failed', description: msg, variant: 'destructive' })
-      } else {
-        setError('Failed to resend code.')
-        toast({ title: 'Resend failed', description: 'Failed to resend code.', variant: 'destructive' })
-      }
+    setResendMsg("");
+    setError("");
+    const errs = await resendEmailCode();
+    if (errs.length === 0) {
+      setResendMsg("Verification code resent successfully!");
+      setTimeout(() => setResendMsg(""), 3000);
+    } else {
+      setError(errs[0]);
     }
-  }
+  };
 
   return (
-    <AuthLayout title="Verify your email" subtitle={`We've sent a 6-digit code to ${user?.email || "your email"} — please enter it below`}>
+    <AuthLayout title="Verify your email" subtitle={`We've sent a 6-digit code to ${displayEmail}`}>
       <div className="space-y-6">
         <motion.div
           initial={{ scale: 0 }}
@@ -120,7 +92,13 @@ const VerifyEmail = () => {
           </motion.div>
         )}
 
-        <div className="flex justify-center gap-3">
+        {resendMsg && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-sm text-center">
+            {resendMsg}
+          </motion.div>
+        )}
+
+        <div className="flex justify-center gap-3" onPaste={handlePaste}>
           {code.map((digit, i) => (
             <motion.input
               key={i}
@@ -134,31 +112,39 @@ const VerifyEmail = () => {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value.replace(/[^0-9]/g, ""))}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className="w-12 h-14 text-center text-xl font-semibold rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+              disabled={isLoading}
+              className="w-12 h-14 text-center text-xl font-semibold rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all disabled:opacity-50"
             />
           ))}
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+          whileHover={{ scale: isLoading ? 1 : 1.01 }}
+          whileTap={{ scale: isLoading ? 1 : 0.99 }}
           onClick={handleVerify}
-          disabled={code.join("").length < 6 || !user?.email}
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-lg shadow-primary/25 transition-all disabled:opacity-50"
+          disabled={code.join("").length < 6 || isLoading}
+          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-lg shadow-primary/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          Verify
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Verifying...
+            </>
+          ) : (
+            "Verify Email"
+          )}
         </motion.button>
 
         <p className="text-center text-sm text-muted-foreground">
-            Didn't receive the code?{' '}
-            <button
-              onClick={handleResend}
-              disabled={resendCooldown > 0 || !user?.email}
-              className={`text-primary font-medium hover:underline ${resendCooldown > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend'}
-            </button>
-          </p>
+          Didn't receive the code?{" "}
+          <button
+            onClick={handleResend}
+            disabled={isLoading}
+            className="text-primary font-medium hover:underline disabled:opacity-50"
+          >
+            Resend
+          </button>
+        </p>
       </div>
     </AuthLayout>
   );
