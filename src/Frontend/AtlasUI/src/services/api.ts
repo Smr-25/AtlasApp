@@ -62,6 +62,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+// ─── Global error toast callback ────────────────────────────────────
+let globalErrorToast: ((msg: string) => void) | null = null;
+export const setGlobalErrorToast = (fn: (msg: string) => void) => {
+  globalErrorToast = fn;
+};
+
 // ─── Response interceptor — auto refresh on 401 ────────────────────
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -83,6 +89,16 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+
+    // Show global error toast for non-401 errors
+    if (error.response?.status !== 401 && globalErrorToast) {
+      const body = error.response?.data as { errors?: string[]; isSuccess?: boolean } | undefined;
+      const msg = body?.errors?.[0] || error.message || "An unexpected error occurred";
+      // Don't toast for validation errors (400) if they'll be handled by the form
+      if (error.response?.status !== 400) {
+        globalErrorToast(msg);
+      }
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -107,9 +123,7 @@ api.interceptors.response.use(
       }
 
       try {
-        const accessToken = TokenService.getAccessToken();
         const { data } = await axios.post(`${API_BASE_URL}/accounts/refresh-token`, {
-          accessToken,
           refreshToken,
         });
 
@@ -265,7 +279,7 @@ export const authApi = {
     );
   },
 
-  resendPhoneVerificationCode(phoneNumber: string, channel: "Sms" | "WhatsApp" = "Sms") {
+  resendPhoneVerificationCode(phoneNumber: string, channel: "Sms" | "Telegram" = "Sms") {
     return api.post<ApiResponse<null>>(
       "/accounts/resend-phone-verification-code",
       { phoneNumber, channel }
@@ -294,10 +308,10 @@ export const authApi = {
     return api.put<ApiResponse<null>>("/accounts/change-password", body);
   },
 
-  addPhoneNumber(phoneNumber: string, channel: "Sms" | "WhatsApp" = "Sms") {
+  addPhoneNumber(phoneNumber: string, channel: "Sms" | "Telegram" = "Sms") {
     return api.post<ApiResponse<null>>("/accounts/add-phone-number", {
       phoneNumber,
-      channel,
+      verificationChannel: channel,
     });
   },
 
@@ -305,7 +319,7 @@ export const authApi = {
     return api.delete<ApiResponse<null>>("/accounts/delete-account");
   },
 
-  setTelegramChatId(body: { chatId: string }) {
+  setTelegramChatId(body: { telegramChatId: string }) {
     return api.post<ApiResponse<null>>("/accounts/set-telegram-chat-id", body);
   },
 
@@ -496,7 +510,7 @@ export interface UsageDto {
 export const subscriptionApi = {
   getCurrent() { return api.get<ApiResponse<SubscriptionDto>>("/subscriptions/current"); },
   getUsage() { return api.get<ApiResponse<UsageDto>>("/subscriptions/usage"); },
-  checkout(body: { priceId: string; successUrl: string; cancelUrl: string }) {
+  checkout(body: { tier: string; successUrl: string; cancelUrl: string }) {
     return api.post<ApiResponse<{ url: string }>>("/subscriptions/checkout", body);
   },
   portal(body: { returnUrl: string }) {
@@ -540,38 +554,38 @@ export interface DeploySuccessDto { total: number; successful: number; rate: num
 export interface PeakHoursDto { hours: Array<{ hour: number; productivity: number }>; bestHour: number; }
 
 export const devInsightsApi = {
-  timeSaved(from?: string, to?: string) { return api.get<ApiResponse<TimeSavedDto>>("/dev-insights/time-saved", { params: { from, to } }); },
-  focusHeatmap(from?: string, to?: string) { return api.get<ApiResponse<FocusHeatmapDto>>("/dev-insights/focus-heatmap", { params: { from, to } }); },
-  techDebt(projectPath?: string) { return api.get<ApiResponse<TechDebtDto>>("/dev-insights/tech-debt", { params: { projectPath } }); },
-  deploySuccessRate(from?: string, to?: string) { return api.get<ApiResponse<DeploySuccessDto>>("/dev-insights/deployment-success-rate", { params: { from, to } }); },
-  peakHours(from?: string, to?: string) { return api.get<ApiResponse<PeakHoursDto>>("/dev-insights/peak-hours", { params: { from, to } }); },
+  timeSaved(from?: string, to?: string) { return api.get<ApiResponse<TimeSavedDto>>("/devinsights/time-saved", { params: { from, to } }); },
+  focusHeatmap(from?: string, to?: string) { return api.get<ApiResponse<FocusHeatmapDto>>("/devinsights/focus-heatmap", { params: { from, to } }); },
+  techDebt(projectPath?: string) { return api.get<ApiResponse<TechDebtDto>>("/devinsights/tech-debt", { params: { projectPath } }); },
+  deploySuccessRate(from?: string, to?: string) { return api.get<ApiResponse<DeploySuccessDto>>("/devinsights/deployment-success-rate", { params: { from, to } }); },
+  peakHours(from?: string, to?: string) { return api.get<ApiResponse<PeakHoursDto>>("/devinsights/peak-hours", { params: { from, to } }); },
 };
 
 // ─── DevUtilities API ───────────────────────────────────────────────
 export const devUtilitiesApi = {
-  decodeJwt(token: string) { return api.post<ApiResponse<any>>("/dev-utilities/decode-jwt", { token }); },
-  testRegex(body: { pattern: string; input: string; flags?: string }) { return api.post<ApiResponse<any>>("/dev-utilities/test-regex", body); },
-  generateCron(body: { description: string }) { return api.post<ApiResponse<any>>("/dev-utilities/generate-cron", body); },
-  base64(body: { input: string; encode: boolean }) { return api.post<ApiResponse<any>>("/dev-utilities/base64", body); },
-  sshKey(body: { type?: string; bits?: number }) { return api.post<ApiResponse<any>>("/dev-utilities/ssh-key", body); },
-  jsonFormat(body: { json: string }) { return api.post<ApiResponse<any>>("/dev-utilities/json/format", body); },
+  decodeJwt(token: string) { return api.post<ApiResponse<any>>("/devutilities/decode-jwt", { token }); },
+  testRegex(body: { pattern: string; input: string; flags?: string }) { return api.post<ApiResponse<any>>("/devutilities/test-regex", body); },
+  generateCron(body: { description: string }) { return api.post<ApiResponse<any>>("/devutilities/generate-cron", body); },
+  base64(body: { input: string; encode: boolean }) { return api.post<ApiResponse<any>>("/devutilities/base64", body); },
+  sshKey(body: { type?: string; bits?: number }) { return api.post<ApiResponse<any>>("/devutilities/ssh-key", body); },
+  jsonFormat(body: { json: string }) { return api.post<ApiResponse<any>>("/devutilities/json/format", body); },
   sendRequest(body: { method: string; url: string; headers?: Record<string, string>; body?: string }) {
-    return api.post<ApiResponse<any>>("/dev-utilities/network/send-request", body);
+    return api.post<ApiResponse<any>>("/devutilities/network/send-request", body);
   },
-  scanDependencies(body: { projectPath: string }) { return api.post<ApiResponse<any>>("/dev-utilities/security/scan-dependencies", body); },
-  checkPort(port: number) { return api.get<ApiResponse<any>>(`/dev-utilities/system/check-port/${port}`); },
-  killProcess(pid: number) { return api.delete<ApiResponse<any>>(`/dev-utilities/system/kill-process/${pid}`); },
+  scanDependencies(body: { projectPath: string }) { return api.post<ApiResponse<any>>("/devutilities/security/scan-dependencies", body); },
+  checkPort(port: number) { return api.get<ApiResponse<any>>(`/devutilities/system/check-port/${port}`); },
+  killProcess(pid: number) { return api.delete<ApiResponse<any>>(`/devutilities/system/kill-process/${pid}`); },
 };
 
 // ─── ProactiveAgents API ────────────────────────────────────────────
 export const proactiveAgentsApi = {
-  explainError(body: { stackTrace: string; language?: string }) { return api.post<ApiResponse<any>>("/proactive-agents/explain-error", body); },
-  resolvePort(body: { port: number }) { return api.post<ApiResponse<any>>("/proactive-agents/resolve-port", body); },
-  killIdleContainers() { return api.post<ApiResponse<any>>("/proactive-agents/kill-idle-containers"); },
-  suggestCommit(body: { diff: string }) { return api.post<ApiResponse<any>>("/proactive-agents/suggest-commit", body); },
-  summarizePr(body: { prUrl: string }) { return api.post<ApiResponse<any>>("/proactive-agents/summarize-pr", body); },
-  watchDependencies(body: { projectPath?: string }) { return api.post<ApiResponse<any>>("/proactive-agents/watch-dependencies", body); },
-  search(body: { query: string }) { return api.post<ApiResponse<any>>("/proactive-agents/search", body); },
+  explainError(body: { stackTrace: string; language?: string }) { return api.post<ApiResponse<any>>("/proactiveagents/explain-error", body); },
+  resolvePort(body: { port: number }) { return api.post<ApiResponse<any>>("/proactiveagents/resolve-port", body); },
+  killIdleContainers() { return api.post<ApiResponse<any>>("/proactiveagents/kill-idle-containers"); },
+  suggestCommit(body: { diff: string }) { return api.post<ApiResponse<any>>("/proactiveagents/suggest-commit", body); },
+  summarizePr(body: { prUrl: string }) { return api.post<ApiResponse<any>>("/proactiveagents/summarize-pr", body); },
+  watchDependencies(body: { projectPath?: string }) { return api.post<ApiResponse<any>>("/proactiveagents/watch-dependencies", body); },
+  search(body: { query: string }) { return api.post<ApiResponse<any>>("/proactiveagents/search", body); },
 };
 
 // ─── Scripts API ────────────────────────────────────────────────────
@@ -662,7 +676,7 @@ export interface SonarQubeDto { status: string; bugs: number; vulnerabilities: n
 
 export const sonarQubeApi = {
   getQuality(integrationId: string, projectKey?: string) {
-    return api.get<ApiResponse<SonarQubeDto>>(`/sonar-qube/${integrationId}/quality`, { params: { projectKey } });
+    return api.get<ApiResponse<SonarQubeDto>>(`/sonarqube/${integrationId}/quality`, { params: { projectKey } });
   },
 };
 
@@ -695,11 +709,11 @@ export const teamsApi = {
 
 // ─── GlobalShortcuts API ────────────────────────────────────────────
 export const globalShortcutsApi = {
-  commandPalette(search: string) { return api.get<ApiResponse<any>>("/global-shortcuts/command-palette", { params: { search } }); },
-  aiContext(body: { selectedText: string; contextType: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/ai-context", body); },
-  capture(body: { title: string; content: string; tags?: string[] }) { return api.post<ApiResponse<any>>("/global-shortcuts/capture", body); },
-  share(body: { content: string; recipients?: string[] }) { return api.post<ApiResponse<any>>("/global-shortcuts/share", body); },
-  calendarEvent(body: { text: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/calendar-event", body); },
+  commandPalette(search: string) { return api.get<ApiResponse<any>>("/globalshortcuts/command-palette", { params: { search } }); },
+  aiContext(body: { selectedText: string; contextType: string }) { return api.post<ApiResponse<any>>("/globalshortcuts/ai-context", body); },
+  capture(body: { title: string; content: string; tags?: string[] }) { return api.post<ApiResponse<any>>("/globalshortcuts/capture", body); },
+  share(body: { content: string; recipients?: string[] }) { return api.post<ApiResponse<any>>("/globalshortcuts/share", body); },
+  calendarEvent(body: { text: string }) { return api.post<ApiResponse<any>>("/globalshortcuts/calendar-event", body); },
 };
 
 // ─── Modals API ─────────────────────────────────────────────────────
@@ -720,31 +734,31 @@ export const systemApi = {
 export interface TeamInfoDto { teamId: string; objective?: string; armory?: any; vaultLinks?: any[]; members?: any[]; }
 
 export const teamInfoApi = {
-  getInfo(teamId: string) { return api.get<ApiResponse<TeamInfoDto>>(`/team-info/${teamId}`); },
-  setObjective(teamId: string, body: { title: string; description?: string; deadline?: string }) { return api.post<ApiResponse<null>>(`/team-info/${teamId}/objective`, body); },
-  updateMyFocus(teamId: string, body: { focusDescription: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/my-focus`, body); },
-  updateArmory(teamId: string, body: { stagingServerUrl?: string; testAccountEmail?: string; testAccountPassword?: string; productionVersion?: string; stagingVersion?: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/armory`, body); },
-  addVaultLink(teamId: string, body: { label: string; url: string; icon?: string; sortOrder?: number }) { return api.post<ApiResponse<any>>(`/team-info/${teamId}/vault-links`, body); },
-  updateVaultLink(teamId: string, linkId: string, body: { label: string; url: string; icon?: string; sortOrder?: number }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`, body); },
-  deleteVaultLink(teamId: string, linkId: string) { return api.delete<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`); },
+  getInfo(teamId: string) { return api.get<ApiResponse<TeamInfoDto>>(`/teaminfo/${teamId}`); },
+  setObjective(teamId: string, body: { title: string; description?: string; deadline?: string }) { return api.post<ApiResponse<null>>(`/teaminfo/${teamId}/objective`, body); },
+  updateMyFocus(teamId: string, body: { focusDescription: string }) { return api.put<ApiResponse<null>>(`/teaminfo/${teamId}/my-focus`, body); },
+  updateArmory(teamId: string, body: { stagingServerUrl?: string; testAccountEmail?: string; testAccountPassword?: string; productionVersion?: string; stagingVersion?: string }) { return api.put<ApiResponse<null>>(`/teaminfo/${teamId}/armory`, body); },
+  addVaultLink(teamId: string, body: { label: string; url: string; icon?: string; sortOrder?: number }) { return api.post<ApiResponse<any>>(`/teaminfo/${teamId}/vault-links`, body); },
+  updateVaultLink(teamId: string, linkId: string, body: { label: string; url: string; icon?: string; sortOrder?: number }) { return api.put<ApiResponse<null>>(`/teaminfo/${teamId}/vault-links/${linkId}`, body); },
+  deleteVaultLink(teamId: string, linkId: string) { return api.delete<ApiResponse<null>>(`/teaminfo/${teamId}/vault-links/${linkId}`); },
 };
 
 // ─── OmniFeed API ───────────────────────────────────────────────
 export interface OmniFeedItemDto { id: string; source: string; content: string; author?: string; timestamp: string; read: boolean; emojis?: any[]; }
 
 export const omniFeedApi = {
-  getFeed(teamId: string, params?: { source?: string; page?: number; pageSize?: number }) { return api.get<ApiResponse<OmniFeedItemDto[]>>(`/omni-feed/${teamId}`, { params }); },
-  publish(body: { teamId: string; content: string; source?: string }) { return api.post<ApiResponse<OmniFeedItemDto>>("/omni-feed/publish", body); },
-  markRead(itemId: string) { return api.post<ApiResponse<null>>(`/omni-feed/${itemId}/read`); },
-  addEmoji(itemId: string, body: { emoji: string }) { return api.post<ApiResponse<null>>(`/omni-feed/${itemId}/emoji`, body); },
+  getFeed(teamId: string, params?: { source?: string; page?: number; pageSize?: number }) { return api.get<ApiResponse<OmniFeedItemDto[]>>(`/omnifeed/${teamId}`, { params }); },
+  publish(body: { teamId: string; content: string; source?: string }) { return api.post<ApiResponse<OmniFeedItemDto>>("/omnifeed/publish", body); },
+  markRead(itemId: string) { return api.post<ApiResponse<null>>(`/omnifeed/${itemId}/read`); },
+  addEmoji(itemId: string, body: { emoji: string }) { return api.post<ApiResponse<null>>(`/omnifeed/${itemId}/emoji`, body); },
 };
 
 // ─── SquadRadar API ─────────────────────────────────────────────
 export interface SquadRadarDto { userId: string; fullName: string; status: string; currentTask?: string; lastActive: string; }
 
 export const squadRadarApi = {
-  getRadar(teamId: string) { return api.get<ApiResponse<SquadRadarDto[]>>(`/squad-radar/${teamId}`); },
-  updatePresence(body: { status: string; currentTask?: string; teamId: string }) { return api.put<ApiResponse<null>>("/squad-radar/presence", body); },
+  getRadar(teamId: string) { return api.get<ApiResponse<SquadRadarDto[]>>(`/squadradar/${teamId}`); },
+  updatePresence(body: { status: string; currentTask?: string; teamId: string }) { return api.put<ApiResponse<null>>("/squadradar/presence", body); },
 };
 
 // ─── SquadArena API ─────────────────────────────────────────────
@@ -752,23 +766,23 @@ export interface LeaderboardEntryDto { userId: string; fullName: string; xp: num
 export interface BountyDto { id: string; title: string; description?: string; xpReward: number; status: string; claimedBy?: string; }
 
 export const squadArenaApi = {
-  getLeaderboard(teamId: string) { return api.get<ApiResponse<LeaderboardEntryDto[]>>(`/squad-arena/leaderboard/${teamId}`); },
-  getBounties(teamId: string) { return api.get<ApiResponse<BountyDto[]>>(`/squad-arena/bounties/${teamId}`); },
-  giveBadge(body: { teamId: string; recipientUserId: string; badgeType: string; message?: string }) { return api.post<ApiResponse<null>>("/squad-arena/badge", body); },
-  createBounty(body: { teamId: string; title: string; description?: string; xpReward: number }) { return api.post<ApiResponse<BountyDto>>("/squad-arena/bounty", body); },
-  claimBounty(id: string) { return api.post<ApiResponse<null>>(`/squad-arena/bounty/${id}/claim`); },
-  completeBounty(id: string) { return api.post<ApiResponse<null>>(`/squad-arena/bounty/${id}/complete`); },
+  getLeaderboard(teamId: string) { return api.get<ApiResponse<LeaderboardEntryDto[]>>(`/squadarena/leaderboard/${teamId}`); },
+  getBounties(teamId: string) { return api.get<ApiResponse<BountyDto[]>>(`/squadarena/bounties/${teamId}`); },
+  giveBadge(body: { teamId: string; recipientUserId: string; badgeType: string; message?: string }) { return api.post<ApiResponse<null>>("/squadarena/badge", body); },
+  createBounty(body: { teamId: string; title: string; description?: string; xpReward: number }) { return api.post<ApiResponse<BountyDto>>("/squadarena/bounty", body); },
+  claimBounty(id: string) { return api.post<ApiResponse<null>>(`/squadarena/bounty/${id}/claim`); },
+  completeBounty(id: string) { return api.post<ApiResponse<null>>(`/squadarena/bounty/${id}/complete`); },
 };
 
 // ─── ResourceHub API ────────────────────────────────────────────
 export interface ResourceDto { id: string; title: string; url: string; category: string; description?: string; isPinned: boolean; createdAt: string; }
 
 export const resourceHubApi = {
-  getResources(teamId: string, category?: string) { return api.get<ApiResponse<ResourceDto[]>>(`/resource-hub/${teamId}`, { params: { category } }); },
-  create(body: { teamId: string; title: string; url: string; category: string; description?: string }) { return api.post<ApiResponse<ResourceDto>>("/resource-hub", body); },
-  update(body: { resourceId: string; title: string; url: string; category: string; description?: string }) { return api.put<ApiResponse<null>>("/resource-hub", body); },
-  remove(resourceId: string) { return api.delete<ApiResponse<null>>(`/resource-hub/${resourceId}`); },
-  togglePin(resourceId: string) { return api.post<ApiResponse<null>>(`/resource-hub/${resourceId}/pin`); },
+  getResources(teamId: string, category?: string) { return api.get<ApiResponse<ResourceDto[]>>(`/resourcehub/${teamId}`, { params: { category } }); },
+  create(body: { teamId: string; title: string; url: string; category: string; description?: string }) { return api.post<ApiResponse<ResourceDto>>("/resourcehub", body); },
+  update(body: { resourceId: string; title: string; url: string; category: string; description?: string }) { return api.put<ApiResponse<null>>("/resourcehub", body); },
+  remove(resourceId: string) { return api.delete<ApiResponse<null>>(`/resourcehub/${resourceId}`); },
+  togglePin(resourceId: string) { return api.post<ApiResponse<null>>(`/resourcehub/${resourceId}/pin`); },
 };
 
 // ─── Projects API ───────────────────────────────────────────────
@@ -795,10 +809,10 @@ export interface HandoffsDto { count: number; }
 export interface DesignDebtDto { count: number; }
 
 export const designInsightsApi = {
-  assetsOptimized() { return api.get<ApiResponse<AssetsOptimizedDto>>("/design-insights/assets-optimized"); },
-  handoffs(from?: string, to?: string) { return api.get<ApiResponse<HandoffsDto>>("/design-insights/handoffs", { params: { from, to } }); },
-  colorTrends() { return api.get<ApiResponse<Record<string, number>>>("/design-insights/color-trends"); },
-  designDebt() { return api.get<ApiResponse<DesignDebtDto>>("/design-insights/design-debt"); },
+  assetsOptimized() { return api.get<ApiResponse<AssetsOptimizedDto>>("/designinsights/assets-optimized"); },
+  handoffs(from?: string, to?: string) { return api.get<ApiResponse<HandoffsDto>>("/designinsights/handoffs", { params: { from, to } }); },
+  colorTrends() { return api.get<ApiResponse<Record<string, number>>>("/designinsights/color-trends"); },
+  designDebt() { return api.get<ApiResponse<DesignDebtDto>>("/designinsights/design-debt"); },
 };
 
 // ─── DesignUtilities API ────────────────────────────────────────
@@ -812,33 +826,33 @@ export interface PaletteColorDto { id?: string; name: string; hexCode: string; }
 
 export const designUtilitiesApi = {
   compressImage(body: { filePath: string; quality: number }) {
-    return api.post<ApiResponse<CompressResultDto>>("/design-utilities/compress-image", body);
+    return api.post<ApiResponse<CompressResultDto>>("/designutilities/compress-image", body);
   },
   convertAsset(file: File, targetFormat: string) {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("targetFormat", targetFormat);
-    return api.post("/design-utilities/convert-asset", fd, { responseType: "blob" });
+    return api.post("/designutilities/convert-asset", fd, { responseType: "blob" });
   },
   optimizeSvg(svgContent: string) {
-    return api.post<ApiResponse<OptimizeSvgDto>>("/design-utilities/optimize-svg", { svgContent });
+    return api.post<ApiResponse<OptimizeSvgDto>>("/designutilities/optimize-svg", { svgContent });
   },
   extractCss(colors: Array<{ name: string; hexCode: string }>, format: "css" | "scss" | "less" = "css") {
-    return api.post<ApiResponse<ExtractCssDto>>("/design-utilities/extract-css", { colors, format });
+    return api.post<ApiResponse<ExtractCssDto>>("/designutilities/extract-css", { colors, format });
   },
   checkContrast(foregroundHex: string, backgroundHex: string) {
-    return api.post<ApiResponse<ContrastCheckDto>>("/design-utilities/check-contrast", { foregroundHex, backgroundHex });
+    return api.post<ApiResponse<ContrastCheckDto>>("/designutilities/check-contrast", { foregroundHex, backgroundHex });
   },
   aspectRatio(width: number, height: number) {
-    return api.get<ApiResponse<AspectRatioDto>>("/design-utilities/aspect-ratio", { params: { width, height } });
+    return api.get<ApiResponse<AspectRatioDto>>("/designutilities/aspect-ratio", { params: { width, height } });
   },
   dummyData(type: string, count: number) {
-    return api.get<ApiResponse<any[]>>("/design-utilities/dummy-data", { params: { type, count } });
+    return api.get<ApiResponse<any[]>>("/designutilities/dummy-data", { params: { type, count } });
   },
-  getPalettes() { return api.get<ApiResponse<PaletteDto[]>>("/design-utilities/palettes"); },
-  createPalette(name: string) { return api.post<ApiResponse<string>>("/design-utilities/palettes", { name }); },
+  getPalettes() { return api.get<ApiResponse<PaletteDto[]>>("/designutilities/palettes"); },
+  createPalette(name: string) { return api.post<ApiResponse<string>>("/designutilities/palettes", { name }); },
   addColorToPalette(paletteId: string, body: { paletteId: string; name: string; hexCode: string }) {
-    return api.post<ApiResponse<string>>(`/design-utilities/palettes/${paletteId}/colors`, body);
+    return api.post<ApiResponse<string>>(`/designutilities/palettes/${paletteId}/colors`, body);
   },
 };
 
@@ -871,7 +885,7 @@ export interface LottieAnimDto { id: string; name: string; previewUrl: string; d
 
 export const lottieFilesApi = {
   search(integrationId: string, query: string) {
-    return api.get<ApiResponse<LottieAnimDto[]>>(`/lottie-files/${integrationId}/search`, { params: { query } });
+    return api.get<ApiResponse<LottieAnimDto[]>>(`/lottiefiles/${integrationId}/search`, { params: { query } });
   },
 };
 
@@ -916,13 +930,13 @@ export interface ScannedBytesDto { totalBytes: number; formattedSize: string; }
 export interface OpenPortsGraphDto { dataPoints: Record<string, number>; }
 
 export const secOpsInsightsApi = {
-  threatsBlocked(from?: string, to?: string) { return api.get<ApiResponse<ThreatsBlockedDto>>("/sec-ops-insights/threats-blocked", { params: { from, to } }); },
-  vulnerabilitiesPatched(from?: string, to?: string) { return api.get<ApiResponse<VulnsPatchedDto>>("/sec-ops-insights/vulnerabilities-patched", { params: { from, to } }); },
-  avgResponseTime(from?: string, to?: string) { return api.get<ApiResponse<AvgResponseTimeDto>>("/sec-ops-insights/avg-response-time", { params: { from, to } }); },
-  securityScore() { return api.get<ApiResponse<SecurityScoreDto>>("/sec-ops-insights/security-score"); },
-  zeroIncidentStreak() { return api.get<ApiResponse<ZeroIncidentDto>>("/sec-ops-insights/zero-incident-streak"); },
-  scannedBytes(from?: string, to?: string) { return api.get<ApiResponse<ScannedBytesDto>>("/sec-ops-insights/scanned-bytes", { params: { from, to } }); },
-  openPortsGraph(from?: string, to?: string) { return api.get<ApiResponse<OpenPortsGraphDto>>("/sec-ops-insights/open-ports-graph", { params: { from, to } }); },
+  threatsBlocked(from?: string, to?: string) { return api.get<ApiResponse<ThreatsBlockedDto>>("/secopsinsights/threats-blocked", { params: { from, to } }); },
+  vulnerabilitiesPatched(from?: string, to?: string) { return api.get<ApiResponse<VulnsPatchedDto>>("/secopsinsights/vulnerabilities-patched", { params: { from, to } }); },
+  avgResponseTime(from?: string, to?: string) { return api.get<ApiResponse<AvgResponseTimeDto>>("/secopsinsights/avg-response-time", { params: { from, to } }); },
+  securityScore() { return api.get<ApiResponse<SecurityScoreDto>>("/secopsinsights/security-score"); },
+  zeroIncidentStreak() { return api.get<ApiResponse<ZeroIncidentDto>>("/secopsinsights/zero-incident-streak"); },
+  scannedBytes(from?: string, to?: string) { return api.get<ApiResponse<ScannedBytesDto>>("/secopsinsights/scanned-bytes", { params: { from, to } }); },
+  openPortsGraph(from?: string, to?: string) { return api.get<ApiResponse<OpenPortsGraphDto>>("/secopsinsights/open-ports-graph", { params: { from, to } }); },
 };
 
 // ─── SecOpsUtilities API ────────────────────────────────────────
@@ -935,13 +949,13 @@ export interface PortScanResultDto { port: number; protocol: string; serviceName
 export interface SpoofMacDto { result: string; }
 
 export const secOpsUtilitiesApi = {
-  hash(body: { input: string; algorithm: string }) { return api.post<ApiResponse<HashResultDto>>("/sec-ops-utilities/hash", body); },
-  ipDns(body: { target: string }) { return api.post<ApiResponse<IpDnsResultDto>>("/sec-ops-utilities/ip-dns", body); },
-  encodePayload(body: { input: string; encoding: string }) { return api.post<ApiResponse<EncodeResultDto>>("/sec-ops-utilities/encode-payload", body); },
-  passwordEntropy(body: { password: string }) { return api.post<ApiResponse<PasswordEntropyDto>>("/sec-ops-utilities/password-entropy", body); },
-  sslCheck(body: { hostname: string }) { return api.post<ApiResponse<SslCheckDto>>("/sec-ops-utilities/ssl-check", body); },
-  portScan(body: { target: string; startPort: number; endPort: number }) { return api.post<ApiResponse<PortScanResultDto[]>>("/sec-ops-utilities/port-scan", body); },
-  spoofMac(body: { interfaceName: string }) { return api.post<ApiResponse<SpoofMacDto>>("/sec-ops-utilities/spoof-mac", body); },
+  hash(body: { input: string; algorithm: string }) { return api.post<ApiResponse<HashResultDto>>("/secopsutilities/hash", body); },
+  ipDns(body: { target: string }) { return api.post<ApiResponse<IpDnsResultDto>>("/secopsutilities/ip-dns", body); },
+  encodePayload(body: { input: string; encoding: string }) { return api.post<ApiResponse<EncodeResultDto>>("/secopsutilities/encode-payload", body); },
+  passwordEntropy(body: { password: string }) { return api.post<ApiResponse<PasswordEntropyDto>>("/secopsutilities/password-entropy", body); },
+  sslCheck(body: { domain: string }) { return api.post<ApiResponse<SslCheckDto>>("/secopsutilities/ssl-check", body); },
+  portScan(body: { target: string; ports: number[] }) { return api.post<ApiResponse<PortScanResultDto[]>>("/secopsutilities/port-scan", body); },
+  spoofMac(body: { interfaceName: string }) { return api.post<ApiResponse<SpoofMacDto>>("/secopsutilities/spoof-mac", body); },
 };
 
 // ─── SecOpsAgents API ───────────────────────────────────────────
@@ -954,102 +968,28 @@ export interface ZombieProcessDto { processId: number; processName: string; memo
 export interface VpnStatusDto { isConnected: boolean; publicIp: string; vpnIp: string | null; isLeaking: boolean; }
 
 export const secOpsAgentsApi = {
-  detectRoguePorts() { return api.post<ApiResponse<RoguePortDto[]>>("/sec-ops-agents/detect-rogue-ports", {}); },
-  warnExpiringSsl(body: { domains: string[] }) { return api.post<ApiResponse<ExpiringSslDto[]>>("/sec-ops-agents/warn-expiring-ssl", body); },
-  detectSuspiciousTraffic(body: { targetUrl: string }) { return api.post<ApiResponse<SuspiciousTrafficDto>>("/sec-ops-agents/detect-suspicious-traffic", body); },
-  scanLeakedKeys(body: { content: string }) { return api.post<ApiResponse<LeakedKeyDto[]>>("/sec-ops-agents/scan-leaked-keys", body); },
-  suggestPatches(body: { projectPath: string }) { return api.post<ApiResponse<PatchSuggestionDto[]>>("/sec-ops-agents/suggest-patches", body); },
-  killZombieProcesses() { return api.post<ApiResponse<ZombieProcessDto[]>>("/sec-ops-agents/kill-zombie-processes", {}); },
-  vpnStatus() { return api.get<ApiResponse<VpnStatusDto>>("/sec-ops-agents/vpn-status"); },
+  detectRoguePorts() { return api.post<ApiResponse<RoguePortDto[]>>("/secopsagents/detect-rogue-ports", {}); },
+  warnExpiringSsl(body: { domains: string[] }) { return api.post<ApiResponse<ExpiringSslDto[]>>("/secopsagents/warn-expiring-ssl", body); },
+  detectSuspiciousTraffic(body: { targetUrl: string }) { return api.post<ApiResponse<SuspiciousTrafficDto>>("/secopsagents/detect-suspicious-traffic", body); },
+  scanLeakedKeys(body: { content: string }) { return api.post<ApiResponse<LeakedKeyDto[]>>("/secopsagents/scan-leaked-keys", body); },
+  suggestPatches(body: { projectPath: string }) { return api.post<ApiResponse<PatchSuggestionDto[]>>("/secopsagents/suggest-patches", body); },
+  killZombieProcesses() { return api.post<ApiResponse<ZombieProcessDto[]>>("/secopsagents/kill-zombie-processes", {}); },
+  vpnStatus() { return api.get<ApiResponse<VpnStatusDto>>("/secopsagents/vpn-status"); },
 };
 
 // ─── SecOpsScripts API ──────────────────────────────────────────
 export interface ScriptOutputDto { output: string; }
 
 export const secOpsScriptsApi = {
-  quickScan(body: { networkRange: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/quick-scan", body); },
-  panicButton(body: { interfaceName: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/panic-button", body); },
-  localWipe(body: { wipeHistory: boolean; wipeCredentials: boolean }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/local-wipe", body); },
-  phishingAlert(body: { emailHeaders: string; senderAddress: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/phishing-alert", body); },
-  rotateSsh(body: { keyComment: string; keySize: number }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/rotate-ssh", body); },
-  firewallLockdown(body: { allowedPorts: number[] }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/firewall-lockdown", body); },
-  clearDns() { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/clear-dns", {}); },
+  quickScan(body: { networkRange: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/quick-scan", body); },
+  panicButton(body: { interfaceName: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/panic-button", body); },
+  localWipe(body: { wipeHistory: boolean; wipeCredentials: boolean }) { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/local-wipe", body); },
+  phishingAlert(body: { emailHeaders: string; senderAddress: string }) { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/phishing-alert", body); },
+  rotateSsh(body: { keyComment: string; keySize: number }) { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/rotate-ssh", body); },
+  firewallLockdown(body: { allowedPorts: number[] }) { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/firewall-lockdown", body); },
+  clearDns() { return api.post<ApiResponse<ScriptOutputDto>>("/secopsscripts/clear-dns", {}); },
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// 📈 MARKETER DASHBOARD APIs
-// ═══════════════════════════════════════════════════════════════════
-
-// ─── MarketerInsights API ───────────────────────────────────────
-export interface RoasDto { roas: number; totalSpend: number; totalRevenue: number; }
-export interface LeadsDto { totalLeads: number; organicLeads: number; paidLeads: number; }
-export interface ZombieAdsDto { totalKilled: number; moneySaved: number; }
-export interface AbTestDto { winRate: number; totalTests: number; wins: number; }
-export interface PeakEngagementDto { hourlyEngagement: Record<string, number>; }
-export interface SentimentDto { positivePercent: number; negativePercent: number; neutralPercent: number; totalMentions: number; }
-export interface TimeSavedReportingDto { hoursSaved: number; reportsGenerated: number; }
-
-export const marketerInsightsApi = {
-  totalRoas(from?: string, to?: string) { return api.get<ApiResponse<RoasDto>>("/marketer-insights/total-roas", { params: { from, to } }); },
-  leadsGenerated(from?: string, to?: string) { return api.get<ApiResponse<LeadsDto>>("/marketer-insights/leads-generated", { params: { from, to } }); },
-  zombieAdsKilled(from?: string, to?: string) { return api.get<ApiResponse<ZombieAdsDto>>("/marketer-insights/zombie-ads-killed", { params: { from, to } }); },
-  abTestWinRate(from?: string, to?: string) { return api.get<ApiResponse<AbTestDto>>("/marketer-insights/ab-test-win-rate", { params: { from, to } }); },
-  peakEngagement(from?: string, to?: string) { return api.get<ApiResponse<PeakEngagementDto>>("/marketer-insights/peak-engagement", { params: { from, to } }); },
-  audienceSentiment(from?: string, to?: string) { return api.get<ApiResponse<SentimentDto>>("/marketer-insights/audience-sentiment", { params: { from, to } }); },
-  timeSavedReporting(from?: string, to?: string) { return api.get<ApiResponse<TimeSavedReportingDto>>("/marketer-insights/time-saved-reporting", { params: { from, to } }); },
-};
-
-// ─── MarketerUtilities API ──────────────────────────────────────
-export interface SeoCheckDto { title: string; titleLength: number; titleOk: boolean; description: string; descriptionLength: number; descriptionOk: boolean; previewSnippet: string; }
-export interface CopywritingDto { copy: string; }
-export interface MdToHtmlDto { html: string; }
-export interface KeywordDensityDto { keyword: string; count: number; density: number; recommendation: string; }
-export interface ReadabilityDto { fleschScore: number; level: string; avgSentenceLength: number; avgWordLength: number; }
-export interface EmojiDto { emoji: string; name: string; category: string; }
-
-export const marketerUtilitiesApi = {
-  seoCheck(body: { title: string; description: string; url: string }) { return api.post<ApiResponse<SeoCheckDto>>("/marketer-utilities/seo-check", body); },
-  copywriting(body: { productName: string; tone: string }) { return api.post<ApiResponse<CopywritingDto>>("/marketer-utilities/copywriting", body); },
-  markdownToHtml(body: { markdown: string }) { return api.post<ApiResponse<MdToHtmlDto>>("/marketer-utilities/markdown-to-html", body); },
-  keywordDensity(body: { content: string; keyword: string }) { return api.post<ApiResponse<KeywordDensityDto>>("/marketer-utilities/keyword-density", body); },
-  readability(body: { text: string }) { return api.post<ApiResponse<ReadabilityDto>>("/marketer-utilities/readability", body); },
-  emojis(body: { query: string }) { return api.post<ApiResponse<EmojiDto[]>>("/marketer-utilities/emojis", body); },
-};
-
-// ─── MarketerAgents API ─────────────────────────────────────────
-export interface BudgetBleedCampaign { campaignId: string; name: string; spend: number; revenue: number; roas: number; }
-export interface BudgetBleedDto { hasBleed: boolean; campaigns: BudgetBleedCampaign[]; }
-export interface BrokenLinkDto { url: string; statusCode: number; errorMessage: string; }
-export interface ViralTrendDto { hashtag: string; platform: string; volume: number; sentiment: string; }
-export interface CompetitorPriceDto { productName: string; oldPrice: number; newPrice: number; discountPercent: number; }
-export interface ResendResultDto { result: string; }
-export interface UtmResultDto { utmUrl: string; }
-export interface CartAbandonmentDto { abandonedCount: number; abandonmentRate: number; recommendation: string; }
-
-export const marketerAgentsApi = {
-  budgetBleed() { return api.post<ApiResponse<BudgetBleedDto>>("/marketer-agents/budget-bleed", {}); },
-  brokenLinks(body: { baseUrl: string }) { return api.post<ApiResponse<BrokenLinkDto[]>>("/marketer-agents/broken-links", body); },
-  viralTrends(body: { industry: string }) { return api.post<ApiResponse<ViralTrendDto[]>>("/marketer-agents/viral-trends", body); },
-  competitorPriceDrop(body: { competitorUrl: string }) { return api.post<ApiResponse<CompetitorPriceDto[]>>("/marketer-agents/competitor-price-drop", body); },
-  resendLowOpen(body: { campaignId: string; newSubject: string }) { return api.post<ApiResponse<ResendResultDto>>("/marketer-agents/resend-low-open", body); },
-  autoUtm(body: { url: string; source: string; medium: string; campaign: string }) { return api.post<ApiResponse<UtmResultDto>>("/marketer-agents/auto-utm", body); },
-  cartAbandonment() { return api.get<ApiResponse<CartAbandonmentDto>>("/marketer-agents/cart-abandonment"); },
-};
-
-// ─── MarketerScripts API ────────────────────────────────────────
-export interface MktScriptOutputDto { output: string; }
-export interface MktReportDto { report: string; }
-export interface EmailVerifyResultDto { total: number; valid: number; invalid: number; invalidEmails: string[]; }
-
-export const marketerScriptsApi = {
-  pauseCampaigns(body: { campaignIds: string[]; reason: string }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/pause-campaigns", body); },
-  socialBlast(body: { content: string; platforms: string[] }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/social-blast", body); },
-  weeklyReport(body: { from: string; to: string }) { return api.post<ApiResponse<MktReportDto>>("/marketer-scripts/weekly-report", body); },
-  utmLink(body: { baseUrl: string; source: string; medium: string; campaign: string }) { return api.post<ApiResponse<UtmResultDto>>("/marketer-scripts/utm-link", body); },
-  competitorScrape(body: { competitorUrl: string }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/competitor-scrape", body); },
-  clearCookies(body: { browser: string }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/clear-cookies", body); },
-  verifyEmails(body: { emails: string[] }) { return api.post<ApiResponse<EmailVerifyResultDto>>("/marketer-scripts/verify-emails", body); },
-};
 
 // ═══════════════════════════════════════════════════════════════════
 // 👑 TEAM LEADER DASHBOARD APIs
@@ -1069,13 +1009,13 @@ export interface MoodFactor { factor: string; impact: number; direction: string;
 export interface TeamMoodDto { stressLevel: number; happinessLevel: number; overallMood: string; factors: MoodFactor[]; }
 
 export const leaderInsightsApi = {
-  sprintVelocity(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<SprintVelocityDto>>("/leader-insights/sprint-velocity", { params: { teamId, from, to } }); },
-  meetingsAvoided(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<MeetingsAvoidedDto>>("/leader-insights/meetings-avoided", { params: { teamId, from, to } }); },
-  blockedTime(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<BlockedTimeDto>>("/leader-insights/blocked-time", { params: { teamId, from, to } }); },
-  costPerFeature(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<CostPerFeatureDto>>("/leader-insights/cost-per-feature", { params: { teamId, from, to } }); },
-  reviewTurnaround(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<ReviewTurnaroundDto>>("/leader-insights/review-turnaround", { params: { teamId, from, to } }); },
-  topContributor(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<TopContributorDto>>("/leader-insights/top-contributor", { params: { teamId, from, to } }); },
-  teamMood(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<TeamMoodDto>>("/leader-insights/team-mood", { params: { teamId, from, to } }); },
+  sprintVelocity(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<SprintVelocityDto>>("/leaderinsights/sprint-velocity", { params: { teamId, from, to } }); },
+  meetingsAvoided(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<MeetingsAvoidedDto>>("/leaderinsights/meetings-avoided", { params: { teamId, from, to } }); },
+  blockedTime(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<BlockedTimeDto>>("/leaderinsights/blocked-time", { params: { teamId, from, to } }); },
+  costPerFeature(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<CostPerFeatureDto>>("/leaderinsights/cost-per-feature", { params: { teamId, from, to } }); },
+  reviewTurnaround(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<ReviewTurnaroundDto>>("/leaderinsights/review-turnaround", { params: { teamId, from, to } }); },
+  topContributor(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<TopContributorDto>>("/leaderinsights/top-contributor", { params: { teamId, from, to } }); },
+  teamMood(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<TeamMoodDto>>("/leaderinsights/team-mood", { params: { teamId, from, to } }); },
 };
 
 // ─── LeaderUtilities ────────────────────────────────────────────
@@ -1091,13 +1031,13 @@ export interface DecisionLogDto { id: string; decision: string; rationale: strin
 export interface MdHtmlDto { html: string; }
 
 export const leaderUtilitiesApi = {
-  timezones(body: { members: { memberName: string; timezoneId: string }[] }) { return api.post<ApiResponse<TimezonesDto>>("/leader-utilities/timezones", body); },
-  quickPoll(body: { question: string; options: string[] }) { return api.post<ApiResponse<QuickPollDto>>("/leader-utilities/quick-poll", body); },
-  capacity(body: { members: { memberName: string; hoursPerDay: number; daysOff: number; meetingHoursPerWeek: number }[] }) { return api.post<ApiResponse<CapacityDto>>("/leader-utilities/capacity", body); },
-  costEstimate(body: { hoursEstimated: number; hourlyRate: number; serverMonthlyCost: number; estimatedMonths: number }) { return api.post<ApiResponse<CostEstimateDto>>("/leader-utilities/cost-estimate", body); },
-  riskMatrix(body: { items: { title: string; impact: number; probability: number }[] }) { return api.post<ApiResponse<RiskMatrixDto>>("/leader-utilities/risk-matrix", body); },
-  decisionLog(body: { decision: string; rationale: string; decidedBy: string }) { return api.post<ApiResponse<DecisionLogDto>>("/leader-utilities/decision-log", body); },
-  markdown(body: { markdown: string }) { return api.post<ApiResponse<MdHtmlDto>>("/leader-utilities/markdown", body); },
+  timezones(body: { members: { memberName: string; timezoneId: string }[] }) { return api.post<ApiResponse<TimezonesDto>>("/leaderutilities/timezones", body); },
+  quickPoll(body: { question: string; options: string[] }) { return api.post<ApiResponse<QuickPollDto>>("/leaderutilities/quick-poll", body); },
+  capacity(body: { members: { memberName: string; hoursPerDay: number; daysOff: number; meetingHoursPerWeek: number }[] }) { return api.post<ApiResponse<CapacityDto>>("/leaderutilities/capacity", body); },
+  costEstimate(body: { hoursEstimated: number; hourlyRate: number; serverMonthlyCost: number; estimatedMonths: number }) { return api.post<ApiResponse<CostEstimateDto>>("/leaderutilities/cost-estimate", body); },
+  riskMatrix(body: { items: { title: string; impact: number; probability: number }[] }) { return api.post<ApiResponse<RiskMatrixDto>>("/leaderutilities/risk-matrix", body); },
+  decisionLog(body: { decision: string; rationale: string; decidedBy: string }) { return api.post<ApiResponse<DecisionLogDto>>("/leaderutilities/decision-log", body); },
+  markdown(body: { markdown: string }) { return api.post<ApiResponse<MdHtmlDto>>("/leaderutilities/markdown", body); },
 };
 
 // ─── LeaderAgents ───────────────────────────────────────────────
@@ -1115,13 +1055,13 @@ export interface GhostMembersDto { ghostMembers: GhostMember[]; }
 export interface MilestoneDto { hasMilestone: boolean; milestoneName: string; completionPercentage: number; celebrationMessage: string; }
 
 export const leaderAgentsApi = {
-  bottleneck(teamId: string) { return api.get<ApiResponse<BottleneckDto>>(`/leader-agents/bottleneck/${teamId}`); },
-  burnoutRisk(teamId: string) { return api.get<ApiResponse<BurnoutRiskDto>>(`/leader-agents/burnout-risk/${teamId}`); },
-  scopeCreep(teamId: string, sprintId?: string) { return api.get<ApiResponse<ScopeCreepDto>>(`/leader-agents/scope-creep/${teamId}`, { params: { sprintId } }); },
-  prReviewNag(body: { teamId: string; thresholdHours: number }) { return api.post<ApiResponse<PrReviewNagDto>>("/leader-agents/pr-review-nag", body); },
-  unassignedBugs(teamId: string) { return api.get<ApiResponse<UnassignedBugsDto>>(`/leader-agents/unassigned-bugs/${teamId}`); },
-  ghostMembers(body: { teamId: string }) { return api.post<ApiResponse<GhostMembersDto>>("/leader-agents/ghost-members", body); },
-  milestone(teamId: string) { return api.get<ApiResponse<MilestoneDto>>(`/leader-agents/milestone/${teamId}`); },
+  bottleneck(teamId: string) { return api.get<ApiResponse<BottleneckDto>>(`/leaderagents/bottleneck/${teamId}`); },
+  burnoutRisk(teamId: string) { return api.get<ApiResponse<BurnoutRiskDto>>(`/leaderagents/burnout-risk/${teamId}`); },
+  scopeCreep(teamId: string, sprintId?: string) { return api.get<ApiResponse<ScopeCreepDto>>(`/leaderagents/scope-creep/${teamId}`, { params: { sprintId } }); },
+  prReviewNag(body: { teamId: string; thresholdHours: number }) { return api.post<ApiResponse<PrReviewNagDto>>("/leaderagents/pr-review-nag", body); },
+  unassignedBugs(teamId: string) { return api.get<ApiResponse<UnassignedBugsDto>>(`/leaderagents/unassigned-bugs/${teamId}`); },
+  ghostMembers(body: { teamId: string }) { return api.post<ApiResponse<GhostMembersDto>>("/leaderagents/ghost-members", body); },
+  milestone(teamId: string) { return api.get<ApiResponse<MilestoneDto>>(`/leaderagents/milestone/${teamId}`); },
 };
 
 // ─── LeaderScripts ──────────────────────────────────────────────
@@ -1135,13 +1075,13 @@ export interface ReassignedTask { taskKey: string; fromUser: string; toUser: str
 export interface BulkReassignDto { tasksReassigned: number; tasks: ReassignedTask[]; }
 
 export const leaderScriptsApi = {
-  sprintStarter(body: { sprintName: string; initialTasks: string[]; teamId: string }) { return api.post<ApiResponse<SprintStarterDto>>("/leader-scripts/sprint-starter", body); },
-  blockedTaskBlaster(body: { teamId: string }) { return api.post<ApiResponse<BlockedTaskBlasterDto>>("/leader-scripts/blocked-task-blaster", body); },
-  releaseNotes(body: { repoName: string; fromTag: string; toTag: string }) { return api.post<ApiResponse<ReleaseNotesDto>>("/leader-scripts/release-notes", body); },
-  meetingMode(body: { durationMinutes: number }) { return api.post<ApiResponse<LeaderScriptOutputDto>>("/leader-scripts/meeting-mode", body); },
-  weekSummary(body: { teamId: string }) { return api.post<ApiResponse<WeekSummaryDto>>("/leader-scripts/week-summary", body); },
-  bulkReassign(body: { absentMemberId: string; teamId: string }) { return api.post<ApiResponse<BulkReassignDto>>("/leader-scripts/bulk-reassign", body); },
-  standupPing(body: { teamId: string }) { return api.post<ApiResponse<LeaderScriptOutputDto>>("/leader-scripts/standup-ping", body); },
+  sprintStarter(body: { sprintName: string; initialTasks: string[]; teamId: string }) { return api.post<ApiResponse<SprintStarterDto>>("/leaderscripts/sprint-starter", body); },
+  blockedTaskBlaster(body: { teamId: string }) { return api.post<ApiResponse<BlockedTaskBlasterDto>>("/leaderscripts/blocked-task-blaster", body); },
+  releaseNotes(body: { repoName: string; fromTag: string; toTag: string }) { return api.post<ApiResponse<ReleaseNotesDto>>("/leaderscripts/release-notes", body); },
+  meetingMode(body: { durationMinutes: number }) { return api.post<ApiResponse<LeaderScriptOutputDto>>("/leaderscripts/meeting-mode", body); },
+  weekSummary(body: { teamId: string }) { return api.post<ApiResponse<WeekSummaryDto>>("/leaderscripts/week-summary", body); },
+  bulkReassign(body: { absentMemberId: string; teamId: string }) { return api.post<ApiResponse<BulkReassignDto>>("/leaderscripts/bulk-reassign", body); },
+  standupPing(body: { teamId: string }) { return api.post<ApiResponse<LeaderScriptOutputDto>>("/leaderscripts/standup-ping", body); },
 };
 
 // ─── LeaderModals ───────────────────────────────────────────────
@@ -1149,10 +1089,10 @@ export interface LeaderModalDto { id: string; modalType: string; hasBeenSeen: bo
 export interface LeaderModalPayloadDto { id: string; modalType: string; payloadJson: string; }
 
 export const leaderModalsApi = {
-  getAll() { return api.get<ApiResponse<LeaderModalDto[]>>("/leader-modals"); },
-  getPayload(modalId: string) { return api.get<ApiResponse<LeaderModalPayloadDto>>(`/leader-modals/${modalId}/payload`); },
-  create(body: { modalType: number; teamId: string; payloadJson?: string }) { return api.post<ApiResponse<{ id: string }>>("/leader-modals", body); },
-  dismiss(modalId: string) { return api.post<ApiResponse<void>>(`/leader-modals/${modalId}/dismiss`); },
+  getAll() { return api.get<ApiResponse<LeaderModalDto[]>>("/leadermodals"); },
+  getPayload(modalId: string) { return api.get<ApiResponse<LeaderModalPayloadDto>>(`/leadermodals/${modalId}/payload`); },
+  create(body: { modalType: number; teamId: string; payloadJson?: string }) { return api.post<ApiResponse<{ id: string }>>("/leadermodals", body); },
+  dismiss(modalId: string) { return api.post<ApiResponse<void>>(`/leadermodals/${modalId}/dismiss`); },
 };
 
 // ─── Gmail API ──────────────────────────────────────────────────

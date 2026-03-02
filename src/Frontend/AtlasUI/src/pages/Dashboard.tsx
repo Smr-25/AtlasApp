@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,8 +9,8 @@ import {
   Container, Bug, FileCode, TrendingUp, SquareKanban, Sparkles,
   Activity, Radio, Trophy, PanelRightClose, PanelRightOpen,
   Bot, PenTool, Layers, Ruler, Palette,
-  Shield, ShieldAlert, Zap, Wrench,
-  DollarSign, FlaskConical, BarChart3,
+  ShieldAlert, Zap, Wrench,
+  BarChart3,
   BookOpen, Radar, FolderGit2, Users, BookMarked, Settings2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +23,8 @@ import { startSignalR, stopSignalR, onNotification, offAll } from "@/services/si
 import { useToast } from "@/hooks/use-toast";
 
 import CommandPalette from "@/components/dashboard/CommandPalette";
+
+import AtlasLogo from "@/components/AtlasLogo";
 import OverviewPanel from "@/components/dashboard/OverviewPanel";
 import WorkspacesPanel from "@/components/dashboard/WorkspacesPanel";
 import IntegrationsPanel from "@/components/dashboard/IntegrationsPanel";
@@ -52,11 +54,6 @@ import SecOpsInsightsPanel from "@/components/dashboard/cyber/SecOpsInsightsPane
 import SecOpsUtilitiesPanel from "@/components/dashboard/cyber/SecOpsUtilitiesPanel";
 import SecOpsAgentsPanel from "@/components/dashboard/cyber/SecOpsAgentsPanel";
 import SecOpsScriptsPanel from "@/components/dashboard/cyber/SecOpsScriptsPanel";
-import MarketerOverviewPanel from "@/components/dashboard/marketer/MarketerOverviewPanel";
-import MarketerInsightsPanel from "@/components/dashboard/marketer/MarketerInsightsPanel";
-import MarketerUtilitiesPanel from "@/components/dashboard/marketer/MarketerUtilitiesPanel";
-import MarketerAgentsPanel from "@/components/dashboard/marketer/MarketerAgentsPanel";
-import MarketerScriptsPanel from "@/components/dashboard/marketer/MarketerScriptsPanel";
 import LeaderOverviewPanel from "@/components/dashboard/leader/LeaderOverviewPanel";
 import LeaderInsightsPanel from "@/components/dashboard/leader/LeaderInsightsPanel";
 import LeaderUtilitiesPanel from "@/components/dashboard/leader/LeaderUtilitiesPanel";
@@ -100,7 +97,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(
-    user?.role === "developer" ? "dev-overview" : user?.role === "designer" ? "designer-overview" : user?.role === "cybersecurity" ? "secops-overview" : user?.role === "marketer" ? "marketer-overview" : user?.role === "team-leader" ? "leader-overview" : "overview"
+    user?.role === "developer" ? "dev-overview" : user?.role === "designer" ? "designer-overview" : user?.role === "cybersecurity" ? "secops-overview" : user?.role === "team-leader" ? "leader-overview" : "overview"
   );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -178,7 +175,7 @@ const Dashboard = () => {
   const allIntegrations = [...integrations, ...pendingIntegrations];
   const role = user?.role;
   const coreNavItems: NavItem[] = [
-    { id: role === "developer" ? "dev-overview" : role === "designer" ? "designer-overview" : role === "cybersecurity" ? "secops-overview" : role === "marketer" ? "marketer-overview" : role === "team-leader" ? "leader-overview" : "overview", icon: LayoutDashboard, label: "Overview" },
+    { id: role === "developer" ? "dev-overview" : role === "designer" ? "designer-overview" : role === "cybersecurity" ? "secops-overview" : role === "team-leader" ? "leader-overview" : "overview", icon: LayoutDashboard, label: "Overview" },
     { id: "workspaces", icon: FolderOpen, label: "Workspaces", badge: workspaces.length.toString() },
     { id: "integrations", icon: Plug, label: "Integrations", badge: allIntegrations.length.toString() },
     { id: "teams", icon: Users, label: "Teams" },
@@ -217,12 +214,6 @@ const Dashboard = () => {
     { id: "secops-agents", icon: Bot, label: "AI Agents" },
     { id: "secops-scripts", icon: Zap, label: "Scripts" },
   ] : [];
-  const marketerNavItems: NavItem[] = user?.role === "marketer" ? [
-    { id: "marketer-insights", icon: DollarSign, label: "Analytics" },
-    { id: "marketer-utilities", icon: Wrench, label: "Marketing Tools" },
-    { id: "marketer-agents", icon: FlaskConical, label: "AI Agents" },
-    { id: "marketer-scripts", icon: Zap, label: "Automation" },
-  ] : [];
   const leaderNavItems: NavItem[] = user?.role === "team-leader" ? [
     { id: "leader-insights", icon: BarChart3, label: "Team Analytics" },
     { id: "leader-utilities", icon: Wrench, label: "PM Tools" },
@@ -236,7 +227,7 @@ const Dashboard = () => {
     { id: "profile", icon: User, label: "Profile" },
   ];
   const initials = user?.fullName?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "U";
-  const isAlwaysDark = ["developer", "cybersecurity", "marketer", "team-leader"].includes(currentRole || "");
+  const isAlwaysDark = ["developer", "cybersecurity"].includes(currentRole || "");
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -248,12 +239,7 @@ const Dashboard = () => {
       >
         {/* Left: Logo + Workspace */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-primary/20">
-              <span className="text-primary-foreground font-bold text-sm">A</span>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-bold text-foreground hidden sm:block tracking-tight">Atlas</span>}
-          </div>
+          <AtlasLogo size="sm" variant={sidebarCollapsed ? "icon" : "full"} />
           <div className="h-5 w-px bg-border/40" />
           {/* Workspace Switcher */}
           <div className="relative">
@@ -444,22 +430,6 @@ const Dashboard = () => {
                   </>
                 )}
 
-                {marketerNavItems.length > 0 && (
-                  <>
-                    {!sidebarCollapsed ? (
-                      <div className="px-3 pb-1.5 pt-2">
-                        <div className="h-px bg-border/40 mb-2" />
-                        <p className="text-[10px] font-bold text-muted-foreground/50 tracking-[0.15em] uppercase">Marketing</p>
-                      </div>
-                    ) : <div className="mx-2 my-2 h-px bg-border/40" />}
-                    <nav className="space-y-0.5 mb-4">
-                      {marketerNavItems.map((item, i) => (
-                        <SidebarItem key={item.id} item={item} active={activeTab === item.id} collapsed={sidebarCollapsed} onClick={() => setActiveTab(item.id)} delay={0.08 + i * 0.02} />
-                      ))}
-                    </nav>
-                  </>
-                )}
-
                 {leaderNavItems.length > 0 && (
                   <>
                     {!sidebarCollapsed ? (
@@ -564,12 +534,6 @@ const Dashboard = () => {
                 {activeTab === "secops-utilities" && <SecOpsUtilitiesPanel />}
                 {activeTab === "secops-agents" && <SecOpsAgentsPanel />}
                 {activeTab === "secops-scripts" && <SecOpsScriptsPanel />}
-                {/* ─── Marketer Panels ─── */}
-                {activeTab === "marketer-overview" && <MarketerOverviewPanel onTabChange={setActiveTab} />}
-                {activeTab === "marketer-insights" && <MarketerInsightsPanel />}
-                {activeTab === "marketer-utilities" && <MarketerUtilitiesPanel />}
-                {activeTab === "marketer-agents" && <MarketerAgentsPanel />}
-                {activeTab === "marketer-scripts" && <MarketerScriptsPanel />}
                 {/* ─── Leader Panels ─── */}
                 {activeTab === "leader-overview" && <LeaderOverviewPanel onTabChange={setActiveTab} />}
                 {activeTab === "leader-insights" && <LeaderInsightsPanel />}
@@ -662,93 +626,115 @@ const SidebarItem = ({ item, active, collapsed, onClick, delay = 0 }: { item: Na
 // ═══════════════════════════════════════════════════════════════════
 // RIGHT PULSE PANEL — Premium
 // ═══════════════════════════════════════════════════════════════════
-const RightPulsePanel = ({ integrations, activeWorkspace, onClose }: { integrations: IntegrationDto[]; activeWorkspace: WorkspaceDto | null; onClose: () => void }) => (
-  <div className="h-full flex flex-col p-4 overflow-y-auto scrollbar-thin">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <h3 className="text-xs font-bold text-foreground tracking-tight uppercase">Live Pulse</h3>
-      </div>
-      <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
-        <PanelRightClose className="w-3.5 h-3.5" />
-      </button>
-    </div>
+const RightPulsePanel = ({ integrations, activeWorkspace, onClose }: { integrations: IntegrationDto[]; activeWorkspace: WorkspaceDto | null; onClose: () => void }) => {
+  const [recentNotifications, setRecentNotifications] = useState<Array<{ id: string; title: string; body: string; createdAt: string; priority: string }>>([]);
 
-    {activeWorkspace && (
-      <div className="mb-4 p-3.5 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/8">
-        <div className="flex items-center gap-2 mb-2">
-          <FolderOpen className="w-4 h-4 text-primary" />
-          <p className="text-sm font-semibold text-foreground truncate">{activeWorkspace.name}</p>
+  useEffect(() => {
+    notificationsApi.getAll({ pageSize: 5 }).then((res) => {
+      if (res.data.isSuccess && res.data.data) {
+        setRecentNotifications(res.data.data.map((n) => ({ id: n.id, title: n.title, body: n.body, createdAt: n.createdAt, priority: n.priority })));
+      }
+    }).catch(() => {});
+  }, []);
+
+  const priorityColor: Record<string, string> = { Critical: "bg-red-500", High: "bg-amber-500", Normal: "bg-blue-500", Low: "bg-emerald-500" };
+
+  const timeAgo = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
+  return (
+    <div className="h-full flex flex-col p-4 overflow-y-auto scrollbar-thin">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <h3 className="text-xs font-bold text-foreground tracking-tight uppercase">Live Pulse</h3>
         </div>
-        {activeWorkspace.activeIntegrations && activeWorkspace.activeIntegrations.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {activeWorkspace.activeIntegrations.map((ai) => {
-              const ProviderSvg = getProviderIcon(ai.provider);
-              return (
-                <div key={ai.integrationId} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card/40 border border-border/20 text-xs text-muted-foreground">
-                  {ProviderSvg && <ProviderSvg size={12} />}
-                  <span>{ai.integrationName}</span>
-                  <div className={`w-1.5 h-1.5 rounded-full ${ai.enabled ? "bg-emerald-500" : "bg-zinc-400"}`} />
-                </div>
-              );
-            })}
-          </div>
-        ) : <p className="text-xs text-muted-foreground/50">No integrations connected</p>}
+        <button onClick={onClose} className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+          <PanelRightClose className="w-3.5 h-3.5" />
+        </button>
       </div>
-    )}
 
-    <div className="mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Radio className="w-3.5 h-3.5 text-emerald-500" />
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</p>
-      </div>
-      <div className="space-y-1.5">
-        {integrations.slice(0, 5).map((int) => {
-          const ProviderSvg = getProviderIcon(int.provider);
-          return (
-            <div key={int.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card/30 border border-border/15 hover:bg-card/50 transition-colors">
-              <span className="w-4 h-4 flex items-center justify-center shrink-0">{ProviderSvg ? <ProviderSvg size={13} /> : <Plug className="w-3 h-3 text-muted-foreground" />}</span>
-              <span className="text-xs text-foreground flex-1 truncate">{int.name}</span>
-              <div className={`w-2 h-2 rounded-full ${statusColors[int.status] || "bg-zinc-400"}`} />
+      {activeWorkspace && (
+        <div className="mb-4 p-3.5 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/8">
+          <div className="flex items-center gap-2 mb-2">
+            <FolderOpen className="w-4 h-4 text-primary" />
+            <p className="text-sm font-semibold text-foreground truncate">{activeWorkspace.name}</p>
+          </div>
+          {activeWorkspace.activeIntegrations && activeWorkspace.activeIntegrations.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {activeWorkspace.activeIntegrations.map((ai) => {
+                const ProviderSvg = getProviderIcon(ai.provider);
+                return (
+                  <div key={ai.integrationId} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card/40 border border-border/20 text-xs text-muted-foreground">
+                    {ProviderSvg && <ProviderSvg size={12} />}
+                    <span>{ai.integrationName}</span>
+                    <div className={`w-1.5 h-1.5 rounded-full ${ai.enabled ? "bg-emerald-500" : "bg-zinc-400"}`} />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-    </div>
-
-    <div className="mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Activity className="w-3.5 h-3.5 text-blue-400" />
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Activity</p>
-      </div>
-      {[
-        { text: "Workspace data synced", time: "just now", color: "bg-emerald-500" },
-        { text: "Integrations loaded", time: "1m ago", color: "bg-blue-500" },
-        { text: "Session active", time: "2m ago", color: "bg-amber-500" },
-      ].map((feed, i) => (
-        <div key={i} className="flex items-start gap-2.5 px-3 py-2 rounded-lg hover:bg-muted/15 transition-colors">
-          <div className={`w-1.5 h-1.5 rounded-full ${feed.color} mt-1.5 shrink-0`} />
-          <div>
-            <p className="text-xs text-foreground leading-snug">{feed.text}</p>
-            <p className="text-[10px] text-muted-foreground/50">{feed.time}</p>
-          </div>
+          ) : <p className="text-xs text-muted-foreground/50">No integrations connected</p>}
         </div>
-      ))}
-    </div>
+      )}
 
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <Trophy className="w-3.5 h-3.5 text-amber-500" />
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Bounties</p>
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Radio className="w-3.5 h-3.5 text-emerald-500" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</p>
+        </div>
+        <div className="space-y-1.5">
+          {integrations.slice(0, 5).map((int) => {
+            const ProviderSvg = getProviderIcon(int.provider);
+            return (
+              <div key={int.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card/30 border border-border/15 hover:bg-card/50 transition-colors">
+                <span className="w-4 h-4 flex items-center justify-center shrink-0">{ProviderSvg ? <ProviderSvg size={13} /> : <Plug className="w-3 h-3 text-muted-foreground" />}</span>
+                <span className="text-xs text-foreground flex-1 truncate">{int.name}</span>
+                <div className={`w-2 h-2 rounded-full ${statusColors[int.status] || "bg-zinc-400"}`} />
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/8 text-center">
-        <Trophy className="w-6 h-6 text-amber-500/20 mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">No active bounties</p>
-        <p className="text-[10px] text-muted-foreground/40 mt-1">Create a team to start</p>
+
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Activity className="w-3.5 h-3.5 text-blue-400" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Activity</p>
+        </div>
+        {recentNotifications.length > 0 ? recentNotifications.map((n) => (
+          <div key={n.id} className="flex items-start gap-2.5 px-3 py-2 rounded-lg hover:bg-muted/15 transition-colors">
+            <div className={`w-1.5 h-1.5 rounded-full ${priorityColor[n.priority] || "bg-blue-500"} mt-1.5 shrink-0`} />
+            <div className="min-w-0">
+              <p className="text-xs text-foreground leading-snug truncate">{n.title}</p>
+              <p className="text-[10px] text-muted-foreground/50">{timeAgo(n.createdAt)}</p>
+            </div>
+          </div>
+        )) : (
+          <p className="text-xs text-muted-foreground/40 px-3 py-2">No recent activity</p>
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Trophy className="w-3.5 h-3.5 text-amber-500" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Bounties</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/8 text-center">
+          <Trophy className="w-6 h-6 text-amber-500/20 mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">No active bounties</p>
+          <p className="text-[10px] text-muted-foreground/40 mt-1">Create a team to start</p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 
 export default Dashboard;

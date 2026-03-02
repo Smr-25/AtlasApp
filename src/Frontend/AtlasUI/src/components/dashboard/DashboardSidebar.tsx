@@ -11,7 +11,6 @@ import {
   GitBranch,
   Figma,
   Shield,
-  BarChart3,
   Users,
   Terminal,
   Code2,
@@ -46,7 +45,6 @@ const roleIcons: Record<UserRole, typeof LayoutDashboard> = {
   developer: GitBranch,
   designer: Figma,
   cybersecurity: Shield,
-  marketer: BarChart3,
   "team-leader": Users,
 };
 

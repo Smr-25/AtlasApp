@@ -124,7 +124,7 @@ const DashboardTopNav = ({ activeWorkspace, workspaces, onSwitchWorkspace, onTab
       {/* Right — Actions */}
       <div className="flex items-center gap-0.5">
         {(() => {
-          const isAlwaysDark = ["developer", "cybersecurity", "marketer"].includes(currentRole);
+          const isAlwaysDark = ["developer", "cybersecurity"].includes(currentRole);
           return (
             <motion.button
               whileTap={isAlwaysDark ? {} : { rotate: 180 }}

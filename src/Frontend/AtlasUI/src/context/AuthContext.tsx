@@ -22,7 +22,6 @@ export type UserRole =
   | "developer"
   | "designer"
   | "cybersecurity"
-  | "marketer"
   | "team-leader";
 
 /** Maps backend enum (UserProfession) → frontend role key */
@@ -30,7 +29,6 @@ export const professionToRole: Record<number, UserRole> = {
   0: "developer",
   1: "designer",
   2: "cybersecurity",
-  3: "marketer",
   4: "team-leader",
 };
 
@@ -39,11 +37,9 @@ export const professionStringToRole: Record<string, UserRole> = {
   developer: "developer",
   designer: "designer",
   cybersecurity: "cybersecurity",
-  digitalmarketing: "marketer",
   productmanager: "team-leader",
   // Also handle role names returned by login endpoint
   secops: "cybersecurity",
-  marketer: "marketer",
   teamleader: "team-leader",
 };
 
@@ -51,7 +47,6 @@ export const roleToProfession: Record<UserRole, number> = {
   developer: 0,
   designer: 1,
   cybersecurity: 2,
-  marketer: 3,
   "team-leader": 4,
 };
 
@@ -93,8 +88,6 @@ interface AuthContextType {
 
   setUserRole: (role: UserRole) => void;
   completeOnboarding: (
-    profession: number,
-    jobTitle: string,
     answers: Array<{
       questionId: string;
       optionId: string;
@@ -701,8 +694,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const completeOnboarding = async (
-    profession: number,
-    jobTitle: string,
     answers: Array<{
       questionId: string;
       optionId: string;
@@ -711,11 +702,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<string[]> => {
     try {
       setIsLoading(true);
+      // Map frontend role key to backend profession enum
+      const profession = roleToProfession[user?.role || "developer"] ?? 0;
+      const jobTitle = user?.role === "designer" ? "UI/UX Designer"
+        : user?.role === "cybersecurity" ? "Security Engineer"
+        : user?.role === "team-leader" ? "Product Manager"
+        : "Software Developer";
+
       const res = await onboardingApi.complete({ profession, jobTitle, answers });
       if (res.data.isSuccess) {
-        const role = professionToRole[profession] || "developer";
-        if (user) {
-          setUser({ ...user, onboardingComplete: true, role });
+        // After onboarding, fetch profile to get the assigned role
+        try {
+          const profRes = await profileApi.getMe();
+          if (profRes.data.isSuccess && profRes.data.data) {
+            const role = resolveRole(profRes.data.data.profession);
+            if (user) {
+              setUser({ ...user, onboardingComplete: true, role: role || "developer" });
+            }
+          } else if (user) {
+            setUser({ ...user, onboardingComplete: true });
+          }
+        } catch {
+          if (user) {
+            setUser({ ...user, onboardingComplete: true });
+          }
         }
         setIsAuthenticated(true);
         return [];

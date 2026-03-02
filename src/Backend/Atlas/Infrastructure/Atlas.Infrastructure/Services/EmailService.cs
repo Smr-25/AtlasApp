@@ -33,12 +33,12 @@ public class EmailService(IOptions<EmailSettings> options) : IEmailService
             "Verify Your Email",
             "Welcome to ATLAS!",
             $"""
-            <p style="font-size:16px;color:#333;">Thank you for signing up. Please use the verification code below to confirm your email address:</p>
-            <div style="text-align:center;margin:32px 0;">
-                <span style="display:inline-block;background:#6366f1;color:#fff;font-size:32px;font-weight:700;letter-spacing:8px;padding:16px 32px;border-radius:12px;">{code}</span>
-            </div>
-            <p style="font-size:14px;color:#666;">This code will expire in <strong>15 minutes</strong>. If you didn't create an account, you can safely ignore this email.</p>
-            """);
+             <p style="font-size:16px;color:#333;">Thank you for signing up. Please use the verification code below to confirm your email address:</p>
+             <div style="text-align:center;margin:32px 0;">
+                 <span style="display:inline-block;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:32px;font-weight:700;letter-spacing:8px;padding:16px 32px;border-radius:12px;box-shadow:0 4px 14px rgba(249,115,22,0.35);">{code}</span>
+             </div>
+             <p style="font-size:14px;color:#666;">This code will expire in <strong>15 minutes</strong>. If you didn't create an account, you can safely ignore this email.</p>
+             """);
         await SendEmailAsync(to, "ATLAS — Verify Your Email Address", html);
     }
 

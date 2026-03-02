@@ -166,7 +166,6 @@ const CenterStage = ({ workspace }: { workspace: WorkspaceDto }) => {
             {user?.role === "developer" ? "🖥 Active Tasks & Code" :
              user?.role === "designer" ? "🎨 Design Files & Assets" :
              user?.role === "cybersecurity" ? "🛡 Security Scans & Alerts" :
-             user?.role === "marketer" ? "📊 Campaign Metrics" :
              "📋 Project Board"}
           </h3>
           <div className="grid grid-cols-2 gap-3 relative">

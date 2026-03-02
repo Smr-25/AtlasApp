@@ -2,33 +2,31 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, Sparkles, Loader2 } from "lucide-react";
-import { useAuth, UserRole, roleToProfession } from "@/context/AuthContext";
+import { useAuth, UserRole } from "@/context/AuthContext";
 import { onboardingQuestions, roleLabels, roleDescriptions, roleIcons } from "@/lib/onboarding-data";
+import AtlasLogo from "@/components/AtlasLogo";
 
-const roles: UserRole[] = ["developer", "designer", "cybersecurity", "marketer", "team-leader"];
+const roles: UserRole[] = ["developer", "designer", "cybersecurity", "team-leader"];
 
 const roleColors: Record<UserRole, string> = {
   developer: "from-blue-500 to-blue-600",
   designer: "from-rose-500 to-rose-600",
   cybersecurity: "from-emerald-500 to-emerald-600",
-  marketer: "from-amber-500 to-amber-600",
-  "team-leader": "from-orange-500 to-orange-600",
+  "team-leader": "from-yellow-500 to-yellow-600",
 };
 
 const roleAccentBg: Record<UserRole, string> = {
   developer: "bg-blue-500/10 border-blue-500/30 text-blue-600",
   designer: "bg-rose-500/10 border-rose-500/30 text-rose-600",
   cybersecurity: "bg-emerald-500/10 border-emerald-500/30 text-emerald-600",
-  marketer: "bg-amber-500/10 border-amber-500/30 text-amber-600",
-  "team-leader": "bg-orange-500/10 border-orange-500/30 text-orange-600",
+  "team-leader": "bg-yellow-500/10 border-yellow-500/30 text-yellow-600",
 };
 
 const roleAccentSelected: Record<UserRole, string> = {
   developer: "bg-blue-500 text-white border-blue-500 shadow-blue-500/25",
   designer: "bg-rose-500 text-white border-rose-500 shadow-rose-500/25",
   cybersecurity: "bg-emerald-500 text-white border-emerald-500 shadow-emerald-500/25",
-  marketer: "bg-amber-500 text-white border-amber-500 shadow-amber-500/25",
-  "team-leader": "bg-orange-500 text-white border-orange-500 shadow-orange-500/25",
+  "team-leader": "bg-yellow-500 text-white border-yellow-500 shadow-yellow-500/25",
 };
 
 const Onboarding = () => {
@@ -82,7 +80,6 @@ const Onboarding = () => {
     } else {
       // Complete onboarding — send to real API
       setError("");
-      const profession = roleToProfession[selectedRole!];
 
       // Build answers in the backend expected format (UUID questionId + UUID optionId)
       const formattedAnswers: Array<{ questionId: string; optionId: string; customValue?: string }> = [];
@@ -97,9 +94,7 @@ const Onboarding = () => {
         }
       }
 
-      const jobTitle = roleLabels[selectedRole!];
-
-      const errs = await completeOnboarding(profession, jobTitle, formattedAnswers);
+      const errs = await completeOnboarding(formattedAnswers);
       if (errs.length === 0) {
         navigate("/dashboard");
       } else {
@@ -119,12 +114,7 @@ const Onboarding = () => {
       {/* Header */}
       <div className="border-b border-border bg-card px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/30">
-              <span className="text-primary-foreground font-semibold text-sm">A</span>
-            </div>
-            <span className="text-foreground font-semibold">Atlas</span>
-          </div>
+          <AtlasLogo size="sm" />
           <span className="text-xs text-muted-foreground">
             Step {currentStep + 1} of {totalSteps}
           </span>

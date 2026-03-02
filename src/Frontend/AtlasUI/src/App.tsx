@@ -16,8 +16,9 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import OAuthCallback from "./pages/auth/OAuthCallback";
 import { Loader2 } from "lucide-react";
-import { profileApi } from "@/services/api";
+import { profileApi, setGlobalErrorToast } from "@/services/api";
 import { useState, useEffect } from "react";
+import { useToast as useToastHook } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
@@ -26,7 +27,6 @@ const roleToDashboardPath: Record<UserRole, string> = {
   developer: "/developer",
   designer: "/designer",
   cybersecurity: "/secops",
-  marketer: "/marketer",
   "team-leader": "/leader",
 };
 
@@ -132,18 +132,34 @@ const AppRoutes = () => (
     <Route path="/developer/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/designer/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/secops/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/marketer/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/leader/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
 
+/** Sets up global error toast for API interceptor */
+const GlobalErrorToastSetup = () => {
+  const { toast } = useToastHook();
+  useEffect(() => {
+    setGlobalErrorToast((msg) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: msg,
+      });
+    });
+    return () => setGlobalErrorToast(() => {});
+  }, [toast]);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <GlobalErrorToastSetup />
       <AuthProvider>
         <ThemeProvider>
           <BrowserRouter>

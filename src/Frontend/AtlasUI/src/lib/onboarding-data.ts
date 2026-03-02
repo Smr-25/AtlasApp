@@ -53,7 +53,6 @@ export const roleLabels: Record<UserRole, string> = {
   developer: "Developer",
   designer: "Designer",
   cybersecurity: "Cybersecurity",
-  marketer: "Marketer",
   "team-leader": "Team Leader",
 };
 
@@ -61,7 +60,6 @@ export const roleDescriptions: Record<UserRole, string> = {
   developer: "Build, deploy and scale applications",
   designer: "Create beautiful user experiences",
   cybersecurity: "Protect systems and data",
-  marketer: "Drive growth and engagement",
   "team-leader": "Lead and manage teams effectively",
 };
 
@@ -69,7 +67,6 @@ export const roleIcons: Record<UserRole, string> = {
   developer: "💻",
   designer: "🎨",
   cybersecurity: "🛡️",
-  marketer: "📈",
   "team-leader": "👥",
 };
 
@@ -102,16 +99,6 @@ export const onboardingQuestions: Record<UserRole, OnboardingQuestion[]> = {
     makeQuestion("cybersecurity", "tools", "Which tools do you primarily use?",
       ["Burp Suite", "Wireshark", "Metasploit", "Nmap", "Splunk", "SIEM tools"], true),
     makeQuestion("cybersecurity", "experience", "What's your experience level?",
-      ["Junior (0-2 years)", "Mid-level (2-5 years)", "Senior (5-10 years)", "Lead (10+ years)"]),
-  ],
-  marketer: [
-    makeQuestion("marketer", "specialty", "What's your marketing specialty?",
-      ["Digital Marketing", "Content Marketing", "SEO/SEM", "Social Media", "Email Marketing", "Growth Hacking"]),
-    makeQuestion("marketer", "tools", "Which marketing tools do you use?",
-      ["Google Analytics", "HubSpot", "Mailchimp", "Semrush", "Hootsuite", "Ahrefs", "Buffer"], true),
-    makeQuestion("marketer", "channels", "Which channels do you focus on?",
-      ["Search/Google", "Social Media", "Email", "Content/Blog", "Paid Ads", "Influencer"], true),
-    makeQuestion("marketer", "experience", "What's your experience level?",
       ["Junior (0-2 years)", "Mid-level (2-5 years)", "Senior (5-10 years)", "Lead (10+ years)"]),
   ],
   "team-leader": [

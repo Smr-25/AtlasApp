@@ -26,21 +26,19 @@ const roleThemeClass: Record<UserRole, string> = {
   developer: "theme-developer",
   designer: "theme-designer",
   cybersecurity: "theme-cybersecurity",
-  marketer: "theme-marketer",
   "team-leader": "theme-team-leader",
 };
 
 const allThemeClasses = Object.values(roleThemeClass);
 
 // Roles that are always dark regardless of toggle
-const alwaysDarkRoles: UserRole[] = ["developer", "cybersecurity", "marketer"];
+const alwaysDarkRoles: UserRole[] = ["developer", "cybersecurity"];
 
 // Default theme per role (for light/dark toggle starting point)
 const defaultThemeForRole: Record<UserRole, Theme> = {
   developer: "dark",
   designer: "light",
   cybersecurity: "dark",
-  marketer: "dark",
   "team-leader": "light",
 };
 
