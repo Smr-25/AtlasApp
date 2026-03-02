@@ -20,7 +20,7 @@ public class GetGitDashboardHandler(
         if (integration == null) throw new NotFoundException("Integration not found");
         if (integration.Provider != IntegrationProvider.GitHub) throw new Exception("This is not a Git integration");
 
-        var token = encryptionService.Decrypt(integration.EncryptedAccessToken);
+        var token = encryptionService.Decrypt(integration.EncryptedAccessToken!);
 
         var myItemsTask = gitAdapter.GetMyWorkItemsAsync(token, cancellationToken);
         var reviewsTask = gitAdapter.GetReviewRequestsAsync(token, cancellationToken);

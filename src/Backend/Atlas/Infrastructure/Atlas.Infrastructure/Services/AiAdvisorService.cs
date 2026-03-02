@@ -61,12 +61,12 @@ public class AiAdvisorService(IHttpClientFactory httpClientFactory,IOptions<AiSe
         try 
         {
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            return JsonSerializer.Deserialize<AiHealthAdviceDto>(contentText, options) 
+            return JsonSerializer.Deserialize<AiHealthAdviceDto>(contentText!, options) 
                    ?? new AiHealthAdviceDto("Parse Error", "AI returned invalid format.", false, "Normal");
         }
         catch
         {
-            return new AiHealthAdviceDto("Raw AI Response", contentText, false, "Normal");
+            return new AiHealthAdviceDto("Raw AI Response", contentText ?? "No response", false, "Normal");
         }
     }
 }

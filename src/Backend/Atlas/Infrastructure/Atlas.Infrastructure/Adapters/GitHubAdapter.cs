@@ -175,9 +175,6 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
         
         logger.LogInformation("Created branch '{NewBranchName}' from '{BaseBranch}' in {Owner}/{Repo}", newBranchName, baseBranch, owner, repo);
     }
-
-    #region Private Methods
-
     private HttpClient CreateAuthenticatedClient(string accessToken)
     {
         var client = httpClientFactory.CreateClient("GitHub");
@@ -272,10 +269,6 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
         return parts.Length > 1 ? parts[1] : repositoryUrl;
     }
 
-    #endregion
-
-    #region GitHub API Response DTOs
-
     private record GitHubSearchIssueResponse(
         [property: JsonPropertyName("items")] List<GitHubIssueItem>? Items
     );
@@ -332,5 +325,4 @@ public class GitHubAdapter(IHttpClientFactory httpClientFactory, ILogger<GitHubA
         [property: JsonPropertyName("sha")] string Sha
     );
 
-    #endregion
 }

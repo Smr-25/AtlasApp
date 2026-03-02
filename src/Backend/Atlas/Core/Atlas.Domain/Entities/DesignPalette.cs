@@ -4,7 +4,7 @@ namespace Atlas.Domain.Entities;
 
 public class DesignPalette : BaseEntity
 {
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
     public Guid UserId { get; private set; }
     
     private readonly List<PaletteColor> _colors = [];

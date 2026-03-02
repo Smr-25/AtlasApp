@@ -26,7 +26,6 @@ public class CompleteOnboardingCommandHandler(
             UserProfession.Developer => UserRole.Developer,
             UserProfession.Designer => UserRole.Designer,
             UserProfession.CyberSecurity => UserRole.SecOps,
-            UserProfession.DigitalMarketing => UserRole.Marketer,
             UserProfession.ProductManager => UserRole.TeamLeader,
             _ => UserRole.Developer
         };

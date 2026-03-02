@@ -27,11 +27,11 @@ export type UserRole =
 
 /** Maps backend enum (UserProfession) → frontend role key */
 export const professionToRole: Record<number, UserRole> = {
-  1: "developer",
-  2: "designer",
-  3: "cybersecurity",
-  4: "marketer",
-  5: "team-leader",
+  0: "developer",
+  1: "designer",
+  2: "cybersecurity",
+  3: "marketer",
+  4: "team-leader",
 };
 
 /** Maps backend string profession → frontend role key */
@@ -48,11 +48,11 @@ export const professionStringToRole: Record<string, UserRole> = {
 };
 
 export const roleToProfession: Record<UserRole, number> = {
-  developer: 1,
-  designer: 2,
-  cybersecurity: 3,
-  marketer: 4,
-  "team-leader": 5,
+  developer: 0,
+  designer: 1,
+  cybersecurity: 2,
+  marketer: 3,
+  "team-leader": 4,
 };
 
 export interface User {

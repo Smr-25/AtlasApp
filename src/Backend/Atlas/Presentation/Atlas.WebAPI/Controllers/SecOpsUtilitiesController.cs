@@ -1,6 +1,5 @@
 using Atlas.Application.Features.SecOpsUtilities.Commands.EncodePayload;
 using Atlas.Application.Features.SecOpsUtilities.Commands.GenerateHash;
-using Atlas.Application.Features.SecOpsUtilities.Commands.SpoofMac;
 using Atlas.Application.Features.SecOpsUtilities.Queries.CalculatePasswordEntropy;
 using Atlas.Application.Features.SecOpsUtilities.Queries.CheckSsl;
 using Atlas.Application.Features.SecOpsUtilities.Queries.IpDnsLookup;
@@ -54,12 +53,4 @@ public class SecOpsUtilitiesController : ApiControllerBase
         var result = await Mediator.Send(query);
         return OkResponse(result);
     }
-
-    [HttpPost("spoof-mac")]
-    public async Task<IActionResult> SpoofMac([FromBody] SpoofMacCommand command)
-    {
-        var result = await Mediator.Send(command);
-        return OkResponse(new { Result = result });
-    }
 }
-

@@ -33,7 +33,6 @@ public class ParseCalendarEventCommandHandler(
         }
         catch
         {
-            // ignored
         }
 
         return new CalendarEventResultDto("Meeting", DateTime.UtcNow.AddDays(1).Date.AddHours(10), false, null);
@@ -41,4 +40,3 @@ public class ParseCalendarEventCommandHandler(
 
     private record ParsedEvent(string? Title, string? DateTime);
 }
-

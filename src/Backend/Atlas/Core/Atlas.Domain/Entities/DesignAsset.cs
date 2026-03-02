@@ -4,11 +4,11 @@ namespace Atlas.Domain.Entities;
 
 public class DesignAsset : BaseEntity
 {
-    public string OriginalFileName { get; private set; }
-    public string TargetFormat { get; private set; } 
+    public string OriginalFileName { get; private set; } = null!;
+    public string TargetFormat { get; private set; } = null!;
     public long OriginalSizeBytes { get; private set; }
     public long ConvertedSizeBytes { get; private set; }
-    public string FilePath { get; private set; } 
+    public string FilePath { get; private set; } = null!;
     public bool IsOptimized { get; private set; }
     public long OptimizedSizeBytes { get; private set; }
     public Guid UserId { get; private set; }

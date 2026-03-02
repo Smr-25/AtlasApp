@@ -117,7 +117,6 @@ public class NotionService : INotionService
                     language = langProp.RichText[0].PlainText;
             }
 
-            // Fetch page content (code block)
             var code = "";
             try
             {
@@ -134,7 +133,6 @@ public class NotionService : INotionService
             }
             catch
             {
-                // If we can't fetch blocks, use empty code
             }
 
             snippets.Add(new NotionSnippetDto(

@@ -21,7 +21,6 @@ public class GetWorkspacesQueryHandler(
         var userId = currentUserService.GetRequiredUserId();
         logger.LogDebug("Fetching workspaces for user {UserId}", userId);
         
-        // User-in member olduğu bütün workspace ID-ları (öz yaratdıqları + shared olanlar)
         var memberWorkspaceIds = await context.WorkspaceMembers
             .Where(wm => wm.UserId == userId && !wm.IsDeleted)
             .Select(wm => wm.WorkspaceId)

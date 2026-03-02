@@ -20,7 +20,7 @@ public class StartJiraPomodoroCommandHandler(
             .FirstOrDefaultAsync(x => x.Id == request.IntegrationId, cancellationToken);
         if (integration == null) throw new NotFoundException("Integration not found");
 
-        var token = encryptionService.Decrypt(integration.EncryptedAccessToken);
+        var token = encryptionService.Decrypt(integration.EncryptedAccessToken!);
         var issue = await jiraAdapter.GetIssueAsync(token, request.DomainUrl, request.IssueKey, cancellationToken);
 
         var session = FocusSession.Create(

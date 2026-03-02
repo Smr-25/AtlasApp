@@ -28,7 +28,6 @@ public class Team : BaseEntity
             MaxMembers = 7
         };
 
-        // Owner is automatically Manager
         team._members.Add(TeamMember.Create(team.Id, ownerUserId, TeamMemberRole.Manager));
 
         return team;
@@ -74,4 +73,3 @@ public class Team : BaseEntity
         SetDelete();
     }
 }
-

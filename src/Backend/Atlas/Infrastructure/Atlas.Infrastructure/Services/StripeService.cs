@@ -1,4 +1,5 @@
 using Atlas.Application.Common.Interfaces;
+using Atlas.Application.Features.Subscriptions.Queries.GetInvoices;
 using Atlas.Application.Settings;
 using Microsoft.Extensions.Options;
 using Stripe;
@@ -74,6 +75,28 @@ public class StripeService(IOptions<StripeSettings> stripeSettings) : IStripeSer
 
         var service = new SubscriptionService();
         await service.CancelAsync(subscriptionId, cancellationToken: cancellationToken);
+    }
+
+    public async Task<List<InvoiceDto>> GetInvoicesAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        StripeConfiguration.ApiKey = _settings.SecretKey;
+
+        var service = new InvoiceService();
+        var invoices = await service.ListAsync(new InvoiceListOptions
+        {
+            Customer = customerId,
+            Limit = 24
+        }, cancellationToken: cancellationToken);
+
+        return invoices.Data.Select(i => new InvoiceDto(
+            i.Id,
+            i.Created,
+            i.Status ?? "unknown",
+            i.AmountPaid,
+            i.Currency,
+            i.InvoicePdf,
+            i.HostedInvoiceUrl
+        )).ToList();
     }
 }
 

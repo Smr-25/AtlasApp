@@ -19,7 +19,6 @@ public class UpdateWorkspaceCommandHandler(
         var userId = currentUserService.GetRequiredUserId();
         logger.LogInformation("Updating workspace {WorkspaceId} for user {UserId}", request.WorkspaceId, userId);
         
-        // Editor or above can update workspace details
         await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Editor, cancellationToken);
         
         var workspace = await applicationDbContext.Workspaces

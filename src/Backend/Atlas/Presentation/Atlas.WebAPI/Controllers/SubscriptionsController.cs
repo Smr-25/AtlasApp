@@ -3,6 +3,7 @@ using Atlas.Application.Features.Subscriptions.Commands.CreateCheckoutSession;
 using Atlas.Application.Features.Subscriptions.Commands.CreatePortalSession;
 using Atlas.Application.Features.Subscriptions.Dtos;
 using Atlas.Application.Features.Subscriptions.Queries.GetCurrentSubscription;
+using Atlas.Application.Features.Subscriptions.Queries.GetInvoices;
 using Atlas.Application.Features.Subscriptions.Queries.GetSubscriptionUsage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -46,5 +47,11 @@ public class SubscriptionsController : ApiControllerBase
         var result = await Mediator.Send(new CancelSubscriptionCommand());
         return OkResponse(result);
     }
-}
 
+    [HttpGet("invoices")]
+    public async Task<IActionResult> GetInvoices()
+    {
+        var result = await Mediator.Send(new GetInvoicesQuery());
+        return OkResponse(result);
+    }
+}

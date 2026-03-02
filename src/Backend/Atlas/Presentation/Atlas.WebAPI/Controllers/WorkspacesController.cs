@@ -77,7 +77,6 @@ public class WorkspacesController : ApiControllerBase
         return OkResponse(result);
     }
     
-    // ─── Member Management ─────────────────────────────────────
     
     [HttpGet("{id}/members")]
     public async Task<IActionResult> GetMembers(Guid id)

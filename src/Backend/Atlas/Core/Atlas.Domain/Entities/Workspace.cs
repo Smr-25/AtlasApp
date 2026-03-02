@@ -33,7 +33,6 @@ public partial class Workspace : BaseEntity
             IsShared = false
         };
         
-        // Owner otomatik olaraq member kimi əlavə olunur
         workspace._members.Add(WorkspaceMember.Create(workspace.Id, userProfileId, WorkspaceMemberRole.Owner));
         
         return workspace;

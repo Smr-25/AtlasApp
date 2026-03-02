@@ -17,7 +17,7 @@ public class RejectPrCommandHandler(
             .FirstOrDefaultAsync(x => x.Id == request.IntegrationId, cancellationToken);
         if (integration == null) throw new NotFoundException("Integration not found");
 
-        var token = encryptionService.Decrypt(integration.EncryptedAccessToken);
+        var token = encryptionService.Decrypt(integration.EncryptedAccessToken!);
         await gitAdapter.RejectPullRequestAsync(token, request.Owner, request.Repo, request.PrNumber, request.Reason, cancellationToken);
     }
 }

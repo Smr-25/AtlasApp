@@ -68,14 +68,12 @@ public class InsightCalculationService(
 
     public async Task<double> GetDeploymentSuccessRateAsync(Guid userId, DateTime from, DateTime to, CancellationToken ct)
     {
-        var deployments = await dbContext.AwsDeployments
-            .Where(d => d.UserId == userId && d.StartedAt >= from && d.StartedAt <= to)
-            .ToListAsync(ct);
+        var snapshot = await dbContext.InsightSnapshots
+            .Where(s => s.UserId == userId && s.MetricKey == "DeploymentSuccessRate")
+            .OrderByDescending(s => s.RecordedAt)
+            .FirstOrDefaultAsync(ct);
 
-        if (deployments.Count == 0) return 100.0;
-
-        var successful = deployments.Count(d => d.Status == Domain.Enums.DeploymentStatus.Success);
-        return Math.Round((double)successful / deployments.Count * 100, 2);
+        return snapshot?.Value ?? 100.0;
     }
 
     public async Task<Dictionary<int, double>> GetPeakProductivityHoursAsync(Guid userId, DateTime from, DateTime to, CancellationToken ct)
@@ -89,4 +87,3 @@ public class InsightCalculationService(
             .ToDictionary(g => g.Key, g => g.Sum(s => s.DurationMinutes) / 60.0);
     }
 }
-

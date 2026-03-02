@@ -102,7 +102,7 @@
      Deep refined dark, elegant blue accents, premium feel
      ═══════════════════════════════════════════════════════════ */
   .theme-developer {
-    --font-family: "Inter", "SF Pro Display", system-ui, sans-serif;
+    --font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
     /* Refined dark — not pitch black, elegant charcoal */

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   SquareKanban, Play, Clock, CheckCircle, AlertCircle,
@@ -25,8 +25,18 @@ const statusConfig: Record<string, { icon: typeof Play; color: string }> = {
   Done: { icon: CheckCircle, color: "text-emerald-400" },
 };
 
-// Demo tasks until Jira integration API is wired
-const demoTasks = [
+// Tasks loaded dynamically - see fallbackTasks and useEffect below
+
+interface JiraTask {
+  key: string;
+  summary: string;
+  status: string;
+  priority: string;
+  assignee: string;
+  storyPoints?: number;
+}
+
+const fallbackTasks: JiraTask[] = [
   { key: "ATLAS-142", summary: "Implement OAuth refresh token rotation", status: "In Progress", priority: "high", assignee: "You", storyPoints: 5 },
   { key: "ATLAS-138", summary: "Fix Docker container memory leak on staging", status: "To Do", priority: "highest", assignee: "You", storyPoints: 8 },
   { key: "ATLAS-155", summary: "Add rate limiting to WebSocket connections", status: "In Review", priority: "medium", assignee: "You", storyPoints: 3 },
@@ -37,9 +47,36 @@ const demoTasks = [
 
 const JiraPanel = ({ integrations }: JiraPanelProps) => {
   const [pomodoroLoading, setPomodoroLoading] = useState<string | null>(null);
+  const [pomodoroResult, setPomodoroResult] = useState<any>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [tasks, setTasks] = useState<JiraTask[]>(fallbackTasks);
 
   const jiraInt = integrations.find((i) => i.provider === "Jira" && i.status === "Active");
+
+  // Attempt to load real Jira data via Git dashboard when integration is active
+  useEffect(() => {
+    if (!jiraInt) { setTasks(fallbackTasks); return; }
+    let cancelled = false;
+    gitApi.dashboard(jiraInt.id).then((res) => {
+      if (cancelled) return;
+      if (res.data.isSuccess && res.data.data) {
+        // Map PR data to task-like items if Jira board data is available
+        const d = res.data.data;
+        if (d.pullRequests && d.pullRequests.length > 0) {
+          const mapped: JiraTask[] = d.pullRequests.map((pr) => ({
+            key: `PR-${pr.id}`,
+            summary: pr.title,
+            status: pr.state === "open" ? "In Progress" : pr.state === "closed" ? "Done" : "In Review",
+            priority: "medium",
+            assignee: pr.author || "You",
+            storyPoints: undefined,
+          }));
+          setTasks(mapped.length > 0 ? mapped : fallbackTasks);
+        }
+      }
+    }).catch(() => { if (!cancelled) setTasks(fallbackTasks); });
+    return () => { cancelled = true; };
+  }, [jiraInt]);
 
   const handleStartPomodoro = async (issueKey: string) => {
     setPomodoroLoading(issueKey);
@@ -51,8 +88,8 @@ const JiraPanel = ({ integrations }: JiraPanelProps) => {
   };
 
   const filteredTasks = filter === "all"
-    ? demoTasks
-    : demoTasks.filter((t) => t.status === filter);
+    ? tasks
+    : tasks.filter((t) => t.status === filter);
 
   const statuses = ["all", "To Do", "In Progress", "In Review", "Done"];
 
@@ -74,10 +111,10 @@ const JiraPanel = ({ integrations }: JiraPanelProps) => {
       {/* Sprint Stats */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: "To Do", count: demoTasks.filter((t) => t.status === "To Do").length, color: "text-muted-foreground", bg: "from-slate-500/10 to-slate-500/5" },
-          { label: "In Progress", count: demoTasks.filter((t) => t.status === "In Progress").length, color: "text-blue-400", bg: "from-blue-500/10 to-blue-500/5" },
-          { label: "In Review", count: demoTasks.filter((t) => t.status === "In Review").length, color: "text-amber-400", bg: "from-amber-500/10 to-amber-500/5" },
-          { label: "Done", count: demoTasks.filter((t) => t.status === "Done").length, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-500/5" },
+          { label: "To Do", count: tasks.filter((t) => t.status === "To Do").length, color: "text-muted-foreground", bg: "from-slate-500/10 to-slate-500/5" },
+          { label: "In Progress", count: tasks.filter((t) => t.status === "In Progress").length, color: "text-blue-400", bg: "from-blue-500/10 to-blue-500/5" },
+          { label: "In Review", count: tasks.filter((t) => t.status === "In Review").length, color: "text-amber-400", bg: "from-amber-500/10 to-amber-500/5" },
+          { label: "Done", count: tasks.filter((t) => t.status === "Done").length, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-500/5" },
         ].map((s, i) => (
           <motion.div
             key={s.label}

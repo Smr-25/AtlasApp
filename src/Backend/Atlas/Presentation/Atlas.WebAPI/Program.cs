@@ -8,6 +8,8 @@ using Atlas.Persistence;
 using Atlas.WebAPI.Hubs;
 using Atlas.WebAPI.Middlewares;
 using Atlas.WebAPI.Services;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
@@ -28,11 +30,18 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
 
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseMemoryStorage());
+builder.Services.AddHangfireServer();
+builder.Services.AddSingleton<AtlasBackgroundJobs>();
+
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("TeamLeaderOnly", policy => policy.RequireRole("TeamLeader"))
     .AddPolicy("DeveloperOrSecOps", policy => policy.RequireRole("Developer", "SecOps"))
-    .AddPolicy("DesignerOnly", policy => policy.RequireRole("Designer"))
-    .AddPolicy("MarketerOnly", policy => policy.RequireRole("Marketer"));
+    .AddPolicy("DesignerOnly", policy => policy.RequireRole("Designer"));
 
 var rateLimitSettings = builder.Configuration.GetSection("RateLimitSettings").Get<RateLimitSettings>()
                         ?? new RateLimitSettings();
@@ -141,12 +150,36 @@ app.MapHub<AtlasHub>("/hubs/atlas");
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-    string[] roles = ["Developer", "Designer", "SecOps", "Marketer", "TeamLeader"];
+    string[] roles = ["Developer", "Designer", "SecOps", "TeamLeader"];
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
     }
 }
+
+if (app.Environment.IsDevelopment())
+{
+    await DemoSeedService.SeedDemoDataAsync(app.Services);
+}
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = [] // Development-də auth yoxdur, production-da əlavə et
+});
+
+var jobs = app.Services.GetRequiredService<AtlasBackgroundJobs>();
+
+RecurringJob.AddOrUpdate("system-health-check",
+    () => jobs.SystemHealthCheckAsync(),
+    "*/5 * * * *"); // Hər 5 dəqiqədən bir
+
+RecurringJob.AddOrUpdate("docker-health-check",
+    () => jobs.DockerHealthCheckAsync(),
+    "*/15 * * * *"); // Hər 15 dəqiqədən bir
+
+RecurringJob.AddOrUpdate("daily-insights",
+    () => jobs.DailyInsightsAsync(),
+    "0 9 * * *"); // Hər gün saat 09:00-da
 
 app.Run();

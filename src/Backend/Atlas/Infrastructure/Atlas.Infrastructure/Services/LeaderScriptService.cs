@@ -4,6 +4,8 @@ namespace Atlas.Infrastructure.Services;
 
 public class LeaderScriptService(IJiraAdapter jiraAdapter) : ILeaderScriptService
 {
+    private readonly IJiraAdapter _jiraAdapter = jiraAdapter;
+
     public Task<SprintStarterResult> RunSprintStarterAsync(Guid userId, string sprintName, List<string> initialTasks, Guid teamId, CancellationToken ct)
     {
         var tasksCreated = initialTasks.Count;

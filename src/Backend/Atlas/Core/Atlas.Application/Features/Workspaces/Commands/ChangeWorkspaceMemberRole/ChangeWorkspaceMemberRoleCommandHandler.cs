@@ -18,7 +18,6 @@ public class ChangeWorkspaceMemberRoleCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
         
-        // Only Owner or Admin can change roles
         await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Admin, cancellationToken);
         
         var workspace = await context.Workspaces
@@ -34,4 +33,3 @@ public class ChangeWorkspaceMemberRoleCommandHandler(
             request.UserId, request.NewRole, request.WorkspaceId);
     }
 }
-

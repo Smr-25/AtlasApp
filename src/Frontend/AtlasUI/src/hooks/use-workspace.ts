@@ -33,6 +33,7 @@ export function useWorkspaces() {
           setWorkspaces(d.data);
           const def = d.data.find((w) => w.isDefault) || d.data[0] || null;
           setActiveWorkspace(def);
+          if (def) localStorage.setItem("atlas_workspace_id", def.id);
         }
       }
 
@@ -64,6 +65,7 @@ export function useWorkspaces() {
 
   const switchWorkspace = useCallback((ws: WorkspaceDto) => {
     setActiveWorkspace(ws);
+    localStorage.setItem("atlas_workspace_id", ws.id);
   }, []);
 
   const createWorkspace = useCallback(

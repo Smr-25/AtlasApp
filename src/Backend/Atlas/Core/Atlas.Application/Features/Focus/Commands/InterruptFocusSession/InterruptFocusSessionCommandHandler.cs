@@ -26,7 +26,6 @@ public class InterruptFocusSessionCommandHandler(
 
         session.Interrupt();
 
-        // Log activity
         var activity = UserActivity.Create(
             userId,
             "FocusSessionInterrupted",
@@ -40,4 +39,3 @@ public class InterruptFocusSessionCommandHandler(
         return true;
     }
 }
-

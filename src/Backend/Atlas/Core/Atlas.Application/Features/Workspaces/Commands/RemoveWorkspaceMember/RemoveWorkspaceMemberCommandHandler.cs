@@ -18,7 +18,6 @@ public class RemoveWorkspaceMemberCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
         
-        // Owner or Admin can remove members; a member can remove themselves
         if (userId != request.UserId)
             await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Admin, cancellationToken);
 
@@ -35,4 +34,3 @@ public class RemoveWorkspaceMemberCommandHandler(
             request.UserId, request.WorkspaceId);
     }
 }
-

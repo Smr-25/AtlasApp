@@ -22,7 +22,6 @@ public class ToggleWorkspaceIntegrationCommandHandler(
         logger.LogInformation("Toggling integration {IntegrationId} for workspace {WorkspaceId}, Enable: {Enable}", 
             request.IntegrationId, request.WorkspaceId, request.Enable);
 
-        // Editor+ can toggle integrations
         await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Editor, cancellationToken);
 
         var workspace = await applicationDbContext.Workspaces
@@ -35,7 +34,6 @@ public class ToggleWorkspaceIntegrationCommandHandler(
             
         if (integration == null) throw new NotFoundException("Integration", request.IntegrationId);
 
-        // Personal scope integrations can only be toggled by their owner
         if (integration.Scope == IntegrationScope.Personal && integration.UserProfileId != userId)
             throw new ForbiddenException("Cannot toggle another user's personal integration. The user must connect their own.");
 

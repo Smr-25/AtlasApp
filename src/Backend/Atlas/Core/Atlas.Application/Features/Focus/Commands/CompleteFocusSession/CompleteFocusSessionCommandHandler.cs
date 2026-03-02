@@ -26,7 +26,6 @@ public class CompleteFocusSessionCommandHandler(
 
         session.Complete();
 
-        // Log activity
         var activity = UserActivity.Create(
             userId,
             "FocusSessionCompleted",
@@ -40,4 +39,3 @@ public class CompleteFocusSessionCommandHandler(
         return true;
     }
 }
-

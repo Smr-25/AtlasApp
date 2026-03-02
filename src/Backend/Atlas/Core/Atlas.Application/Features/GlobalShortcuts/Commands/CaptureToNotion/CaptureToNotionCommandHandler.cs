@@ -44,7 +44,7 @@ public class CaptureToNotionCommandHandler(
                     request.Content,
                     "text",
                     notionIntegration.MetadataJson ?? "",
-                    notionIntegration.EncryptedAccessToken,
+                    notionIntegration.EncryptedAccessToken!,
                     cancellationToken);
 
                 capture.MarkSynced(externalId);

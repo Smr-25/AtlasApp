@@ -32,7 +32,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ModalState> ModalStates { get; set; }
     public DbSet<HotkeyBinding> HotkeyBindings { get; set; }
     public DbSet<SentryIssue> SentryIssues { get; set; }
-    public DbSet<AwsDeployment> AwsDeployments { get; set; }
     public DbSet<SonarQubeReport> SonarQubeReports { get; set; }
     public DbSet<ProactiveAlert> ProactiveAlerts { get; set; }
     public DbSet<DependencyWatch> DependencyWatches { get; set; }
@@ -44,9 +43,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SecOpsAlert> SecOpsAlerts { get; set; }
     public DbSet<SecOpsInsightSnapshot> SecOpsInsightSnapshots { get; set; }
     public DbSet<SecurityScanResult> SecurityScanResults { get; set; }
-    public DbSet<MarketerAlert> MarketerAlerts { get; set; }
-    public DbSet<MarketerInsightSnapshot> MarketerInsightSnapshots { get; set; }
-    public DbSet<MarketingCampaignMetric> MarketingCampaignMetrics { get; set; }
     public DbSet<QuickCapture> QuickCaptures { get; set; }
     public DbSet<TeamObjective> TeamObjectives { get; set; }
     public DbSet<TeamVaultLink> TeamVaultLinks { get; set; }
@@ -60,6 +56,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<BountyBoard> BountyBoards { get; set; }
     public DbSet<OmniFeedItem> OmniFeedItems { get; set; }
     public DbSet<SharedResource> SharedResources { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<UserPreference> UserPreferences { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<PersonalAccessToken> PersonalAccessTokens { get; set; }
+    public DbSet<OutgoingWebhook> OutgoingWebhooks { get; set; }
+    public DbSet<SupportTicket> SupportTickets { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

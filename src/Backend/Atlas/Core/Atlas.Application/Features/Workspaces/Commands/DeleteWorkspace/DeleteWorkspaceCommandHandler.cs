@@ -20,7 +20,6 @@ public class DeleteWorkspaceCommandHandler(
         var userId = currentUserService.GetRequiredUserId();
         logger.LogInformation("Deleting workspace {WorkspaceId} for user {UserId}", request.WorkspaceId, userId);
         
-        // Only Owner or Admin can delete a workspace
         await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Admin, cancellationToken);
         
         var workspace = await context.Workspaces

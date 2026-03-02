@@ -3,7 +3,6 @@ using Atlas.Application.Common.Exceptions.Users;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Application.Features.Accounts.Dtos;
 using Atlas.Domain.Entities;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +11,6 @@ namespace Atlas.Application.Features.Accounts.Queries.GetProfile;
 
 public class GetProfileQueryHandler(
     UserManager<AppUser> userManager, 
-    IMapper mapper, 
     ICurrentUserService currentUserService,
     IApplicationDbContext applicationDbContext) : IRequestHandler<GetProfileQuery, AccountDto>
 {

@@ -4,8 +4,8 @@ namespace Atlas.Domain.Entities;
 
 public class PaletteColor : BaseEntity
 {
-    public string Name { get; private set; } 
-    public string HexCode { get; private set; } 
+    public string Name { get; private set; } = null!;
+    public string HexCode { get; private set; } = null!;
     public Guid PaletteId { get; private set; } 
 
     private PaletteColor() { }

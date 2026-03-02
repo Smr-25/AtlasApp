@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,15 +11,18 @@ import {
   Bot, PenTool, Layers, Ruler, Palette,
   Shield, ShieldAlert, Zap, Wrench,
   DollarSign, FlaskConical, BarChart3,
-  BookOpen, Radar, FolderGit2, Users, BookMarked,
+  BookOpen, Radar, FolderGit2, Users, BookMarked, Settings2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useWorkspaces } from "@/hooks/use-workspace";
-import { WorkspaceDto, IntegrationDto } from "@/services/api";
+import { WorkspaceDto, IntegrationDto, notificationsApi } from "@/services/api";
 import { getProviderIcon } from "@/components/icons/IntegrationIcons";
 import { useNavigate } from "react-router-dom";
+import { startSignalR, stopSignalR, onNotification, offAll } from "@/services/signalr";
+import { useToast } from "@/hooks/use-toast";
 
+import CommandPalette from "@/components/dashboard/CommandPalette";
 import OverviewPanel from "@/components/dashboard/OverviewPanel";
 import WorkspacesPanel from "@/components/dashboard/WorkspacesPanel";
 import IntegrationsPanel from "@/components/dashboard/IntegrationsPanel";
@@ -68,6 +71,8 @@ import SquadArenaPanel from "@/components/dashboard/shared/SquadArenaPanel";
 import ResourceHubPanel from "@/components/dashboard/shared/ResourceHubPanel";
 import KnowledgePanel from "@/components/dashboard/shared/KnowledgePanel";
 import ProjectsPanel from "@/components/dashboard/shared/ProjectsPanel";
+import NotificationsPanel from "@/components/dashboard/shared/NotificationsPanel";
+import SettingsPanel from "@/components/dashboard/shared/SettingsPanel";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface NavItem {
@@ -105,6 +110,8 @@ const Dashboard = () => {
   const [wsDropdownOpen, setWsDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const { toast } = useToast();
 
   const {
     workspaces, integrations, pendingIntegrations, activeWorkspace,
@@ -123,6 +130,27 @@ const Dashboard = () => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [zenMode, commandOpen]);
+
+  // ── SignalR real-time connection ─────────────────────────────────
+  useEffect(() => {
+    startSignalR().catch(() => {});
+    return () => { offAll(); stopSignalR(); };
+  }, []);
+
+  // ── Real-time notification listener ──────────────────────────────
+  useEffect(() => {
+    onNotification((data) => {
+      setUnreadCount((prev) => prev + 1);
+      toast({ title: data.title, description: data.body, duration: 4000 });
+    });
+  }, [toast]);
+
+  // ── Fetch unread notification count ─────────────────────────────
+  useEffect(() => {
+    notificationsApi.getUnreadCount().then((res) => {
+      if (res.data.isSuccess && res.data.data) setUnreadCount(res.data.data.total);
+    }).catch(() => {});
+  }, [activeTab]); // Refresh count when tab changes
 
   const handleLogout = async () => { clearRole(); await logout(); navigate("/login"); };
 
@@ -202,8 +230,11 @@ const Dashboard = () => {
     { id: "leader-scripts", icon: Zap, label: "Automation" },
     { id: "leader-modals", icon: Layers, label: "Modals" },
   ] : [];
-  const bottomNavItems: NavItem[] = [{ id: "profile", icon: User, label: "Profile" }];
-  const allNavItems = [...coreNavItems, ...devNavItems, ...designerNavItems, ...secopsNavItems, ...marketerNavItems, ...leaderNavItems, ...bottomNavItems];
+  const bottomNavItems: NavItem[] = [
+    { id: "notifications", icon: Bell, label: "Notifications" },
+    { id: "settings", icon: Settings2, label: "Settings" },
+    { id: "profile", icon: User, label: "Profile" },
+  ];
   const initials = user?.fullName?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "U";
   const isAlwaysDark = ["developer", "cybersecurity", "marketer", "team-leader"].includes(currentRole || "");
 
@@ -300,9 +331,13 @@ const Dashboard = () => {
             {theme === "light" && !isAlwaysDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </motion.button>
 
-          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors relative">
+          <button onClick={() => setActiveTab("notifications")} className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors relative">
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-card" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-red-500 rounded-full ring-2 ring-card text-[9px] font-bold text-white px-1">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
 
           {/* User Avatar Menu */}
@@ -550,6 +585,8 @@ const Dashboard = () => {
                 {activeTab === "resource-hub" && <ResourceHubPanel />}
                 {activeTab === "knowledge" && <KnowledgePanel />}
                 {activeTab === "projects" && <ProjectsPanel />}
+                {activeTab === "notifications" && <NotificationsPanel />}
+                {activeTab === "settings" && <SettingsPanel />}
                 {activeTab === "profile" && <ProfilePanel />}
               </motion.div>
             </AnimatePresence>
@@ -586,10 +623,8 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* ═══════ COMMAND PALETTE ═══════ */}
-      <AnimatePresence>
-        {commandOpen && <CommandPaletteModal onClose={() => setCommandOpen(false)} onNavigate={(tab) => { setActiveTab(tab); setCommandOpen(false); }} navItems={allNavItems} />}
-      </AnimatePresence>
+      {/* ═══════ COMMAND PALETTE (Real API Search) ═══════ */}
+      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={(route) => { setActiveTab(route); setCommandOpen(false); }} />
 
       <CreateWorkspaceDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} onCreate={createWorkspace} />
       <AnimatePresence>
@@ -715,44 +750,5 @@ const RightPulsePanel = ({ integrations, activeWorkspace, onClose }: { integrati
   </div>
 );
 
-// ═══════════════════════════════════════════════════════════════════
-// COMMAND PALETTE MODAL — Premium
-// ═══════════════════════════════════════════════════════════════════
-const CommandPaletteModal = ({ onClose, onNavigate, navItems }: { onClose: () => void; onNavigate: (tab: string) => void; navItems: NavItem[] }) => {
-  const [search, setSearch] = useState("");
-  const filtered = navItems.filter((item) => item.label.toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-md z-50" onClick={onClose} />
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: -20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -20 }}
-        transition={{ type: "spring", stiffness: 350, damping: 30 }}
-        className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-xl bg-card border border-border rounded-2xl shadow-2xl shadow-black/30 z-50 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-          <Search className="w-5 h-5 text-muted-foreground shrink-0" />
-          <input type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Type a command or search..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 outline-none"
-            onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "Enter" && filtered.length > 0) onNavigate(filtered[0].id); }}
-          />
-          <kbd className="text-[10px] text-muted-foreground/40 bg-muted/40 px-2 py-1 rounded-md border border-border/30">ESC</kbd>
-        </div>
-        <div className="max-h-80 overflow-y-auto p-2">
-          {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">No results found</p>
-          ) : (
-            filtered.map((item) => (
-              <button key={item.id} onClick={() => onNavigate(item.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-foreground hover:bg-muted/40 transition-colors">
-                <item.icon className="w-4 h-4 text-muted-foreground" />
-                <span>{item.label}</span>
-                {item.badge && <span className="text-[10px] bg-muted/50 px-2 py-0.5 rounded-md ml-auto text-muted-foreground">{item.badge}</span>}
-              </button>
-            ))
-          )}
-        </div>
-      </motion.div>
-    </>
-  );
-};
 
 export default Dashboard;

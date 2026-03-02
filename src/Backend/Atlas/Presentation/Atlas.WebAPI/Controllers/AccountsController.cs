@@ -30,7 +30,6 @@ namespace Atlas.WebAPI.Controllers;
 [EnableRateLimiting("fixed")]
 public class AccountsController : ApiControllerBase
 {
-    #region Auth Endpoints (Public)
     
     [HttpPost("register")]
     [EnableRateLimiting("register")]
@@ -133,9 +132,7 @@ public class AccountsController : ApiControllerBase
         return NoContentResponse();
     }
     
-    #endregion
     
-    #region Profile Endpoints (Authorized)
 
     [Authorize]
     [HttpGet("profile")]
@@ -200,7 +197,6 @@ public class AccountsController : ApiControllerBase
         return OkResponse(result);
     }
     
-    #endregion
 
     [HttpGet("external/{provider}")]
     [AllowAnonymous]

@@ -18,7 +18,7 @@ public class GetDribbbleInspirationQueryHandler(
             .FirstOrDefaultAsync(x => x.Id == request.IntegrationId, cancellationToken);
         if (integration == null) throw new NotFoundException("Integration not found");
 
-        var token = encryptionService.Decrypt(integration.EncryptedAccessToken);
+        var token = encryptionService.Decrypt(integration.EncryptedAccessToken!);
 
         return string.IsNullOrEmpty(request.SearchQuery)
             ? await dribbbleAdapter.GetShotsAsync(token, cancellationToken)

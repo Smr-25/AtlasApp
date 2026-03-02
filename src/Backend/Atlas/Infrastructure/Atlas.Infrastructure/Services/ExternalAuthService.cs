@@ -10,9 +10,6 @@ namespace Atlas.Infrastructure.Services;
 public class ExternalAuthService(IOptions<ExternalAuthSettings> options) : IExternalAuthService
 {
     private readonly ExternalAuthSettings _externalAuthSettings = options.Value;
-
-    #region Google Authentication
-
     public async Task<ExternalUserInfo?> ValidateGoogleTokenAsync(string idToken)
     {
         try
@@ -38,10 +35,6 @@ public class ExternalAuthService(IOptions<ExternalAuthSettings> options) : IExte
         }
     }
 
-    #endregion
-
-    #region GitHub Authentication
-
     public async Task<ExternalUserInfo?> ValidateGitHubTokenAsync(string? accessToken, string? authorizationCode = null)
     {
         try
@@ -62,7 +55,6 @@ public class ExternalAuthService(IOptions<ExternalAuthSettings> options) : IExte
                 var resp = await client.SendAsync(req);
                 if (!resp.IsSuccessStatusCode) return null;
                 var body = await resp.Content.ReadAsStringAsync();
-                // GitHub may return query string or json depending on Accept header; we requested json
                 var parsed = JsonSerializer.Deserialize<JsonElement>(body);
                 if (parsed.TryGetProperty("access_token", out var at))
                     accessToken = at.GetString();
@@ -72,7 +64,6 @@ public class ExternalAuthService(IOptions<ExternalAuthSettings> options) : IExte
 
             if (string.IsNullOrEmpty(accessToken)) return null;
 
-            // Get user info
             using var userClient = new HttpClient();
             userClient.DefaultRequestHeaders.UserAgent.ParseAdd("Atlas-App");
             userClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -86,7 +77,6 @@ public class ExternalAuthService(IOptions<ExternalAuthSettings> options) : IExte
             var fullName = userDoc.TryGetProperty("name", out var n) && n.ValueKind != JsonValueKind.Null ? n.GetString() : null;
             var email = userDoc.TryGetProperty("email", out var e) && e.ValueKind != JsonValueKind.Null ? e.GetString() : null;
 
-            // If email is null, fetch primary email from /user/emails
             if (string.IsNullOrEmpty(email))
             {
                 var emailResp = await userClient.GetAsync(_externalAuthSettings.GitHub.UserEmailsEndpoint);
@@ -129,5 +119,4 @@ public class ExternalAuthService(IOptions<ExternalAuthSettings> options) : IExte
         }
     }
 
-    #endregion
 }

@@ -17,7 +17,6 @@ public class ShareWorkspaceCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
 
-        // Must have team features
         if (!await subscriptionGuard.HasTeamFeaturesAsync(userId, cancellationToken))
             throw new ForbiddenException("Shared workspaces require Team subscription.");
 
@@ -36,8 +35,6 @@ public class ShareWorkspaceCommandHandler(
 
         workspace.SetShared(true);
         
-        // Add all team members as workspace members (Viewer role by default)
-        // Team Managers get Editor role
         foreach (var teamMember in team.Members.Where(m => !m.IsDeleted && m.UserId != userId))
         {
             var existingMember = workspace.Members.FirstOrDefault(wm => wm.UserId == teamMember.UserId && !wm.IsDeleted);

@@ -18,7 +18,7 @@ public class GetSentryIssueDetailQueryHandler(
             .FirstOrDefaultAsync(x => x.Id == request.IntegrationId, cancellationToken);
         if (integration == null) throw new NotFoundException("Integration not found");
 
-        var token = encryptionService.Decrypt(integration.EncryptedAccessToken);
+        var token = encryptionService.Decrypt(integration.EncryptedAccessToken!);
         return await sentryAdapter.GetIssueDetailAsync(token, request.IssueId, cancellationToken);
     }
 }

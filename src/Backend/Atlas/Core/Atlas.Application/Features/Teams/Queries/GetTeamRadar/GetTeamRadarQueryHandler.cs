@@ -37,12 +37,10 @@ public class GetTeamRadarQueryHandler(
         var today = DateTime.UtcNow.Date;
         var memberUserIds = team.Members.Select(m => m.UserId).ToList();
 
-        // Get today's focus sessions for all team members
         var focusSessions = await dbContext.FocusSessions
             .Where(fs => memberUserIds.Contains(fs.UserId) && fs.StartedAt >= today)
             .ToListAsync(cancellationToken);
 
-        // Get latest activity for each member
         var latestActivities = await dbContext.UserActivities
             .Where(ua => memberUserIds.Contains(ua.UserId))
             .GroupBy(ua => ua.UserId)
@@ -57,7 +55,6 @@ public class GetTeamRadarQueryHandler(
             var memberFocusSessions = focusSessions.Where(fs => fs.UserId == member.UserId).ToList();
             var latestActivity = latestActivities.FirstOrDefault(a => a.UserId == member.UserId);
 
-            // Check if member has an active focus session
             var activeSession = memberFocusSessions
                 .FirstOrDefault(fs => fs.Status == FocusSessionStatus.InProgress);
 
@@ -91,4 +88,3 @@ public class GetTeamRadarQueryHandler(
         );
     }
 }
-

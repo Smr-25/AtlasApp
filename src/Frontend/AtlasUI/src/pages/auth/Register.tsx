@@ -91,7 +91,7 @@ const Register = () => {
           <label className={labelClass}>Full Name</label>
           <input
             type="text"
-            placeholder="Samir Almammadli"
+            placeholder="Enter your full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className={inputClass}
@@ -105,7 +105,7 @@ const Register = () => {
           <label className={labelClass}>Username</label>
           <input
             type="text"
-            placeholder="Smr25"
+            placeholder="Enter a unique username"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
             className={inputClass}
@@ -119,7 +119,7 @@ const Register = () => {
           <label className={labelClass}>Email</label>
           <input
             type="email"
-            placeholder="smr@example.com"
+            placeholder="Enter your email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputClass}
@@ -134,7 +134,7 @@ const Register = () => {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Min. 8 characters"
+              placeholder="Create a strong password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}

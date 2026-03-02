@@ -1,5 +1,4 @@
 using Atlas.Application.Features.SecOpsAgents.Commands.DetectRoguePorts;
-using Atlas.Application.Features.SecOpsAgents.Commands.KillZombieProcesses;
 using Atlas.Application.Features.SecOpsAgents.Commands.ScanLeakedKeys;
 using Atlas.Application.Features.SecOpsAgents.Queries.CheckVpnDrop;
 using Atlas.Application.Features.SecOpsAgents.Queries.DetectSuspiciousTraffic;
@@ -48,13 +47,6 @@ public class SecOpsAgentsController : ApiControllerBase
         return OkResponse(result);
     }
 
-    [HttpPost("kill-zombie-processes")]
-    public async Task<IActionResult> KillZombieProcesses()
-    {
-        var result = await Mediator.Send(new KillZombieProcessesCommand());
-        return OkResponse(result);
-    }
-
     [HttpGet("vpn-status")]
     public async Task<IActionResult> CheckVpnDrop()
     {
@@ -62,4 +54,3 @@ public class SecOpsAgentsController : ApiControllerBase
         return OkResponse(result);
     }
 }
-

@@ -19,7 +19,6 @@ public class CreateTeamCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
 
-        // Only Team tier subscribers can create teams
         if (!await subscriptionGuard.HasTeamFeaturesAsync(userId, cancellationToken))
             throw new ForbiddenException("Team features require Team subscription.");
 
@@ -37,4 +36,3 @@ public class CreateTeamCommandHandler(
         return team.Id;
     }
 }
-

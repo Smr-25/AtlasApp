@@ -40,6 +40,8 @@ public static class ServiceRegistration
             
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IWorkspaceAccessService, WorkspaceAccessService>();
+            services.AddScoped<IAuditService, AuditService>();
+            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ISmsService, SmsService>();
@@ -75,14 +77,11 @@ public static class ServiceRegistration
             services.AddTransient<IFileSystemService, FileSystemService>();
             
             services.AddTransient<ISentryAdapter, SentryAdapter>();
-            services.AddTransient<IAwsAdapter, AwsAdapter>();
             services.AddTransient<ISonarQubeAdapter, SonarQubeAdapter>();
             services.AddTransient<IPerplexityAdapter, PerplexityAdapter>();
             services.AddTransient<IFigmaAdapter, FigmaAdapter>();
-            services.AddTransient<IMiroAdapter, MiroAdapter>();
             services.AddTransient<ILottieFilesAdapter, LottieFilesAdapter>();
             services.AddTransient<IDribbbleAdapter, DribbbleAdapter>();
-            services.AddTransient<IZeplinAdapter, ZeplinAdapter>();
             services.AddTransient<IDevUtilityService, DevUtilityService>();
             services.AddTransient<IDesignUtilityService, DesignUtilityService>();
             services.AddTransient<IProactiveAgentService, ProactiveAgentService>();
@@ -92,29 +91,12 @@ public static class ServiceRegistration
             services.AddTransient<ISecOpsUtilityService, SecOpsUtilityService>();
             services.AddTransient<ISecOpsAgentService, SecOpsAgentService>();
             services.AddScoped<ISecOpsInsightCalculationService, SecOpsInsightCalculationService>();
-            services.AddTransient<IMarketerUtilityService, MarketerUtilityService>();
-            services.AddTransient<IMarketerAgentService, MarketerAgentService>();
-            services.AddScoped<IMarketerInsightCalculationService, MarketerInsightCalculationService>();
-            
             services.AddTransient<ILeaderScriptService, LeaderScriptService>();
             services.AddTransient<ILeaderUtilityService, LeaderUtilityService>();
             services.AddTransient<ILeaderAgentService, LeaderAgentService>();
             services.AddScoped<ILeaderInsightCalculationService, LeaderInsightCalculationService>();
             services.AddScoped<ISquadRadarService, SquadRadarService>();
             services.AddScoped<IOmniFeedService, OmniFeedService>();
-            
-            services.AddTransient<ICloudflareAdapter, CloudflareAdapter>();
-            services.AddTransient<ISnykAdapter, SnykAdapter>();
-            services.AddTransient<IAwsGuardDutyAdapter, AwsGuardDutyAdapter>();
-            services.AddTransient<IVirusTotalAdapter, VirusTotalAdapter>();
-            services.AddTransient<IShodanAdapter, ShodanAdapter>();
-            services.AddTransient<IPagerDutyAdapter, PagerDutyAdapter>();
-            services.AddTransient<IMetaAdsAdapter, MetaAdsAdapter>();
-            services.AddTransient<IGoogleSearchConsoleAdapter, GoogleSearchConsoleAdapter>();
-            services.AddTransient<IMailchimpAdapter, MailchimpAdapter>();
-            services.AddTransient<ISocialListeningAdapter, SocialListeningAdapter>();
-            services.AddTransient<IGA4Adapter, GA4Adapter>();
-            services.AddTransient<IHubSpotAdapter, HubSpotAdapter>();
         }
     }
 }

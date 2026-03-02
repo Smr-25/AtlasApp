@@ -31,7 +31,6 @@ public class CreateCheckoutSessionCommandHandler(
             .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken)
             ?? throw new NotFoundException("Subscription", userId);
 
-        // Create Stripe customer if not exists
         var customerId = subscription.StripeCustomerId;
         if (string.IsNullOrEmpty(customerId))
         {
@@ -53,4 +52,3 @@ public class CreateCheckoutSessionCommandHandler(
         return checkoutUrl;
     }
 }
-

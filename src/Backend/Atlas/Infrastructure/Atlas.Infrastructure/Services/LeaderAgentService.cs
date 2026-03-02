@@ -4,6 +4,9 @@ namespace Atlas.Infrastructure.Services;
 
 public class LeaderAgentService(IJiraAdapter jiraAdapter, IGitIntegrationAdapter gitAdapter) : ILeaderAgentService
 {
+    private readonly IJiraAdapter _jiraAdapter = jiraAdapter;
+    private readonly IGitIntegrationAdapter _gitAdapter = gitAdapter;
+
     public Task<BottleneckResult> PredictBottleneckAsync(Guid teamId, CancellationToken ct)
     {
         return Task.FromResult(new BottleneckResult([]));

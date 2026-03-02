@@ -20,7 +20,6 @@ public class SendSnippetToNotionCommandHandler(
             .FirstOrDefaultAsync(s => s.Id == request.SnippetId && s.UserId == userId, cancellationToken)
             ?? throw new NotFoundException("Snippet", request.SnippetId);
 
-        // Send to Notion - does NOT take space in our DB!
         var notionPageId = await notionService.SendSnippetToNotionAsync(
             snippet.Title,
             snippet.Code,
@@ -33,4 +32,3 @@ public class SendSnippetToNotionCommandHandler(
         return notionPageId;
     }
 }
-

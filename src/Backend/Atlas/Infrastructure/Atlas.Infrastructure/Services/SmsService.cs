@@ -21,6 +21,7 @@ public class SmsService(IOptions<SmsSettings> options) : ISmsService
 
     public async Task SendVerificationSmsAsync(string to, string code)
     {
-        await SendSmsAsync(to, "Your verification code is: " + code);
+        var message = $"[ATLAS] Your verification code is: {code}\n\nThis code expires in 15 minutes. Do not share it with anyone.";
+        await SendSmsAsync(to, message);
     }
 }

@@ -24,7 +24,6 @@ public interface IApplicationDbContext
     DbSet<ModalState> ModalStates { get; }
     DbSet<HotkeyBinding> HotkeyBindings { get; }
     DbSet<SentryIssue> SentryIssues { get; }
-    DbSet<AwsDeployment> AwsDeployments { get; }
     DbSet<SonarQubeReport> SonarQubeReports { get; }
     DbSet<ProactiveAlert> ProactiveAlerts { get; }
     DbSet<DependencyWatch> DependencyWatches { get; }
@@ -36,9 +35,6 @@ public interface IApplicationDbContext
     DbSet<SecOpsAlert> SecOpsAlerts { get; }
     DbSet<SecOpsInsightSnapshot> SecOpsInsightSnapshots { get; }
     DbSet<SecurityScanResult> SecurityScanResults { get; }
-    DbSet<MarketerAlert> MarketerAlerts { get; }
-    DbSet<MarketerInsightSnapshot> MarketerInsightSnapshots { get; }
-    DbSet<MarketingCampaignMetric> MarketingCampaignMetrics { get; }
     DbSet<QuickCapture> QuickCaptures { get; }
     DbSet<TeamObjective> TeamObjectives { get; }
     DbSet<TeamVaultLink> TeamVaultLinks { get; }
@@ -55,5 +51,11 @@ public interface IApplicationDbContext
     DbSet<OnboardingOption> OnboardingOptions { get; }
     DbSet<OnboardingQuestion> OnboardingQuestions { get; }
     DbSet<OnboardingAnswer> OnboardingAnswers { get; }
+    DbSet<Notification> Notifications { get; }
+    DbSet<UserPreference> UserPreferences { get; }
+    DbSet<AuditLog> AuditLogs { get; }
+    DbSet<PersonalAccessToken> PersonalAccessTokens { get; }
+    DbSet<OutgoingWebhook> OutgoingWebhooks { get; }
+    DbSet<SupportTicket> SupportTickets { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

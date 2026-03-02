@@ -24,11 +24,11 @@ public class CreateBranchFromIssueHandler(
 
         if (jiraInt == null || gitInt == null) throw new NotFoundException("Integration not found");
 
-        var jiraToken = encryptionService.Decrypt(jiraInt.EncryptedAccessToken);
-        var gitToken = encryptionService.Decrypt(gitInt.EncryptedAccessToken);
+        var jiraToken = encryptionService.Decrypt(jiraInt.EncryptedAccessToken!);
+        var gitToken = encryptionService.Decrypt(gitInt.EncryptedAccessToken!);
 
         var jiraDomain = jiraInt.ApiUrl;
-        var issue = await jiraAdapter.GetIssueAsync(jiraToken, jiraDomain, request.IssueKey, cancellationToken);
+        var issue = await jiraAdapter.GetIssueAsync(jiraToken, jiraDomain!, request.IssueKey, cancellationToken);
 
         var safeSummary = GenerateSlug(issue.Summary);
         var branchName = $"feature/{issue.Key.ToUpper()}-{safeSummary}";
@@ -36,7 +36,7 @@ public class CreateBranchFromIssueHandler(
         await gitAdapter.CreateBranchAsync(gitToken, request.RepoOwner, request.RepoName, request.BaseBranch,
             branchName, cancellationToken);
 
-        await jiraAdapter.MoveIssueAsync(jiraToken, jiraDomain, request.IssueKey, "31", cancellationToken); 
+        await jiraAdapter.MoveIssueAsync(jiraToken, jiraDomain!, request.IssueKey, "31", cancellationToken); 
 
         return branchName;
     }

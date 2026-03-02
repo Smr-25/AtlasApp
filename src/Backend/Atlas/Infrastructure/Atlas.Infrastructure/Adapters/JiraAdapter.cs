@@ -172,12 +172,8 @@ public class JiraAdapter(IHttpClientFactory httpClientFactory, ILogger<JiraAdapt
             return [];
         }
     }
-
-    #region Private Methods
-
     private static (string Token, string DomainUrl) ParseTokenAndDomain(string accessToken)
     {
-        // Format: "base64token|https://your-domain.atlassian.net"
         var parts = accessToken.Split('|');
         if (parts.Length != 2)
         {
@@ -224,10 +220,6 @@ public class JiraAdapter(IHttpClientFactory httpClientFactory, ILogger<JiraAdapt
         $"{domain}/browse/{issue.Key}"
     );
 
-    #endregion
-
-    #region Internal Models
-
     private record JiraSearchResponse(
         [property: JsonPropertyName("issues")] List<JiraIssueResponse> Issues,
         [property: JsonPropertyName("total")] int Total
@@ -266,5 +258,4 @@ public class JiraAdapter(IHttpClientFactory httpClientFactory, ILogger<JiraAdapt
         [property: JsonPropertyName("to")] JiraStatus? To
     );
 
-    #endregion
 }

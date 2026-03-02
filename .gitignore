@@ -48,11 +48,6 @@ Thumbs.db
 *.swp
 
 appsettings.Mac.json
-README.md
-Phase1-README.md
-Persistence-README.md
-ResponseModel_Location_Guide.md
-Atlas_Analysis_Report.md
-CODE-QUALITY-ANALYSIS.md
-API_REFERENCE.md
-FRONTEND_API_REFERENCE.md
+
+# Presentation guide (personal, not for repo)
+PRESENTATION_GUIDE.md

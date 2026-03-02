@@ -49,11 +49,15 @@ export const TokenService = {
   },
 };
 
-// ─── Request interceptor — attach token ─────────────────────────────
+// ─── Request interceptor — attach token + workspace ─────────────────
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = TokenService.getAccessToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const wsId = localStorage.getItem("atlas_workspace_id");
+  if (wsId && config.headers) {
+    config.headers["X-Workspace-Id"] = wsId;
   }
   return config;
 });
@@ -103,7 +107,9 @@ api.interceptors.response.use(
       }
 
       try {
+        const accessToken = TokenService.getAccessToken();
         const { data } = await axios.post(`${API_BASE_URL}/accounts/refresh-token`, {
+          accessToken,
           refreshToken,
         });
 
@@ -288,10 +294,10 @@ export const authApi = {
     return api.put<ApiResponse<null>>("/accounts/change-password", body);
   },
 
-  addPhoneNumber(phoneNumber: string, verificationChannel: "Sms" | "WhatsApp" = "Sms") {
+  addPhoneNumber(phoneNumber: string, channel: "Sms" | "WhatsApp" = "Sms") {
     return api.post<ApiResponse<null>>("/accounts/add-phone-number", {
       phoneNumber,
-      verificationChannel,
+      channel,
     });
   },
 
@@ -299,7 +305,7 @@ export const authApi = {
     return api.delete<ApiResponse<null>>("/accounts/delete-account");
   },
 
-  setTelegramChatId(body: { linkCode: string; chatId: string }) {
+  setTelegramChatId(body: { chatId: string }) {
     return api.post<ApiResponse<null>>("/accounts/set-telegram-chat-id", body);
   },
 
@@ -333,6 +339,7 @@ export interface WorkspaceIntegrationDto {
   integrationId: string;
   integrationName: string;
   provider: string;
+  scope?: string;
   enabled: boolean;
   connectedAt?: string;
 }
@@ -344,6 +351,8 @@ export interface WorkspaceDto {
   isDefault: boolean;
   localFolderPath?: string | null;
   isShared?: boolean;
+  myRole?: string;
+  membersCount?: number;
   activeIntegrations?: WorkspaceIntegrationDto[];
 }
 
@@ -352,6 +361,7 @@ export interface IntegrationDto {
   name: string;
   provider: string;
   status: "PendingSetup" | "Active" | "Disconnected" | "Expired" | "Error";
+  scope?: string;
   metadataJson?: string | null;
 }
 
@@ -361,6 +371,13 @@ export interface FolderValidationDto {
   sizeInBytes: number;
   subFolderCount: number;
   fileCount: number;
+}
+
+export interface WorkspaceMemberDto {
+  userId: string;
+  userName: string;
+  role: string;
+  joinedAt: string;
 }
 
 // ─── Workspace API ──────────────────────────────────────────────────
@@ -391,6 +408,18 @@ export const workspaceApi = {
   },
   validateFolder(folderPath: string) {
     return api.post<ApiResponse<FolderValidationDto>>("/workspaces/validate-folder", { folderPath });
+  },
+  getMembers(id: string) {
+    return api.get<ApiResponse<WorkspaceMemberDto[]>>(`/workspaces/${id}/members`);
+  },
+  addMember(id: string, body: { userId: string; role?: string }) {
+    return api.post<ApiResponse<null>>(`/workspaces/${id}/members`, body);
+  },
+  removeMember(id: string, userId: string) {
+    return api.delete<ApiResponse<null>>(`/workspaces/${id}/members/${userId}`);
+  },
+  changeMemberRole(id: string, userId: string, newRole: string) {
+    return api.patch<ApiResponse<null>>(`/workspaces/${id}/members/${userId}/role`, { newRole });
   },
 };
 
@@ -474,6 +503,7 @@ export const subscriptionApi = {
     return api.post<ApiResponse<{ url: string }>>("/subscriptions/portal", body);
   },
   cancel() { return api.post<ApiResponse<null>>("/subscriptions/cancel"); },
+  getInvoices() { return api.get<ApiResponse<InvoiceDto[]>>("/subscriptions/invoices"); },
 };
 
 // ─── Greeting API ───────────────────────────────────────────────────
@@ -1129,6 +1159,213 @@ export const leaderModalsApi = {
 export interface GmailMessageDto { id: string; from: string; subject: string; snippet: string; date: string; isRead: boolean; }
 export const gmailApi = {
   getUnread() { return api.get<ApiResponse<GmailMessageDto[]>>("/gmail/unread"); },
+};
+
+// ─── Invoice DTO ────────────────────────────────────────────────
+export interface InvoiceDto {
+  id: string;
+  date: string;
+  status: string;
+  amountPaid: number;
+  currency: string;
+  pdfUrl: string;
+  hostedUrl: string;
+}
+
+// ─── Preferences API ────────────────────────────────────────────
+export interface PreferencesDto {
+  language: string;
+  theme: string;
+  timezone: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  inboxAlerts: boolean;
+  inboxApprovals: boolean;
+  inboxMentions: boolean;
+  inboxSystem: boolean;
+  weeklyDigest: boolean;
+  customSettingsJson?: string | null;
+}
+
+export const preferencesApi = {
+  get() { return api.get<ApiResponse<PreferencesDto>>("/preferences"); },
+  update(body: Partial<PreferencesDto>) { return api.put<ApiResponse<null>>("/preferences", body); },
+};
+
+// ─── Notifications / Smart Inbox API ────────────────────────────
+export interface NotificationDto {
+  id: string;
+  category: "AlertsSecOps" | "ApprovalsGit" | "MentionsSocial" | "SystemInsights";
+  priority: "Low" | "Normal" | "High" | "Critical";
+  title: string;
+  body: string;
+  actionType?: string | null;
+  actionPayloadJson?: string | null;
+  sourceEntity?: string | null;
+  sourceEntityId?: string | null;
+  isRead: boolean;
+  readAt?: string | null;
+  workspaceId?: string | null;
+  createdAt: string;
+}
+
+export interface UnreadCountDto {
+  total: number;
+  alertsSecOps: number;
+  approvalsGit: number;
+  mentionsSocial: number;
+  systemInsights: number;
+}
+
+export const notificationsApi = {
+  getAll(params?: { category?: string; unreadOnly?: boolean; page?: number; pageSize?: number }) {
+    return api.get<ApiResponse<NotificationDto[]>>("/notifications", { params });
+  },
+  getUnreadCount() {
+    return api.get<ApiResponse<UnreadCountDto>>("/notifications/unread-count");
+  },
+  markAsRead(id: string) {
+    return api.post<ApiResponse<null>>(`/notifications/${id}/read`);
+  },
+  markAllAsRead(category?: string) {
+    return api.post<ApiResponse<null>>("/notifications/read-all", null, { params: { category } });
+  },
+  execute(id: string) {
+    return api.post<ApiResponse<unknown>>(`/notifications/${id}/execute`);
+  },
+  remove(id: string) {
+    return api.delete<ApiResponse<null>>(`/notifications/${id}`);
+  },
+};
+
+// ─── Search API (Cmd+K) ────────────────────────────────────────
+export interface SearchResultItem {
+  type: string;
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon?: string;
+  route: string;
+}
+
+export interface SearchResultDto {
+  workspaces: SearchResultItem[];
+  integrations: SearchResultItem[];
+  scripts: SearchResultItem[];
+  snippets: SearchResultItem[];
+  projects: SearchResultItem[];
+  teams: SearchResultItem[];
+  commands: SearchResultItem[];
+}
+
+export const searchApi = {
+  search(q: string, limit = 5) {
+    return api.get<ApiResponse<SearchResultDto>>("/search", { params: { q, limit } });
+  },
+};
+
+// ─── Audit Logs API ─────────────────────────────────────────────
+export interface AuditLogDto {
+  id: string;
+  action: string;
+  detail?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface SessionDto {
+  ipAddress: string;
+  userAgent: string;
+  lastLoginAt: string;
+  isCurrent: boolean;
+}
+
+export const auditLogsApi = {
+  getAll(params?: { action?: string; from?: string; to?: string; page?: number; pageSize?: number }) {
+    return api.get<ApiResponse<AuditLogDto[]>>("/auditlogs", { params });
+  },
+  getSessions() {
+    return api.get<ApiResponse<SessionDto[]>>("/auditlogs/sessions");
+  },
+};
+
+// ─── Personal Tokens API ────────────────────────────────────────
+export interface PersonalTokenDto {
+  id: string;
+  name: string;
+  token?: string;         // Only on create response
+  tokenPrefix?: string;   // On list
+  scopes: string[];
+  expiresAt?: string | null;
+  lastUsedAt?: string | null;
+  isRevoked: boolean;
+}
+
+export const personalTokensApi = {
+  getAll() {
+    return api.get<ApiResponse<PersonalTokenDto[]>>("/personaltokens");
+  },
+  create(body: { name: string; scopes: string[]; expiresAt?: string | null }) {
+    return api.post<ApiResponse<PersonalTokenDto>>("/personaltokens", body);
+  },
+  revoke(id: string) {
+    return api.post<ApiResponse<null>>(`/personaltokens/${id}/revoke`);
+  },
+};
+
+// ─── Webhooks API ───────────────────────────────────────────────
+export interface WebhookDto {
+  id: string;
+  name: string;
+  url: string;
+  secret?: string | null;
+  events: string[];
+  workspaceId?: string | null;
+  active: boolean;
+  failCount: number;
+  createdAt: string;
+}
+
+export const webhooksApi = {
+  getAll() {
+    return api.get<ApiResponse<WebhookDto[]>>("/webhooks");
+  },
+  create(body: { name: string; url: string; secret?: string; events: string[]; workspaceId?: string | null }) {
+    return api.post<ApiResponse<WebhookDto>>("/webhooks", body);
+  },
+  update(id: string, body: { name?: string; url?: string; secret?: string; events?: string[] }) {
+    return api.put<ApiResponse<null>>(`/webhooks/${id}`, body);
+  },
+  toggle(id: string, active: boolean) {
+    return api.post<ApiResponse<null>>(`/webhooks/${id}/toggle`, { active });
+  },
+  remove(id: string) {
+    return api.delete<ApiResponse<null>>(`/webhooks/${id}`);
+  },
+};
+
+// ─── Support API ────────────────────────────────────────────────
+export interface SupportTicketDto {
+  id: string;
+  type: string;
+  subject: string;
+  body: string;
+  status: "Open" | "InProgress" | "Resolved" | "Closed";
+  pageUrl?: string | null;
+  browserInfo?: string | null;
+  createdAt: string;
+}
+
+export const supportApi = {
+  getTickets() {
+    return api.get<ApiResponse<SupportTicketDto[]>>("/support");
+  },
+  create(body: { type: string; subject: string; body: string; pageUrl?: string; browserInfo?: string }) {
+    return api.post<ApiResponse<SupportTicketDto>>("/support", body);
+  },
+  close(id: string) {
+    return api.post<ApiResponse<null>>(`/support/${id}/close`);
+  },
 };
 
 export default api;

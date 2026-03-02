@@ -19,7 +19,7 @@ public class ApprovePrCommandHandler(
         var integration = await applicationDbContext.Integrations.FirstOrDefaultAsync(x => x.Id == request.IntegrationId, cancellationToken);
         if (integration == null) throw new NotFoundException("Integration not found");
         
-        var token = encryptionService.Decrypt(integration.EncryptedAccessToken);
+        var token = encryptionService.Decrypt(integration.EncryptedAccessToken!);
         await gitAdapter.ApprovePullRequestAsync(token, request.Owner, request.Repo, request.PrNumber, cancellationToken);
 
         var userId = currentUser.GetUserIdOrDefault();

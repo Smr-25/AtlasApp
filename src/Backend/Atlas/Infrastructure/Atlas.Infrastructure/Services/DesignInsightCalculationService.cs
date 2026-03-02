@@ -1,12 +1,10 @@
 using Atlas.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Atlas.Infrastructure.Services;
 
 public class DesignInsightCalculationService(
-    IApplicationDbContext dbContext,
-    ILogger<DesignInsightCalculationService> logger
+    IApplicationDbContext dbContext
 ) : IDesignInsightCalculationService
 {
     public async Task<double> GetAssetsOptimizedSavingsAsync(Guid userId, CancellationToken ct)

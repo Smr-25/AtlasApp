@@ -17,11 +17,9 @@ public class SetHotkeyCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
 
-        // Custom hotkeys require Pro or Team subscription
         if (!await subscriptionGuard.HasCustomHotkeysAsync(userId, cancellationToken))
             throw new ForbiddenException("Custom hotkeys require Pro or Team subscription.");
 
-        // Check if binding for this action already exists - update it
         var existing = await dbContext.HotkeyBindings
             .FirstOrDefaultAsync(h => h.UserId == userId && h.Action == request.Action, cancellationToken);
 
@@ -39,4 +37,3 @@ public class SetHotkeyCommandHandler(
         return hotkey.Id;
     }
 }
-

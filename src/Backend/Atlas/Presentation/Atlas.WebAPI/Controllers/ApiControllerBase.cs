@@ -3,8 +3,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Atlas.WebAPI.Controllers;
-
-
 [ApiController]
 [Route("api/[controller]")]
 public abstract class ApiControllerBase : ControllerBase
@@ -12,9 +10,6 @@ public abstract class ApiControllerBase : ControllerBase
     private ISender? _mediator;
     
     protected ISender Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<ISender>();
-
-    #region Success Responses
-
     
     protected IActionResult OkResponse<T>(T data)
     {
@@ -35,10 +30,6 @@ public abstract class ApiControllerBase : ControllerBase
     {
         return NoContent();
     }
-
-    #endregion
-
-    #region Error Responses
 
     protected IActionResult BadRequestResponse(string message)
     {
@@ -66,5 +57,4 @@ public abstract class ApiControllerBase : ControllerBase
         return StatusCode(403, ResponseModel<object>.Failure(message));
     }
 
-    #endregion
 }

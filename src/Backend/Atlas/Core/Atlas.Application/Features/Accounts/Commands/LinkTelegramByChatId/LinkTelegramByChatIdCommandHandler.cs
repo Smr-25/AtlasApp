@@ -28,12 +28,10 @@ public class LinkTelegramByChatIdCommandHandler(
             return Unit.Value;
         }
 
-        // Link Telegram ChatId
         user.TelegramChatId = request.ChatId;
         user.TelegramLinkCode = null;
         user.TelegramLinkCodeExpiry = null;
         
-        // If phone verification is pending and user prefers Telegram, send verification code
         if (!user.PhoneNumberConfirmed && 
             !string.IsNullOrEmpty(user.PhoneNumber) &&
             user.PreferredVerificationChannel == UserVerificationChannel.Telegram)
@@ -44,7 +42,6 @@ public class LinkTelegramByChatIdCommandHandler(
             
             await userManager.UpdateAsync(user);
             
-            // Send verification code via Telegram
             await telegramService.SendVerificationCodeAsync(request.ChatId, code);
             
             logger.LogInformation("Telegram linked and verification code sent for user {UserId}", user.Id);
@@ -53,7 +50,6 @@ public class LinkTelegramByChatIdCommandHandler(
         {
             await userManager.UpdateAsync(user);
             
-            // Send welcome message
             await telegramService.SendMessageAsync(request.ChatId, 
                 "✅ Telegram hesabınız uğurla bağlandı! Artıq bildirişləri buradan alacaqsınız.");
             

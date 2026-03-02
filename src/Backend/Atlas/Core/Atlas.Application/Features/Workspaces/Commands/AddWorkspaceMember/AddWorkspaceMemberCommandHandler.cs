@@ -18,7 +18,6 @@ public class AddWorkspaceMemberCommandHandler(
     {
         var userId = currentUserService.GetRequiredUserId();
         
-        // Only Owner or Admin can add members
         await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Admin, cancellationToken);
         
         var workspace = await context.Workspaces
@@ -27,7 +26,6 @@ public class AddWorkspaceMemberCommandHandler(
         
         if (workspace == null) throw new NotFoundException("Workspace", request.WorkspaceId);
         
-        // Verify target user exists
         var targetUserExists = await context.UserProfiles.AnyAsync(u => u.Id == request.UserId, cancellationToken);
         if (!targetUserExists)
             throw new NotFoundException("User", request.UserId);
@@ -39,4 +37,3 @@ public class AddWorkspaceMemberCommandHandler(
             request.UserId, request.Role, request.WorkspaceId);
     }
 }
-
