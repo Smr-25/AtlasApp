@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
+using Atlas.Domain.Enums;
 using Atlas.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ namespace Atlas.Application.Features.Workspaces.Commands.DeleteWorkspace;
 public class DeleteWorkspaceCommandHandler(
     IApplicationDbContext context,
     ICurrentUserService currentUserService,
+    IWorkspaceAccessService workspaceAccess,
     ILogger<DeleteWorkspaceCommandHandler> logger) : IRequestHandler<DeleteWorkspaceCommand>
 {
     public async Task Handle(DeleteWorkspaceCommand request, CancellationToken cancellationToken)
@@ -18,8 +20,13 @@ public class DeleteWorkspaceCommandHandler(
         var userId = currentUserService.GetRequiredUserId();
         logger.LogInformation("Deleting workspace {WorkspaceId} for user {UserId}", request.WorkspaceId, userId);
         
+        // Only Owner or Admin can delete a workspace
+        await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Admin, cancellationToken);
+        
         var workspace = await context.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && w.UserProfileId == userId, cancellationToken);
+            .Include(w => w.WorkspaceIntegrations)
+            .Include(w => w.Members)
+            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && !w.IsDeleted, cancellationToken);
 
         if (workspace == null) throw new NotFoundException("Workspace", request.WorkspaceId);
 

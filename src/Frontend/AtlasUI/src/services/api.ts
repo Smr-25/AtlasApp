@@ -467,8 +467,12 @@ export interface UsageDto {
 export const subscriptionApi = {
   getCurrent() { return api.get<ApiResponse<SubscriptionDto>>("/subscriptions/current"); },
   getUsage() { return api.get<ApiResponse<UsageDto>>("/subscriptions/usage"); },
-  checkout(body: { tier: string }) { return api.post<ApiResponse<{ url: string }>>("/subscriptions/checkout", body); },
-  portal() { return api.post<ApiResponse<{ url: string }>>("/subscriptions/portal"); },
+  checkout(body: { priceId: string; successUrl: string; cancelUrl: string }) {
+    return api.post<ApiResponse<{ url: string }>>("/subscriptions/checkout", body);
+  },
+  portal(body: { returnUrl: string }) {
+    return api.post<ApiResponse<{ url: string }>>("/subscriptions/portal", body);
+  },
   cancel() { return api.post<ApiResponse<null>>("/subscriptions/cancel"); },
 };
 
@@ -489,11 +493,11 @@ export const greetingApi = {
 };
 
 // ─── Hotkeys API ────────────────────────────────────────────────────
-export interface HotkeyDto { id: string; action: string; keys: string; category?: string; }
+export interface HotkeyDto { id: string; action: string; keyCombination: string; scope?: string; }
 
 export const hotkeysApi = {
   getAll() { return api.get<ApiResponse<HotkeyDto[]>>("/hotkeys"); },
-  set(body: { action: string; keys: string }) { return api.post<ApiResponse<HotkeyDto>>("/hotkeys", body); },
+  set(body: { action: string; keyCombination: string; scope?: string }) { return api.post<ApiResponse<HotkeyDto>>("/hotkeys", body); },
   remove(id: string) { return api.delete<ApiResponse<null>>(`/hotkeys/${id}`); },
   seedDefaults() { return api.post<ApiResponse<null>>("/hotkeys/seed-defaults"); },
 };
@@ -545,15 +549,15 @@ export interface ScriptDto { id: string; name: string; description?: string; lan
 export interface ScriptRunResult { output: string; exitCode: number; duration: number; }
 
 export const scriptsApi = {
-  create(body: { name: string; description?: string; language: string; content: string }) { return api.post<ApiResponse<ScriptDto>>("/scripts", body); },
+  create(body: { name: string; command: string; workingDirectory?: string }) { return api.post<ApiResponse<ScriptDto>>("/scripts", body); },
   run(id: string) { return api.post<ApiResponse<ScriptRunResult>>(`/scripts/${id}/run`); },
-  spinEnvironment(body: { projectPath: string; template?: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/spin-environment", body); },
+  spinEnvironment(body: { projectPath: string; env?: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/spin-environment", body); },
   resolveConflicts(body: { projectPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/resolve-conflicts", body); },
-  nukeMigrate(body: { projectPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/nuke-migrate", body); },
+  nukeMigrate(body: { projectPath: string; connectionString?: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/nuke-migrate", body); },
   flushCache() { return api.post<ApiResponse<ScriptRunResult>>("/scripts/flush-cache"); },
   formatLint(body: { projectPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/format-lint", body); },
   killNodes() { return api.post<ApiResponse<ScriptRunResult>>("/scripts/kill-nodes"); },
-  generateBoilerplate(body: { template: string; name: string; outputPath: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/generate-boilerplate", body); },
+  generateBoilerplate(body: { template: string; projectName: string }) { return api.post<ApiResponse<ScriptRunResult>>("/scripts/generate-boilerplate", body); },
 };
 
 // ─── Snippets API ───────────────────────────────────────────────────
@@ -561,8 +565,8 @@ export interface SnippetDto { id: string; title: string; language: string; conte
 
 export const snippetsApi = {
   getAll() { return api.get<ApiResponse<SnippetDto[]>>("/snippets"); },
-  create(body: { title: string; language: string; content: string; tags?: string[] }) { return api.post<ApiResponse<SnippetDto>>("/snippets", body); },
-  update(id: string, body: { title: string; language: string; content: string; tags?: string[] }) { return api.put<ApiResponse<SnippetDto>>(`/snippets/${id}`, body); },
+  create(body: { title: string; code: string; language: string; tags?: string[] }) { return api.post<ApiResponse<SnippetDto>>("/snippets", body); },
+  update(id: string, body: { title: string; code: string; language: string; tags?: string[] }) { return api.put<ApiResponse<SnippetDto>>(`/snippets/${id}`, body); },
   remove(id: string) { return api.delete<ApiResponse<null>>(`/snippets/${id}`); },
   toggleFavorite(id: string) { return api.patch<ApiResponse<null>>(`/snippets/${id}/favorite`); },
   sendToNotion(body: { snippetId: string }) { return api.post<ApiResponse<null>>("/snippets/send-to-notion", body); },
@@ -574,7 +578,7 @@ export interface FocusSessionDto { id: string; task: string; duration: number; s
 export interface FocusStatsDto { totalSessions: number; totalMinutes: number; averageDuration: number; streak: number; todaySessions: number; todayMinutes: number; }
 
 export const focusApi = {
-  start(body: { task: string; duration?: number }) { return api.post<ApiResponse<FocusSessionDto>>("/focus", body); },
+  start(body: { durationMinutes: number; taskDescription?: string; sessionType?: string }) { return api.post<ApiResponse<FocusSessionDto>>("/focus", body); },
   getStats() { return api.get<ApiResponse<FocusStatsDto>>("/focus/stats"); },
   getActive() { return api.get<ApiResponse<FocusSessionDto | null>>("/focus/active"); },
   complete(id: string) { return api.post<ApiResponse<null>>(`/focus/${id}/complete`); },
@@ -652,7 +656,7 @@ export const teamsApi = {
   getMyTeams() { return api.get<ApiResponse<TeamDto[]>>("/teams/my"); },
   create(body: { name: string; description?: string }) { return api.post<ApiResponse<TeamDto>>("/teams", body); },
   getTeam(teamId: string) { return api.get<ApiResponse<any>>(`/teams/${teamId}`); },
-  addMember(teamId: string, body: { email: string; role?: string }) { return api.post<ApiResponse<null>>(`/teams/${teamId}/members`, body); },
+  addMember(teamId: string, body: { userId: string }) { return api.post<ApiResponse<null>>(`/teams/${teamId}/members`, body); },
   removeMember(teamId: string, userId: string) { return api.delete<ApiResponse<null>>(`/teams/${teamId}/members/${userId}`); },
   getRadar(teamId: string) { return api.get<ApiResponse<any>>(`/teams/${teamId}/radar`); },
   getProductivity(teamId: string) { return api.get<ApiResponse<any>>(`/teams/${teamId}/productivity`); },
@@ -662,8 +666,8 @@ export const teamsApi = {
 // ─── GlobalShortcuts API ────────────────────────────────────────────
 export const globalShortcutsApi = {
   commandPalette(search: string) { return api.get<ApiResponse<any>>("/global-shortcuts/command-palette", { params: { search } }); },
-  aiContext(body: { context: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/ai-context", body); },
-  capture(body: { content: string; type?: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/capture", body); },
+  aiContext(body: { selectedText: string; contextType: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/ai-context", body); },
+  capture(body: { title: string; content: string; tags?: string[] }) { return api.post<ApiResponse<any>>("/global-shortcuts/capture", body); },
   share(body: { content: string; recipients?: string[] }) { return api.post<ApiResponse<any>>("/global-shortcuts/share", body); },
   calendarEvent(body: { text: string }) { return api.post<ApiResponse<any>>("/global-shortcuts/calendar-event", body); },
 };
@@ -687,11 +691,11 @@ export interface TeamInfoDto { teamId: string; objective?: string; armory?: any;
 
 export const teamInfoApi = {
   getInfo(teamId: string) { return api.get<ApiResponse<TeamInfoDto>>(`/team-info/${teamId}`); },
-  setObjective(teamId: string, body: { objective: string }) { return api.post<ApiResponse<null>>(`/team-info/${teamId}/objective`, body); },
-  updateMyFocus(teamId: string, body: { focus: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/my-focus`, body); },
-  updateArmory(teamId: string, body: { tools: string[] }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/armory`, body); },
-  addVaultLink(teamId: string, body: { name: string; url: string; category?: string }) { return api.post<ApiResponse<any>>(`/team-info/${teamId}/vault-links`, body); },
-  updateVaultLink(teamId: string, linkId: string, body: { name: string; url: string; category?: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`, body); },
+  setObjective(teamId: string, body: { title: string; description?: string; deadline?: string }) { return api.post<ApiResponse<null>>(`/team-info/${teamId}/objective`, body); },
+  updateMyFocus(teamId: string, body: { focusDescription: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/my-focus`, body); },
+  updateArmory(teamId: string, body: { stagingServerUrl?: string; testAccountEmail?: string; testAccountPassword?: string; productionVersion?: string; stagingVersion?: string }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/armory`, body); },
+  addVaultLink(teamId: string, body: { label: string; url: string; icon?: string; sortOrder?: number }) { return api.post<ApiResponse<any>>(`/team-info/${teamId}/vault-links`, body); },
+  updateVaultLink(teamId: string, linkId: string, body: { label: string; url: string; icon?: string; sortOrder?: number }) { return api.put<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`, body); },
   deleteVaultLink(teamId: string, linkId: string) { return api.delete<ApiResponse<null>>(`/team-info/${teamId}/vault-links/${linkId}`); },
 };
 
@@ -710,7 +714,7 @@ export interface SquadRadarDto { userId: string; fullName: string; status: strin
 
 export const squadRadarApi = {
   getRadar(teamId: string) { return api.get<ApiResponse<SquadRadarDto[]>>(`/squad-radar/${teamId}`); },
-  updatePresence(body: { status: string; currentTask?: string }) { return api.put<ApiResponse<null>>("/squad-radar/presence", body); },
+  updatePresence(body: { status: string; currentTask?: string; teamId: string }) { return api.put<ApiResponse<null>>("/squad-radar/presence", body); },
 };
 
 // ─── SquadArena API ─────────────────────────────────────────────
@@ -720,7 +724,7 @@ export interface BountyDto { id: string; title: string; description?: string; xp
 export const squadArenaApi = {
   getLeaderboard(teamId: string) { return api.get<ApiResponse<LeaderboardEntryDto[]>>(`/squad-arena/leaderboard/${teamId}`); },
   getBounties(teamId: string) { return api.get<ApiResponse<BountyDto[]>>(`/squad-arena/bounties/${teamId}`); },
-  giveBadge(body: { userId: string; badge: string; reason?: string }) { return api.post<ApiResponse<null>>("/squad-arena/badge", body); },
+  giveBadge(body: { teamId: string; recipientUserId: string; badgeType: string; message?: string }) { return api.post<ApiResponse<null>>("/squad-arena/badge", body); },
   createBounty(body: { teamId: string; title: string; description?: string; xpReward: number }) { return api.post<ApiResponse<BountyDto>>("/squad-arena/bounty", body); },
   claimBounty(id: string) { return api.post<ApiResponse<null>>(`/squad-arena/bounty/${id}/claim`); },
   completeBounty(id: string) { return api.post<ApiResponse<null>>(`/squad-arena/bounty/${id}/complete`); },
@@ -940,6 +944,191 @@ export const secOpsScriptsApi = {
   rotateSsh(body: { keyComment: string; keySize: number }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/rotate-ssh", body); },
   firewallLockdown(body: { allowedPorts: number[] }) { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/firewall-lockdown", body); },
   clearDns() { return api.post<ApiResponse<ScriptOutputDto>>("/sec-ops-scripts/clear-dns", {}); },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// 📈 MARKETER DASHBOARD APIs
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── MarketerInsights API ───────────────────────────────────────
+export interface RoasDto { roas: number; totalSpend: number; totalRevenue: number; }
+export interface LeadsDto { totalLeads: number; organicLeads: number; paidLeads: number; }
+export interface ZombieAdsDto { totalKilled: number; moneySaved: number; }
+export interface AbTestDto { winRate: number; totalTests: number; wins: number; }
+export interface PeakEngagementDto { hourlyEngagement: Record<string, number>; }
+export interface SentimentDto { positivePercent: number; negativePercent: number; neutralPercent: number; totalMentions: number; }
+export interface TimeSavedReportingDto { hoursSaved: number; reportsGenerated: number; }
+
+export const marketerInsightsApi = {
+  totalRoas(from?: string, to?: string) { return api.get<ApiResponse<RoasDto>>("/marketer-insights/total-roas", { params: { from, to } }); },
+  leadsGenerated(from?: string, to?: string) { return api.get<ApiResponse<LeadsDto>>("/marketer-insights/leads-generated", { params: { from, to } }); },
+  zombieAdsKilled(from?: string, to?: string) { return api.get<ApiResponse<ZombieAdsDto>>("/marketer-insights/zombie-ads-killed", { params: { from, to } }); },
+  abTestWinRate(from?: string, to?: string) { return api.get<ApiResponse<AbTestDto>>("/marketer-insights/ab-test-win-rate", { params: { from, to } }); },
+  peakEngagement(from?: string, to?: string) { return api.get<ApiResponse<PeakEngagementDto>>("/marketer-insights/peak-engagement", { params: { from, to } }); },
+  audienceSentiment(from?: string, to?: string) { return api.get<ApiResponse<SentimentDto>>("/marketer-insights/audience-sentiment", { params: { from, to } }); },
+  timeSavedReporting(from?: string, to?: string) { return api.get<ApiResponse<TimeSavedReportingDto>>("/marketer-insights/time-saved-reporting", { params: { from, to } }); },
+};
+
+// ─── MarketerUtilities API ──────────────────────────────────────
+export interface SeoCheckDto { title: string; titleLength: number; titleOk: boolean; description: string; descriptionLength: number; descriptionOk: boolean; previewSnippet: string; }
+export interface CopywritingDto { copy: string; }
+export interface MdToHtmlDto { html: string; }
+export interface KeywordDensityDto { keyword: string; count: number; density: number; recommendation: string; }
+export interface ReadabilityDto { fleschScore: number; level: string; avgSentenceLength: number; avgWordLength: number; }
+export interface EmojiDto { emoji: string; name: string; category: string; }
+
+export const marketerUtilitiesApi = {
+  seoCheck(body: { title: string; description: string; url: string }) { return api.post<ApiResponse<SeoCheckDto>>("/marketer-utilities/seo-check", body); },
+  copywriting(body: { productName: string; tone: string }) { return api.post<ApiResponse<CopywritingDto>>("/marketer-utilities/copywriting", body); },
+  markdownToHtml(body: { markdown: string }) { return api.post<ApiResponse<MdToHtmlDto>>("/marketer-utilities/markdown-to-html", body); },
+  keywordDensity(body: { content: string; keyword: string }) { return api.post<ApiResponse<KeywordDensityDto>>("/marketer-utilities/keyword-density", body); },
+  readability(body: { text: string }) { return api.post<ApiResponse<ReadabilityDto>>("/marketer-utilities/readability", body); },
+  emojis(body: { query: string }) { return api.post<ApiResponse<EmojiDto[]>>("/marketer-utilities/emojis", body); },
+};
+
+// ─── MarketerAgents API ─────────────────────────────────────────
+export interface BudgetBleedCampaign { campaignId: string; name: string; spend: number; revenue: number; roas: number; }
+export interface BudgetBleedDto { hasBleed: boolean; campaigns: BudgetBleedCampaign[]; }
+export interface BrokenLinkDto { url: string; statusCode: number; errorMessage: string; }
+export interface ViralTrendDto { hashtag: string; platform: string; volume: number; sentiment: string; }
+export interface CompetitorPriceDto { productName: string; oldPrice: number; newPrice: number; discountPercent: number; }
+export interface ResendResultDto { result: string; }
+export interface UtmResultDto { utmUrl: string; }
+export interface CartAbandonmentDto { abandonedCount: number; abandonmentRate: number; recommendation: string; }
+
+export const marketerAgentsApi = {
+  budgetBleed() { return api.post<ApiResponse<BudgetBleedDto>>("/marketer-agents/budget-bleed", {}); },
+  brokenLinks(body: { baseUrl: string }) { return api.post<ApiResponse<BrokenLinkDto[]>>("/marketer-agents/broken-links", body); },
+  viralTrends(body: { industry: string }) { return api.post<ApiResponse<ViralTrendDto[]>>("/marketer-agents/viral-trends", body); },
+  competitorPriceDrop(body: { competitorUrl: string }) { return api.post<ApiResponse<CompetitorPriceDto[]>>("/marketer-agents/competitor-price-drop", body); },
+  resendLowOpen(body: { campaignId: string; newSubject: string }) { return api.post<ApiResponse<ResendResultDto>>("/marketer-agents/resend-low-open", body); },
+  autoUtm(body: { url: string; source: string; medium: string; campaign: string }) { return api.post<ApiResponse<UtmResultDto>>("/marketer-agents/auto-utm", body); },
+  cartAbandonment() { return api.get<ApiResponse<CartAbandonmentDto>>("/marketer-agents/cart-abandonment"); },
+};
+
+// ─── MarketerScripts API ────────────────────────────────────────
+export interface MktScriptOutputDto { output: string; }
+export interface MktReportDto { report: string; }
+export interface EmailVerifyResultDto { total: number; valid: number; invalid: number; invalidEmails: string[]; }
+
+export const marketerScriptsApi = {
+  pauseCampaigns(body: { campaignIds: string[]; reason: string }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/pause-campaigns", body); },
+  socialBlast(body: { content: string; platforms: string[] }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/social-blast", body); },
+  weeklyReport(body: { from: string; to: string }) { return api.post<ApiResponse<MktReportDto>>("/marketer-scripts/weekly-report", body); },
+  utmLink(body: { baseUrl: string; source: string; medium: string; campaign: string }) { return api.post<ApiResponse<UtmResultDto>>("/marketer-scripts/utm-link", body); },
+  competitorScrape(body: { competitorUrl: string }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/competitor-scrape", body); },
+  clearCookies(body: { browser: string }) { return api.post<ApiResponse<MktScriptOutputDto>>("/marketer-scripts/clear-cookies", body); },
+  verifyEmails(body: { emails: string[] }) { return api.post<ApiResponse<EmailVerifyResultDto>>("/marketer-scripts/verify-emails", body); },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// 👑 TEAM LEADER DASHBOARD APIs
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── LeaderInsights ─────────────────────────────────────────────
+export interface SprintDataPoint { sprintName: string; points: number; endDate: string; }
+export interface SprintVelocityDto { totalPoints: number; averagePerSprint: number; dataPoints: SprintDataPoint[]; }
+export interface MeetingsAvoidedDto { meetingsCancelled: number; hoursSaved: number; estimatedMoneySaved: number; }
+export interface BlockedMember { memberName: string; blockedHours: number; topBlocker: string; }
+export interface BlockedTimeDto { totalBlockedHours: number; members: BlockedMember[]; }
+export interface FeatureCost { featureName: string; estimatedHours: number; cost: number; }
+export interface CostPerFeatureDto { features: FeatureCost[]; averageCost: number; }
+export interface ReviewTurnaroundDto { averageHours: number; medianHours: number; totalReviews: number; }
+export interface TopContributorDto { memberName: string; tasksClosed: number; prsMerged: number; bugsFixed: number; totalScore: number; }
+export interface MoodFactor { factor: string; impact: number; direction: string; }
+export interface TeamMoodDto { stressLevel: number; happinessLevel: number; overallMood: string; factors: MoodFactor[]; }
+
+export const leaderInsightsApi = {
+  sprintVelocity(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<SprintVelocityDto>>("/leader-insights/sprint-velocity", { params: { teamId, from, to } }); },
+  meetingsAvoided(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<MeetingsAvoidedDto>>("/leader-insights/meetings-avoided", { params: { teamId, from, to } }); },
+  blockedTime(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<BlockedTimeDto>>("/leader-insights/blocked-time", { params: { teamId, from, to } }); },
+  costPerFeature(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<CostPerFeatureDto>>("/leader-insights/cost-per-feature", { params: { teamId, from, to } }); },
+  reviewTurnaround(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<ReviewTurnaroundDto>>("/leader-insights/review-turnaround", { params: { teamId, from, to } }); },
+  topContributor(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<TopContributorDto>>("/leader-insights/top-contributor", { params: { teamId, from, to } }); },
+  teamMood(teamId: string, from?: string, to?: string) { return api.get<ApiResponse<TeamMoodDto>>("/leader-insights/team-mood", { params: { teamId, from, to } }); },
+};
+
+// ─── LeaderUtilities ────────────────────────────────────────────
+export interface MemberTimeEntry { memberName: string; timezoneId: string; localTime: string; offset: string; }
+export interface TimezonesDto { utcNow: string; memberTimes: MemberTimeEntry[]; }
+export interface QuickPollDto { pollId: string; formattedMessage: string; }
+export interface CapacityMember { memberName: string; availableHours: number; }
+export interface CapacityDto { totalAvailableHours: number; members: CapacityMember[]; }
+export interface CostEstimateDto { laborCost: number; infrastructureCost: number; totalCost: number; breakdown: string; }
+export interface RiskItem { title: string; impact: number; probability: number; score: number; }
+export interface RiskMatrixDto { urgent: RiskItem[]; important: RiskItem[]; later: RiskItem[]; }
+export interface DecisionLogDto { id: string; decision: string; rationale: string; decidedBy: string; recordedAt: string; }
+export interface MdHtmlDto { html: string; }
+
+export const leaderUtilitiesApi = {
+  timezones(body: { members: { memberName: string; timezoneId: string }[] }) { return api.post<ApiResponse<TimezonesDto>>("/leader-utilities/timezones", body); },
+  quickPoll(body: { question: string; options: string[] }) { return api.post<ApiResponse<QuickPollDto>>("/leader-utilities/quick-poll", body); },
+  capacity(body: { members: { memberName: string; hoursPerDay: number; daysOff: number; meetingHoursPerWeek: number }[] }) { return api.post<ApiResponse<CapacityDto>>("/leader-utilities/capacity", body); },
+  costEstimate(body: { hoursEstimated: number; hourlyRate: number; serverMonthlyCost: number; estimatedMonths: number }) { return api.post<ApiResponse<CostEstimateDto>>("/leader-utilities/cost-estimate", body); },
+  riskMatrix(body: { items: { title: string; impact: number; probability: number }[] }) { return api.post<ApiResponse<RiskMatrixDto>>("/leader-utilities/risk-matrix", body); },
+  decisionLog(body: { decision: string; rationale: string; decidedBy: string }) { return api.post<ApiResponse<DecisionLogDto>>("/leader-utilities/decision-log", body); },
+  markdown(body: { markdown: string }) { return api.post<ApiResponse<MdHtmlDto>>("/leader-utilities/markdown", body); },
+};
+
+// ─── LeaderAgents ───────────────────────────────────────────────
+export interface BottleneckMember { memberName: string; taskKey: string; daysStuck: number; recommendation: string; }
+export interface BottleneckDto { members: BottleneckMember[]; }
+export interface BurnoutMember { memberName: string; overtimeHours: number; lateNightCommits: number; riskLevel: string; }
+export interface BurnoutRiskDto { members: BurnoutMember[]; }
+export interface ScopeCreepDto { originalTaskCount: number; currentTaskCount: number; addedMidSprint: number; creepPercentage: number; warning: string; }
+export interface StalePr { prTitle: string; author: string; hoursPending: number; url: string; }
+export interface PrReviewNagDto { stalePrs: StalePr[]; totalStale: number; }
+export interface UnassignedBug { issueKey: string; title: string; severity: string; reportedAt: string; }
+export interface UnassignedBugsDto { bugs: UnassignedBug[]; totalUnassigned: number; }
+export interface GhostMember { memberName: string; lastActiveAt: string; hoursInactive: number; }
+export interface GhostMembersDto { ghostMembers: GhostMember[]; }
+export interface MilestoneDto { hasMilestone: boolean; milestoneName: string; completionPercentage: number; celebrationMessage: string; }
+
+export const leaderAgentsApi = {
+  bottleneck(teamId: string) { return api.get<ApiResponse<BottleneckDto>>(`/leader-agents/bottleneck/${teamId}`); },
+  burnoutRisk(teamId: string) { return api.get<ApiResponse<BurnoutRiskDto>>(`/leader-agents/burnout-risk/${teamId}`); },
+  scopeCreep(teamId: string, sprintId?: string) { return api.get<ApiResponse<ScopeCreepDto>>(`/leader-agents/scope-creep/${teamId}`, { params: { sprintId } }); },
+  prReviewNag(body: { teamId: string; thresholdHours: number }) { return api.post<ApiResponse<PrReviewNagDto>>("/leader-agents/pr-review-nag", body); },
+  unassignedBugs(teamId: string) { return api.get<ApiResponse<UnassignedBugsDto>>(`/leader-agents/unassigned-bugs/${teamId}`); },
+  ghostMembers(body: { teamId: string }) { return api.post<ApiResponse<GhostMembersDto>>("/leader-agents/ghost-members", body); },
+  milestone(teamId: string) { return api.get<ApiResponse<MilestoneDto>>(`/leader-agents/milestone/${teamId}`); },
+};
+
+// ─── LeaderScripts ──────────────────────────────────────────────
+export interface SprintStarterDto { sprintId: string; sprintName: string; tasksCreated: number; slackNotification: string; }
+export interface BlockedTask { taskKey: string; assignee: string; summary: string; daysBlocked: number; }
+export interface BlockedTaskBlasterDto { blockedTasksFound: number; tasks: BlockedTask[]; messagesSent: number; }
+export interface ReleaseNotesDto { notes: string; }
+export interface LeaderScriptOutputDto { output: string; }
+export interface WeekSummaryDto { tasksCompleted: number; bugsFixed: number; prsMerged: number; velocityPoints: number; summaryMarkdown: string; }
+export interface ReassignedTask { taskKey: string; fromUser: string; toUser: string; }
+export interface BulkReassignDto { tasksReassigned: number; tasks: ReassignedTask[]; }
+
+export const leaderScriptsApi = {
+  sprintStarter(body: { sprintName: string; initialTasks: string[]; teamId: string }) { return api.post<ApiResponse<SprintStarterDto>>("/leader-scripts/sprint-starter", body); },
+  blockedTaskBlaster(body: { teamId: string }) { return api.post<ApiResponse<BlockedTaskBlasterDto>>("/leader-scripts/blocked-task-blaster", body); },
+  releaseNotes(body: { repoName: string; fromTag: string; toTag: string }) { return api.post<ApiResponse<ReleaseNotesDto>>("/leader-scripts/release-notes", body); },
+  meetingMode(body: { durationMinutes: number }) { return api.post<ApiResponse<LeaderScriptOutputDto>>("/leader-scripts/meeting-mode", body); },
+  weekSummary(body: { teamId: string }) { return api.post<ApiResponse<WeekSummaryDto>>("/leader-scripts/week-summary", body); },
+  bulkReassign(body: { absentMemberId: string; teamId: string }) { return api.post<ApiResponse<BulkReassignDto>>("/leader-scripts/bulk-reassign", body); },
+  standupPing(body: { teamId: string }) { return api.post<ApiResponse<LeaderScriptOutputDto>>("/leader-scripts/standup-ping", body); },
+};
+
+// ─── LeaderModals ───────────────────────────────────────────────
+export interface LeaderModalDto { id: string; modalType: string; hasBeenSeen: boolean; dismissedAt: string | null; payloadJson: string | null; teamId: string; }
+export interface LeaderModalPayloadDto { id: string; modalType: string; payloadJson: string; }
+
+export const leaderModalsApi = {
+  getAll() { return api.get<ApiResponse<LeaderModalDto[]>>("/leader-modals"); },
+  getPayload(modalId: string) { return api.get<ApiResponse<LeaderModalPayloadDto>>(`/leader-modals/${modalId}/payload`); },
+  create(body: { modalType: number; teamId: string; payloadJson?: string }) { return api.post<ApiResponse<{ id: string }>>("/leader-modals", body); },
+  dismiss(modalId: string) { return api.post<ApiResponse<void>>(`/leader-modals/${modalId}/dismiss`); },
+};
+
+// ─── Gmail API ──────────────────────────────────────────────────
+export interface GmailMessageDto { id: string; from: string; subject: string; snippet: string; date: string; isRead: boolean; }
+export const gmailApi = {
+  getUnread() { return api.get<ApiResponse<GmailMessageDto[]>>("/gmail/unread"); },
 };
 
 export default api;

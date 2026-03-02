@@ -9,6 +9,7 @@ public interface IApplicationDbContext
     DbSet<Integration> Integrations { get; }
     DbSet<Workspace> Workspaces { get; }
     DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; }
+    DbSet<WorkspaceMember> WorkspaceMembers { get; }
     DbSet<UserActivity> UserActivities { get; }
     DbSet<Snippet> Snippets { get; }
     DbSet<Script> Scripts { get; }

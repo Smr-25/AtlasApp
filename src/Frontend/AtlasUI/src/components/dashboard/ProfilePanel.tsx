@@ -788,7 +788,11 @@ const ProfilePanel = () => {
                   whileTap={{ scale: 0.98 }}
                   onClick={async () => {
                     try {
-                      const res = await subscriptionApi.checkout({ tier: "Pro" });
+                      const res = await subscriptionApi.checkout({
+                        priceId: "price_pro",
+                        successUrl: `${window.location.origin}/dashboard?checkout=success`,
+                        cancelUrl: `${window.location.origin}/dashboard?checkout=cancel`,
+                      });
                       if (res.data.isSuccess && res.data.data?.url) {
                         window.location.href = res.data.data.url;
                       }

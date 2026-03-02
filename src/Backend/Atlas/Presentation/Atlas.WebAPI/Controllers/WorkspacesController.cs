@@ -1,11 +1,16 @@
+using Atlas.Application.Features.Workspaces.Commands.AddWorkspaceMember;
+using Atlas.Application.Features.Workspaces.Commands.ChangeWorkspaceMemberRole;
 using Atlas.Application.Features.Workspaces.Commands.CreateWorkspace;
 using Atlas.Application.Features.Workspaces.Commands.DeleteWorkspace;
+using Atlas.Application.Features.Workspaces.Commands.RemoveWorkspaceMember;
 using Atlas.Application.Features.Workspaces.Commands.SetDefault;
 using Atlas.Application.Features.Workspaces.Commands.ToggleIntegration;
 using Atlas.Application.Features.Workspaces.Commands.UpdateWorkspace;
 using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceById;
+using Atlas.Application.Features.Workspaces.Queries.GetWorkspaceMembers;
 using Atlas.Application.Features.Workspaces.Queries.GetWorkspaces;
 using Atlas.Application.Features.Workspaces.Queries.ValidateFolder;
+using Atlas.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Atlas.Application.Features.Workspaces.Dtos;
@@ -71,6 +76,37 @@ public class WorkspacesController : ApiControllerBase
         var result = await Mediator.Send(new ValidateFolderQuery(request.FolderPath));
         return OkResponse(result);
     }
+    
+    // ─── Member Management ─────────────────────────────────────
+    
+    [HttpGet("{id}/members")]
+    public async Task<IActionResult> GetMembers(Guid id)
+    {
+        return OkResponse(await Mediator.Send(new GetWorkspaceMembersQuery(id)));
+    }
+    
+    [HttpPost("{id}/members")]
+    public async Task<IActionResult> AddMember(Guid id, [FromBody] AddWorkspaceMemberRequest request)
+    {
+        await Mediator.Send(new AddWorkspaceMemberCommand(id, request.UserId, request.Role));
+        return NoContentResponse();
+    }
+    
+    [HttpDelete("{id}/members/{userId}")]
+    public async Task<IActionResult> RemoveMember(Guid id, Guid userId)
+    {
+        await Mediator.Send(new RemoveWorkspaceMemberCommand(id, userId));
+        return NoContentResponse();
+    }
+    
+    [HttpPatch("{id}/members/{userId}/role")]
+    public async Task<IActionResult> ChangeMemberRole(Guid id, Guid userId, [FromBody] ChangeRoleRequest request)
+    {
+        await Mediator.Send(new ChangeWorkspaceMemberRoleCommand(id, userId, request.NewRole));
+        return NoContentResponse();
+    }
 }
 
 public record ValidateFolderRequest(string FolderPath);
+public record AddWorkspaceMemberRequest(Guid UserId, WorkspaceMemberRole Role = WorkspaceMemberRole.Viewer);
+public record ChangeRoleRequest(WorkspaceMemberRole NewRole);

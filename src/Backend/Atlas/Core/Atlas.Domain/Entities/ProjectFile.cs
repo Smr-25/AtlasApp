@@ -12,8 +12,9 @@ public class ProjectProfile : BaseEntity
     public string? MigrationProjectPath { get; set; }  
     public string LastMigrationName { get; set; } = ""; 
     public Guid UserId { get; set; }
+    public Guid? WorkspaceId { get; set; }
     
-    public static ProjectProfile Create(string name, ProjectType type, string rootPath, string? startupProjectPath, string? migrationProjectPath, Guid userId)
+    public static ProjectProfile Create(string name, ProjectType type, string rootPath, string? startupProjectPath, string? migrationProjectPath, Guid userId, Guid? workspaceId = null)
     {
         return new ProjectProfile
         {
@@ -23,7 +24,8 @@ public class ProjectProfile : BaseEntity
             RootPath = rootPath,
             StartupProjectPath = startupProjectPath,
             MigrationProjectPath = migrationProjectPath,
-            UserId = userId
+            UserId = userId,
+            WorkspaceId = workspaceId
         };
     }
 }

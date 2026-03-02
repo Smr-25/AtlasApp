@@ -32,7 +32,7 @@ const SnippetsPanel = () => {
     if (!formTitle.trim() || !formContent.trim()) return;
     setSaving(true);
     try {
-      const body = { title: formTitle, language: formLang, content: formContent, tags: formTags.split(",").map((t) => t.trim()).filter(Boolean) };
+      const body = { title: formTitle, language: formLang, code: formContent, tags: formTags.split(",").map((t) => t.trim()).filter(Boolean) };
       if (editTarget) {
         await snippetsApi.update(editTarget.id, body);
       } else {

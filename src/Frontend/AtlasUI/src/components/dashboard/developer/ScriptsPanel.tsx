@@ -12,7 +12,7 @@ const quickActions: QuickAction[] = [
   { id: "flush", name: "Flush Cache", icon: RefreshCw, desc: "Clear all caches", color: "text-cyan-400 bg-cyan-500/10", action: () => scriptsApi.flushCache() },
   { id: "format", name: "Format & Lint", icon: Braces, desc: "Run formatters & linters", color: "text-green-400 bg-green-500/10", action: (p) => scriptsApi.formatLint({ projectPath: p }) },
   { id: "kill", name: "Kill Node.js", icon: Trash2, desc: "Kill all Node processes", color: "text-orange-400 bg-orange-500/10", action: () => scriptsApi.killNodes() },
-  { id: "boilerplate", name: "Boilerplate", icon: FileCode, desc: "Generate project scaffold", color: "text-purple-400 bg-purple-500/10", action: (p) => scriptsApi.generateBoilerplate({ template: "react", name: "new-project", outputPath: p }) },
+  { id: "boilerplate", name: "Boilerplate", icon: FileCode, desc: "Generate project scaffold", color: "text-purple-400 bg-purple-500/10", action: (p) => scriptsApi.generateBoilerplate({ template: "clean-architecture", projectName: "NewApp" }) },
 ];
 
 const ScriptsPanel = () => {

@@ -53,7 +53,7 @@ const FocusPanel = () => {
     if (!task.trim()) return;
     setActionLoading(true);
     try {
-      const res = await focusApi.start({ task, duration });
+      const res = await focusApi.start({ durationMinutes: duration, taskDescription: task, sessionType: "DeepWork" });
       if (res.data.isSuccess && res.data.data) {
         setActiveSession(res.data.data);
         setElapsed(0);

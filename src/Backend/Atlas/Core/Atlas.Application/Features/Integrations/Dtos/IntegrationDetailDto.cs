@@ -7,6 +7,7 @@ public record IntegrationDetailDto(
     string Name,
     IntegrationProvider Provider,
     IntegrationStatus Status,
+    IntegrationScope Scope,
     string ProviderName,
     string StatusName,
     DateTime? TokenExpiresAt,

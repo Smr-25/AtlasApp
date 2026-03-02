@@ -7,4 +7,5 @@ public interface ICurrentUserService
     bool IsAuthenticated { get; }
     string? Language { get; }      
     int TimezoneOffsetInMinutes { get; }
+    Guid? WorkspaceId { get; }
 }

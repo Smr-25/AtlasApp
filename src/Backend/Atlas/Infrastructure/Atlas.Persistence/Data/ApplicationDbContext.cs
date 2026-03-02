@@ -14,6 +14,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Integration> Integrations { get; set; } 
     public DbSet<Workspace> Workspaces { get; set; } = null!;
     public DbSet<WorkspaceIntegration> WorkspaceIntegrations { get; set; } 
+    public DbSet<WorkspaceMember> WorkspaceMembers { get; set; }
     public DbSet<OnboardingQuestion> OnboardingQuestions { get; set; }
     public DbSet<OnboardingOption> OnboardingOptions { get; set; }
     public DbSet<OnboardingAnswer> OnboardingAnswers { get; set; }

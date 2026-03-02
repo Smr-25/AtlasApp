@@ -2,6 +2,7 @@ using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
 using Atlas.Domain.Entities;
+using Atlas.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ namespace Atlas.Application.Features.Workspaces.Commands.ToggleIntegration;
 public class ToggleWorkspaceIntegrationCommandHandler(
     IApplicationDbContext applicationDbContext,
     ICurrentUserService currentUserService,
+    IWorkspaceAccessService workspaceAccess,
     ILogger<ToggleWorkspaceIntegrationCommandHandler> logger)
     : IRequestHandler<ToggleWorkspaceIntegrationCommand>
 {
@@ -20,15 +22,22 @@ public class ToggleWorkspaceIntegrationCommandHandler(
         logger.LogInformation("Toggling integration {IntegrationId} for workspace {WorkspaceId}, Enable: {Enable}", 
             request.IntegrationId, request.WorkspaceId, request.Enable);
 
+        // Editor+ can toggle integrations
+        await workspaceAccess.ValidateAccessAsync(request.WorkspaceId, userId, WorkspaceMemberRole.Editor, cancellationToken);
+
         var workspace = await applicationDbContext.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && w.UserProfileId == userId, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && !w.IsDeleted, cancellationToken);
         
         if (workspace == null) throw new NotFoundException("Workspace", request.WorkspaceId);
 
         var integration = await applicationDbContext.Integrations
-            .FirstOrDefaultAsync(i => i.Id == request.IntegrationId && i.UserProfileId == userId, cancellationToken);
+            .FirstOrDefaultAsync(i => i.Id == request.IntegrationId && !i.IsDeleted, cancellationToken);
             
         if (integration == null) throw new NotFoundException("Integration", request.IntegrationId);
+
+        // Personal scope integrations can only be toggled by their owner
+        if (integration.Scope == IntegrationScope.Personal && integration.UserProfileId != userId)
+            throw new ForbiddenException("Cannot toggle another user's personal integration. The user must connect their own.");
 
         var link = await applicationDbContext.WorkspaceIntegrations
             .FirstOrDefaultAsync(wi => wi.WorkspaceId == request.WorkspaceId && wi.IntegrationId == request.IntegrationId, cancellationToken);

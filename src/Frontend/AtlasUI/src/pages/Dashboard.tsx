@@ -7,9 +7,11 @@ import {
   LayoutDashboard, Plug, FolderOpen, Star, Plus,
   GitBranch, Terminal, Code2, Coffee,
   Container, Bug, FileCode, TrendingUp, SquareKanban, Sparkles,
-  Activity, Radio, Trophy, MessageSquare, PanelRightClose, PanelRightOpen,
+  Activity, Radio, Trophy, PanelRightClose, PanelRightOpen,
   Bot, PenTool, Layers, Ruler, Palette,
   Shield, ShieldAlert, Zap, Wrench,
+  DollarSign, FlaskConical, BarChart3,
+  BookOpen, Radar, FolderGit2, Users, BookMarked,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -47,7 +49,25 @@ import SecOpsInsightsPanel from "@/components/dashboard/cyber/SecOpsInsightsPane
 import SecOpsUtilitiesPanel from "@/components/dashboard/cyber/SecOpsUtilitiesPanel";
 import SecOpsAgentsPanel from "@/components/dashboard/cyber/SecOpsAgentsPanel";
 import SecOpsScriptsPanel from "@/components/dashboard/cyber/SecOpsScriptsPanel";
+import MarketerOverviewPanel from "@/components/dashboard/marketer/MarketerOverviewPanel";
+import MarketerInsightsPanel from "@/components/dashboard/marketer/MarketerInsightsPanel";
+import MarketerUtilitiesPanel from "@/components/dashboard/marketer/MarketerUtilitiesPanel";
+import MarketerAgentsPanel from "@/components/dashboard/marketer/MarketerAgentsPanel";
+import MarketerScriptsPanel from "@/components/dashboard/marketer/MarketerScriptsPanel";
+import LeaderOverviewPanel from "@/components/dashboard/leader/LeaderOverviewPanel";
+import LeaderInsightsPanel from "@/components/dashboard/leader/LeaderInsightsPanel";
+import LeaderUtilitiesPanel from "@/components/dashboard/leader/LeaderUtilitiesPanel";
+import LeaderAgentsPanel from "@/components/dashboard/leader/LeaderAgentsPanel";
+import LeaderScriptsPanel from "@/components/dashboard/leader/LeaderScriptsPanel";
+import LeaderModalsPanel from "@/components/dashboard/leader/LeaderModalsPanel";
 import ProfilePanel from "@/components/dashboard/ProfilePanel";
+import TeamsPanel from "@/components/dashboard/shared/TeamsPanel";
+import OmniFeedPanel from "@/components/dashboard/shared/OmniFeedPanel";
+import SquadRadarPanel from "@/components/dashboard/shared/SquadRadarPanel";
+import SquadArenaPanel from "@/components/dashboard/shared/SquadArenaPanel";
+import ResourceHubPanel from "@/components/dashboard/shared/ResourceHubPanel";
+import KnowledgePanel from "@/components/dashboard/shared/KnowledgePanel";
+import ProjectsPanel from "@/components/dashboard/shared/ProjectsPanel";
 
 // ─── Types ────────────────────────────────────────────────────────
 interface NavItem {
@@ -75,7 +95,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(
-    user?.role === "developer" ? "dev-overview" : user?.role === "designer" ? "designer-overview" : user?.role === "cybersecurity" ? "secops-overview" : "overview"
+    user?.role === "developer" ? "dev-overview" : user?.role === "designer" ? "designer-overview" : user?.role === "cybersecurity" ? "secops-overview" : user?.role === "marketer" ? "marketer-overview" : user?.role === "team-leader" ? "leader-overview" : "overview"
   );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -128,13 +148,21 @@ const Dashboard = () => {
   }
 
   const allIntegrations = [...integrations, ...pendingIntegrations];
+  const role = user?.role;
   const coreNavItems: NavItem[] = [
-    { id: "overview", icon: LayoutDashboard, label: "Overview" },
+    { id: role === "developer" ? "dev-overview" : role === "designer" ? "designer-overview" : role === "cybersecurity" ? "secops-overview" : role === "marketer" ? "marketer-overview" : role === "team-leader" ? "leader-overview" : "overview", icon: LayoutDashboard, label: "Overview" },
     { id: "workspaces", icon: FolderOpen, label: "Workspaces", badge: workspaces.length.toString() },
     { id: "integrations", icon: Plug, label: "Integrations", badge: allIntegrations.length.toString() },
-  ];
+    { id: "teams", icon: Users, label: "Teams" },
+    { id: "omni-feed", icon: Activity, label: "OmniFeed" },
+    { id: "squad-radar", icon: Radar, label: "Squad Radar" },
+    { id: "squad-arena", icon: Trophy, label: "Squad Arena" },
+    { id: "resource-hub", icon: BookOpen, label: "Resources" },
+    { id: "knowledge", icon: BookMarked, label: "Knowledge" },
+    // Projects → only developer
+    ...(role === "developer" ? [{ id: "projects", icon: FolderGit2, label: "Projects" }] : []),
+  ] as NavItem[];
   const devNavItems: NavItem[] = user?.role === "developer" ? [
-    { id: "dev-overview", icon: LayoutDashboard, label: "Dashboard" },
     { id: "insights", icon: TrendingUp, label: "Insights" },
     { id: "utilities", icon: Terminal, label: "Utilities" },
     { id: "ai-agents", icon: Sparkles, label: "AI Agents", highlight: true },
@@ -147,7 +175,6 @@ const Dashboard = () => {
     { id: "monitoring", icon: Bug, label: "Monitoring" },
   ] : [];
   const designerNavItems: NavItem[] = user?.role === "designer" ? [
-    { id: "designer-overview", icon: LayoutDashboard, label: "Dashboard" },
     { id: "design-insights", icon: TrendingUp, label: "Insights" },
     { id: "design-utilities", icon: Palette, label: "Design Tools" },
     { id: "figma", icon: PenTool, label: "Figma" },
@@ -157,16 +184,28 @@ const Dashboard = () => {
     { id: "zeplin", icon: Ruler, label: "Zeplin" },
   ] : [];
   const secopsNavItems: NavItem[] = user?.role === "cybersecurity" ? [
-    { id: "secops-overview", icon: Shield, label: "Dashboard" },
     { id: "secops-insights", icon: ShieldAlert, label: "Threat Intel" },
     { id: "secops-utilities", icon: Wrench, label: "Security Tools" },
     { id: "secops-agents", icon: Bot, label: "AI Agents" },
     { id: "secops-scripts", icon: Zap, label: "Scripts" },
   ] : [];
+  const marketerNavItems: NavItem[] = user?.role === "marketer" ? [
+    { id: "marketer-insights", icon: DollarSign, label: "Analytics" },
+    { id: "marketer-utilities", icon: Wrench, label: "Marketing Tools" },
+    { id: "marketer-agents", icon: FlaskConical, label: "AI Agents" },
+    { id: "marketer-scripts", icon: Zap, label: "Automation" },
+  ] : [];
+  const leaderNavItems: NavItem[] = user?.role === "team-leader" ? [
+    { id: "leader-insights", icon: BarChart3, label: "Team Analytics" },
+    { id: "leader-utilities", icon: Wrench, label: "PM Tools" },
+    { id: "leader-agents", icon: Bot, label: "AI Agents" },
+    { id: "leader-scripts", icon: Zap, label: "Automation" },
+    { id: "leader-modals", icon: Layers, label: "Modals" },
+  ] : [];
   const bottomNavItems: NavItem[] = [{ id: "profile", icon: User, label: "Profile" }];
-  const allNavItems = [...coreNavItems, ...devNavItems, ...designerNavItems, ...secopsNavItems, ...bottomNavItems];
+  const allNavItems = [...coreNavItems, ...devNavItems, ...designerNavItems, ...secopsNavItems, ...marketerNavItems, ...leaderNavItems, ...bottomNavItems];
   const initials = user?.fullName?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "U";
-  const isAlwaysDark = ["developer", "cybersecurity", "marketer"].includes(currentRole || "");
+  const isAlwaysDark = ["developer", "cybersecurity", "marketer", "team-leader"].includes(currentRole || "");
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -370,6 +409,38 @@ const Dashboard = () => {
                   </>
                 )}
 
+                {marketerNavItems.length > 0 && (
+                  <>
+                    {!sidebarCollapsed ? (
+                      <div className="px-3 pb-1.5 pt-2">
+                        <div className="h-px bg-border/40 mb-2" />
+                        <p className="text-[10px] font-bold text-muted-foreground/50 tracking-[0.15em] uppercase">Marketing</p>
+                      </div>
+                    ) : <div className="mx-2 my-2 h-px bg-border/40" />}
+                    <nav className="space-y-0.5 mb-4">
+                      {marketerNavItems.map((item, i) => (
+                        <SidebarItem key={item.id} item={item} active={activeTab === item.id} collapsed={sidebarCollapsed} onClick={() => setActiveTab(item.id)} delay={0.08 + i * 0.02} />
+                      ))}
+                    </nav>
+                  </>
+                )}
+
+                {leaderNavItems.length > 0 && (
+                  <>
+                    {!sidebarCollapsed ? (
+                      <div className="px-3 pb-1.5 pt-2">
+                        <div className="h-px bg-border/40 mb-2" />
+                        <p className="text-[10px] font-bold text-muted-foreground/50 tracking-[0.15em] uppercase">Leadership</p>
+                      </div>
+                    ) : <div className="mx-2 my-2 h-px bg-border/40" />}
+                    <nav className="space-y-0.5 mb-4">
+                      {leaderNavItems.map((item, i) => (
+                        <SidebarItem key={item.id} item={item} active={activeTab === item.id} collapsed={sidebarCollapsed} onClick={() => setActiveTab(item.id)} delay={0.08 + i * 0.02} />
+                      ))}
+                    </nav>
+                  </>
+                )}
+
                 {!sidebarCollapsed && workspaces.length > 0 && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between px-3 mb-1.5">
@@ -458,6 +529,27 @@ const Dashboard = () => {
                 {activeTab === "secops-utilities" && <SecOpsUtilitiesPanel />}
                 {activeTab === "secops-agents" && <SecOpsAgentsPanel />}
                 {activeTab === "secops-scripts" && <SecOpsScriptsPanel />}
+                {/* ─── Marketer Panels ─── */}
+                {activeTab === "marketer-overview" && <MarketerOverviewPanel onTabChange={setActiveTab} />}
+                {activeTab === "marketer-insights" && <MarketerInsightsPanel />}
+                {activeTab === "marketer-utilities" && <MarketerUtilitiesPanel />}
+                {activeTab === "marketer-agents" && <MarketerAgentsPanel />}
+                {activeTab === "marketer-scripts" && <MarketerScriptsPanel />}
+                {/* ─── Leader Panels ─── */}
+                {activeTab === "leader-overview" && <LeaderOverviewPanel onTabChange={setActiveTab} />}
+                {activeTab === "leader-insights" && <LeaderInsightsPanel />}
+                {activeTab === "leader-utilities" && <LeaderUtilitiesPanel />}
+                {activeTab === "leader-agents" && <LeaderAgentsPanel />}
+                {activeTab === "leader-scripts" && <LeaderScriptsPanel />}
+                {activeTab === "leader-modals" && <LeaderModalsPanel />}
+                {/* ─── Shared Panels ─── */}
+                {activeTab === "teams" && <TeamsPanel />}
+                {activeTab === "omni-feed" && <OmniFeedPanel />}
+                {activeTab === "squad-radar" && <SquadRadarPanel />}
+                {activeTab === "squad-arena" && <SquadArenaPanel />}
+                {activeTab === "resource-hub" && <ResourceHubPanel />}
+                {activeTab === "knowledge" && <KnowledgePanel />}
+                {activeTab === "projects" && <ProjectsPanel />}
                 {activeTab === "profile" && <ProfilePanel />}
               </motion.div>
             </AnimatePresence>

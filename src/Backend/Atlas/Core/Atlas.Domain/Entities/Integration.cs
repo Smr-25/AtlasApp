@@ -8,6 +8,7 @@ public class Integration : BaseEntity
     public string Name { get; private set; } = null!; 
     public IntegrationProvider Provider { get; private set; }
     public IntegrationStatus Status { get; private set; }
+    public IntegrationScope Scope { get; private set; }
     public string? ApiUrl { get; private set; }
     public string? EncryptedAccessToken { get; private set; }
     public string? EncryptedRefreshToken { get; private set; }
@@ -28,7 +29,8 @@ public class Integration : BaseEntity
         string? encryptedRefreshToken,
         DateTime? expiresAt,
         string? metadataJson,
-        string? apiUrl = null)
+        string? apiUrl = null,
+        IntegrationScope scope = IntegrationScope.Personal)
     {
         return new Integration
         {
@@ -40,7 +42,8 @@ public class Integration : BaseEntity
             EncryptedRefreshToken = encryptedRefreshToken,
             TokenExpiresAt = expiresAt,
             MetadataJson = metadataJson,
-            Status = IntegrationStatus.Active
+            Status = IntegrationStatus.Active,
+            Scope = scope
         };
     }
 
@@ -84,7 +87,7 @@ public class Integration : BaseEntity
         SetModified();
     }
 
-    public static Integration CreatePlaceholder(Guid userId, IntegrationProvider provider, string name)
+    public static Integration CreatePlaceholder(Guid userId, IntegrationProvider provider, string name, IntegrationScope scope = IntegrationScope.Personal)
     {
         return new Integration
         {
@@ -92,8 +95,15 @@ public class Integration : BaseEntity
             Name = name,
             Provider = provider,
             ApiUrl = GetDefaultApiUrl(provider),
-            Status = IntegrationStatus.PendingSetup
+            Status = IntegrationStatus.PendingSetup,
+            Scope = scope
         };
+    }
+
+    public void SetScope(IntegrationScope scope)
+    {
+        Scope = scope;
+        SetModified();
     }
 
     public void UpdateMetadata(string metadataJson)

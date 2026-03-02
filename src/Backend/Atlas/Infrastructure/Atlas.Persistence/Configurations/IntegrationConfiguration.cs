@@ -41,6 +41,12 @@ public class IntegrationConfiguration : IEntityTypeConfiguration<Integration>
             .HasConversion<string>()
             .HasMaxLength(50);
 
+        builder.Property(i => i.Scope)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(Atlas.Domain.Enums.IntegrationScope.Personal);
+
         builder.Property(i => i.EncryptedAccessToken)
             .IsRequired(false)
             .HasMaxLength(2000);

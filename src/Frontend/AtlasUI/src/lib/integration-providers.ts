@@ -36,7 +36,7 @@ export const integrationProviders: IntegrationProviderInfo[] = [
   { provider: "Discord", name: "Discord", description: "Community & voice chat", icon: "🎮", category: "Communication", roles: ["developer", "designer", "cybersecurity", "marketer", "team-leader"] },
 
   // Monitoring
-  { provider: "Sentry", name: "Sentry", description: "Error tracking & performance", icon: "🐛", category: "Monitoring", roles: ["developer"], apiUrl: "https://sentry.io/api" },
+  { provider: "Sentry", name: "Sentry", description: "Error tracking & performance", icon: "🐛", category: "Monitoring", roles: ["developer", "team-leader"], apiUrl: "https://sentry.io/api" },
   { provider: "SonarQube", name: "SonarQube", description: "Code quality & security", icon: "🔍", category: "Monitoring", roles: ["developer"], apiUrl: "https://sonarcloud.io/api" },
   { provider: "Perplexity", name: "Perplexity", description: "AI-powered research", icon: "🤖", category: "AI", roles: ["developer", "designer", "cybersecurity", "marketer", "team-leader"] },
 
@@ -47,7 +47,7 @@ export const integrationProviders: IntegrationProviderInfo[] = [
   { provider: "OnePassword", name: "1Password", description: "Password & secrets management", icon: "🔐", category: "SecOps", roles: ["cybersecurity"] },
   { provider: "VirusTotal", name: "VirusTotal", description: "Malware analysis", icon: "🦠", category: "SecOps", roles: ["cybersecurity"] },
   { provider: "Shodan", name: "Shodan", description: "Internet intelligence", icon: "🌐", category: "SecOps", roles: ["cybersecurity"] },
-  { provider: "PagerDuty", name: "PagerDuty", description: "Incident management", icon: "🚨", category: "SecOps", roles: ["cybersecurity"] },
+  { provider: "PagerDuty", name: "PagerDuty", description: "Incident management", icon: "🚨", category: "SecOps", roles: ["cybersecurity", "team-leader"] },
 
   // Marketing
   { provider: "MetaAds", name: "Meta Ads", description: "Facebook & Instagram advertising", icon: "📘", category: "Marketing", roles: ["marketer"] },
@@ -57,6 +57,11 @@ export const integrationProviders: IntegrationProviderInfo[] = [
   { provider: "Ga4", name: "Google Analytics 4", description: "Website analytics", icon: "📊", category: "Marketing", roles: ["marketer"] },
   { provider: "StripeMkt", name: "Stripe", description: "Payment & revenue analytics", icon: "💳", category: "Marketing", roles: ["marketer"] },
   { provider: "HubSpot", name: "HubSpot", description: "CRM & marketing automation", icon: "🧲", category: "Marketing", roles: ["marketer"] },
+
+  // Team Leader / PM
+  { provider: "GoogleCalendar", name: "Google Calendar", description: "Calendar synchronization", icon: "📅", category: "Productivity", roles: ["team-leader"] },
+  { provider: "Confluence", name: "Confluence", description: "Knowledge base & documentation", icon: "📖", category: "Productivity", roles: ["team-leader"] },
+  { provider: "LinearApp", name: "Linear", description: "Project & issue management", icon: "🔷", category: "Productivity", roles: ["team-leader"] },
 ];
 
 /** Get providers relevant to a specific role */

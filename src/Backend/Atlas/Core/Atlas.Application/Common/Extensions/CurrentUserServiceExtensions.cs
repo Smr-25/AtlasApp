@@ -25,5 +25,18 @@ public static class CurrentUserServiceExtensions
 
             return parsedUserId;
         }
+        
+        public Guid GetRequiredWorkspaceId()
+        {
+            var workspaceId = currentUserService.WorkspaceId;
+            if (!workspaceId.HasValue || workspaceId.Value == Guid.Empty)
+                throw new InvalidOperationException("X-Workspace-Id header is required. Please select a workspace.");
+            return workspaceId.Value;
+        }
+        
+        public Guid? GetWorkspaceIdOrDefault()
+        {
+            return currentUserService.WorkspaceId;
+        }
     }
 }

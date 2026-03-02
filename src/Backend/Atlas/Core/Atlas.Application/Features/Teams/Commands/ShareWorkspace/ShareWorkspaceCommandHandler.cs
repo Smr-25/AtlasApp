@@ -1,6 +1,7 @@
 using Atlas.Application.Common.Exceptions.Common;
 using Atlas.Application.Common.Extensions;
 using Atlas.Application.Common.Interfaces;
+using Atlas.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,13 +30,28 @@ public class ShareWorkspaceCommandHandler(
             throw new ForbiddenException("Only the team owner can share workspaces.");
 
         var workspace = await dbContext.Workspaces
+            .Include(w => w.Members)
             .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId && w.UserProfileId == userId, cancellationToken)
             ?? throw new NotFoundException("Workspace", request.WorkspaceId);
 
         workspace.SetShared(true);
+        
+        // Add all team members as workspace members (Viewer role by default)
+        // Team Managers get Editor role
+        foreach (var teamMember in team.Members.Where(m => !m.IsDeleted && m.UserId != userId))
+        {
+            var existingMember = workspace.Members.FirstOrDefault(wm => wm.UserId == teamMember.UserId && !wm.IsDeleted);
+            if (existingMember == null)
+            {
+                var wsRole = teamMember.Role == TeamMemberRole.Manager 
+                    ? WorkspaceMemberRole.Editor 
+                    : WorkspaceMemberRole.Viewer;
+                workspace.AddMember(teamMember.UserId, wsRole);
+            }
+        }
+        
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
     }
 }
-

@@ -6,6 +6,7 @@ public record WorkspaceIntegrationDto(
     Guid IntegrationId,
     string IntegrationName,
     IntegrationProvider Provider,
+    IntegrationScope Scope,
     bool Enabled,
     DateTime ConnectedAt
 );

@@ -39,6 +39,7 @@ public static class ServiceRegistration
             services.Configure<StripeSettings>(configuration.GetSection(StripeSettings.SectionName));
             
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IWorkspaceAccessService, WorkspaceAccessService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ISmsService, SmsService>();

@@ -20,4 +20,13 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
     public int TimezoneOffsetInMinutes => int.TryParse(
         httpContextAccessor.HttpContext?.Request.Headers["X-Timezone-Offset"].FirstOrDefault(),
         out var offset) ? offset : 0;
+    
+    public Guid? WorkspaceId
+    {
+        get
+        {
+            var header = httpContextAccessor.HttpContext?.Request.Headers["X-Workspace-Id"].FirstOrDefault();
+            return Guid.TryParse(header, out var workspaceId) ? workspaceId : null;
+        }
+    }
 }

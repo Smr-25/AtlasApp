@@ -8,5 +8,6 @@ public class IntegrationDto
     public string Name { get; set; } = null!;
     public IntegrationProvider Provider { get; set; }
     public IntegrationStatus Status { get; set; }
+    public IntegrationScope Scope { get; set; }
     public string? MetadataJson { get; set; }
 }
