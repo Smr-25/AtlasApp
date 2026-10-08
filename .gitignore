@@ -53,3 +53,11 @@ appsettings.Mac.json
 # Presentation guide (personal, not for repo)
 PRESENTATION_GUIDE.md
 PRESENTATION.md
+
+# Local macOS application bundle and verification artifacts
+src/Build/
+
+# Private build credentials and local container state
+sixlabors.lic
+*.p12
+*.p8

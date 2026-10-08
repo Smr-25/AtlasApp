@@ -1,0 +1,41 @@
+name: Verify Atlas
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build src/Backend/Atlas/Atlas.sln -c Debug
+      - run: dotnet src/Backend/Atlas/Presentation/Atlas.Desktop/bin/Debug/net10.0/Atlas.Desktop.dll --self-test
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Select Xcode with macOS 26 SDK
+        shell: bash
+        run: |
+          selected=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          if [ -z "$selected" ]; then echo 'Xcode 26+ is required on this runner.'; exit 1; fi
+          echo "DEVELOPER_DIR=$selected/Contents/Developer" >> "$GITHUB_ENV"
+      - run: dotnet restore src/Backend/Atlas/Atlas.sln
+      - run: sh src/Scripts/build.sh
+      - run: sh src/Scripts/check.sh
+      - run: python3 src/Scripts/http-check.py
+      - run: ditto -c -k --keepParent src/Build/Atlas.app src/Build/Atlas-local.zip
+      - name: Retain local test bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-local-development
+          path: src/Build/Atlas-local.zip
+          retention-days: 7
