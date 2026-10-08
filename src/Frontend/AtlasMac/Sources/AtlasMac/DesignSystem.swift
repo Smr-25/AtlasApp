@@ -14,8 +14,8 @@ enum AtlasStyle {
     static let gradient = LinearGradient(colors: [accent, ember], startPoint: .topLeading, endPoint: .bottomTrailing)
     static func color(_ category: String) -> Color {
         switch category {
-        case "Files": return accent
-        case "Images": return .yellow
+        case "Files": return .yellow
+        case "Images": return .pink
         case "PDF": return .red
         case "Text": return .blue
         default: return Color(red: 0.25, green: 0.95, blue: 0.43)
