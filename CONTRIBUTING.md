@@ -10,5 +10,4 @@ Atlas uses a native SwiftUI interface and a local C# engine. Keep processing in 
 
 Use the existing request/result protocol and tool catalog. Avoid a new layer for a single operation. Validate external input, preserve original files, expose partial failures and support cancellation for long work. Add a small behavioral check for nontrivial changes.
 
-
-The current local build uses the Debug .NET configuration because ImageSharp 4 requires a build-time license key for Release. This is a tracked release blocker, not a suppression of the license check. See the release checklist.
+The current local build uses the Debug .NET configuration because ImageSharp 4 requires a build-time license key for Release. This is a tracked release blocker, not a suppression of the license check. See THIRD_PARTY_NOTICES.md.

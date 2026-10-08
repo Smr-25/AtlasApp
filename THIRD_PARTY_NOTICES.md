@@ -10,8 +10,8 @@ Atlas's own source is MIT licensed. Dependencies keep their own copyright and li
 | Markdig | 1.0.0 | [BSD 2-Clause](https://github.com/xoofx/markdig/blob/master/license.txt) |
 | ImageSharp | 4.1.2 | [Six Labors license terms](https://github.com/SixLabors/ImageSharp/blob/main/LICENSE); see included upstream license |
 
-ImageSharp is used by the image tools and image-to-PDF conversion. Version 4 requires a valid build-time key for Release builds. The current project does not contain a key. Do not bypass validation or commit a key; obtain an appropriate key privately or complete the planned image-library replacement before distribution. See [upstream build-time licensing documentation](https://docs.sixlabors.com/articles/imagesharp/).
+ImageSharp is used by the image tools and image-to-PDF conversion. Version 4 requires a valid build-time key for Release builds. The repository does not contain a key. Do not bypass validation or commit a key; provide an appropriate key privately for Release builds. See [upstream build-time licensing documentation](https://docs.sixlabors.com/articles/imagesharp/).
 
-Docker CLI, Compose, Colima and Homebrew are optional, separately installed software; their binaries are not included in Atlas. Images imported through Atlas are third-party applications and retain their own licenses.
+Docker CLI, Compose, Colima and Homebrew are optional, separately installed software; their binaries are not included in Atlas. Images imported through Atlas are third-party applications and retain their own licenses. Atlas does not relicense imported image contents.
 
 Before publishing a self-contained application, collect the full notices for the exact runtime and transitive packages included in that artifact. The current local development bundle is not a public distribution release.

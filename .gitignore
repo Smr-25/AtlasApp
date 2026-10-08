@@ -61,3 +61,12 @@ src/Build/
 sixlabors.lic
 *.p12
 *.p8
+
+# Local notes, exported settings, credentials and manual test artifacts
+src/Docs/*REPORT*.md
+src/Docs/Brand/
+.env.*
+*.key
+*.pem
+*.mobileprovision
+Atlas-Test-*/
