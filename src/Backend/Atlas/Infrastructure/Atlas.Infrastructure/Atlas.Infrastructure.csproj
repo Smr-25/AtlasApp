@@ -1,27 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\Core\Atlas.Application\Atlas.Application.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Docker.DotNet" Version="3.125.15" />
-      <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
-      <PackageReference Include="Google.Apis.Gmail.v1" Version="1.73.0.4029" />
-      <PackageReference Include="Hardware.Info" Version="101.1.1.1" />
-      <PackageReference Include="MailKit" Version="4.14.1" />
-      <PackageReference Include="Markdig" Version="1.0.0" />
-      <PackageReference Include="Notion.Net" Version="4.4.0" />
-      <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
-      <PackageReference Include="Stripe.net" Version="47.4.0" />
-      <PackageReference Include="Telegram.Bot" Version="22.8.1" />
-      <PackageReference Include="Twilio" Version="7.14.3" />
-    </ItemGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="PdfPig" Version="0.1.15" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    <ProjectReference Include="../../Core/Atlas.Application/Atlas.Application.csproj" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="4.1.2" />
+    <PackageReference Include="Markdig" Version="1.0.0" />
+  </ItemGroup>
 </Project>
