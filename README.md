@@ -1,6 +1,6 @@
 <div align="center">
 
-# Atlas
+<img src="src/Frontend/AtlasMac/Sources/AtlasMac/Resources/AtlasWordmark.png" alt="Atlas" width="600">
 
 ### Useful tools. Thoughtfully together.
 
