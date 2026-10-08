@@ -78,6 +78,7 @@ final class Workbench: ObservableObject {
         if let id = selectedID { drafts[id] = request }
         selectedID = nil; section = category; search = ""
     }
+    func backToCategory() { library(selectedTool?.category ?? "All tools") }
     func enterSearch() {
         if let id = selectedID { drafts[id] = request }
         selectedID = nil
@@ -183,6 +184,24 @@ final class Workbench: ObservableObject {
         else {
             jobs[index].text = event.text ?? ""
             jobs[index].state = event.type == "result" ? "Completed" : event.type == "cancelled" ? "Stopped" : "Failed"
+            let partialFailure = event.rows?.contains { $0.contains { $0.hasPrefix("Error:") } } ?? false
+            if event.type == "result" && !partialFailure { clearCompletedInputs(jobs[index].request) }
+        }
+    }
+    private func clearCompletedInputs(_ completed: EngineRequest) {
+        if completed.tool == "files.rename" && completed.options["apply"] != "true" { return }
+        if completed.tool == "scripts.run" && completed.options["confirmed"] != "true" { return }
+        func normalized(_ value: EngineRequest) -> EngineRequest {
+            var copy = value; copy.options.removeValue(forKey: "apply"); copy.options.removeValue(forKey: "confirmed"); return copy
+        }
+        func cleared(_ value: EngineRequest) -> EngineRequest {
+            var copy = normalized(value); copy.input = ""; copy.secondary = ""; copy.paths = []; return copy
+        }
+        // A completed job must never erase input edited while it was running.
+        if selectedID == completed.tool {
+            if normalized(request) == normalized(completed) { request = cleared(request); drafts[completed.tool] = request }
+        } else if let draft = drafts[completed.tool], normalized(draft) == normalized(completed) {
+            drafts[completed.tool] = cleared(draft)
         }
     }
     private func startNext() {

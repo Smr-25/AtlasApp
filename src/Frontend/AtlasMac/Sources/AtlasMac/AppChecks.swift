@@ -63,6 +63,18 @@ enum AppChecks {
         model.cancel(model.jobs[1].id)
         for _ in 0..<100 where !model.jobs[0].isFinished { try await Task.sleep(for: .milliseconds(50)) }
         try check(model.jobs[0].state == "Completed" && model.jobs[1].state == "Stopped", "Sequential queue and queued cancellation")
+        try check(model.request.input.isEmpty && model.currentJob != nil, "Success clears inputs and retains results")
+        model.backToCategory(); try check(model.section == "Text", "Back opens the tool category")
+        model.select(json); model.request.input = "{bad}"
+        model.enqueue()
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try check(model.jobs.last?.state == "Failed" && model.request.input == "{bad}", "Failure preserves input")
+        model.request.input = "{}"; model.enqueue(); model.request.input = "new draft"
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try check(model.request.input == "new draft", "Completion preserves newer edits")
+        model.request.input = "{}"; model.enqueue(); model.library()
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        model.select(json); try check(model.request.input.isEmpty, "Completed background tool clears matching draft")
         model.settings.theme = "dark"
         model.settings.snippets = [.init(name: "Greeting", text: "Salam")]; model.persist()
         model.openJob(model.jobs[0])
@@ -73,8 +85,23 @@ enum AppChecks {
         model.request.options["confirmed"] = "true"; model.recipeName = "Where am I?"; model.saveRecipe()
         model.loadRecipe(model.settings.recipes.last!)
         try check(model.request.input == "/bin/sh" && model.request.options["confirmed"] == nil && model.jobs.isEmpty, "Saved command never inherits execution approval")
+        model.enqueue()
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try check(model.canRunScript && model.request.input == "/bin/sh", "Command preview preserves executable for confirmation")
+        model.enqueue(confirmedScript: true)
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try check(model.request.input.isEmpty && model.request.secondary.isEmpty && model.request.outputDirectory == root.path, "Command completion clears input but retains working directory")
+        let renamed = root.appendingPathComponent("rename.txt"); try "test".write(to: renamed, atomically: true, encoding: .utf8)
+        model.select(toolCatalog.first { $0.id == "files.rename" }!)
+        model.request.paths = [renamed.path]; model.request.outputDirectory = root.path; model.request.options["prefix"] = "done-"
+        model.enqueue()
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try check(model.canApplyRename && model.request.paths == [renamed.path], "Rename preview preserves selection")
+        model.enqueue(applyRename: true)
+        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try check(model.request.paths.isEmpty && model.request.options["prefix"] == "done-", "Rename apply clears selection, keeps options")
         let reopened = Workbench(defaults: defaults)
-        try check(reopened.settings.favorites == ["json"] && reopened.settings.recent == ["json"], "Favorites and recent persistence")
+        try check(reopened.settings.favorites == ["json"] && reopened.settings.recent.contains("json"), "Favorites and recent persistence")
         try check(reopened.settings.recipes.first?.options["mode"] == "minify", "Recipe persistence")
         try check(reopened.settings.theme == "dark" && reopened.settings.snippets?.first?.text == "Salam", "Theme and snippets persist")
         try check(reopened.request.input.isEmpty && reopened.jobs.isEmpty, "Inputs and results are session-only")
@@ -93,8 +120,11 @@ enum AppChecks {
         try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
         _ = NSApplication.shared
         try renderIcons(to: folder)
-        for (name, dark, toolID) in [("atlas-light", false, ""), ("atlas-dark", true, ""), ("workbench-light", false, "json"), ("workbench-dark", true, "json"), ("settings-dark", true, "Settings")] {
-            let model = Workbench(defaults: UserDefaults(suiteName: "atlas-preview-\(UUID())")!)
+        for (name, dark, toolID, width, height) in [("atlas-light", false, "", 1280.0, 840.0), ("atlas-dark", true, "", 1280.0, 840.0), ("workbench-light", false, "json", 1280.0, 840.0), ("workbench-dark", true, "json", 1280.0, 840.0), ("settings-dark", true, "Settings", 900.0, 600.0), ("compact-home", true, "", 640.0, 440.0), ("compact-workbench", true, "json", 640.0, 440.0)] {
+            let suite = "atlas-preview-\(UUID())"
+            let previewDefaults = UserDefaults(suiteName: suite)!
+            defer { previewDefaults.removePersistentDomain(forName: suite) }
+            let model = Workbench(defaults: previewDefaults)
             if toolID == "Settings" { model.library("Settings") }
             if let tool = toolCatalog.first(where: { $0.id == toolID }) {
                 model.select(tool)
@@ -104,12 +134,12 @@ enum AppChecks {
                 job.text = "{\n  \"name\": \"Atlas\",\n  \"local\": true,\n  \"tools\": 33\n}"
                 model.jobs = [job]
             }
-            let view = AtlasView(model: model).frame(width: 1280, height: 840).environment(\.colorScheme, dark ? .dark : .light)
+            let view = AtlasView(model: model).frame(width: width, height: height).environment(\.colorScheme, dark ? .dark : .light)
             let hosting = NSHostingView(rootView: view)
-            let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1280, height: 840), styleMask: [.borderless], backing: .buffered, defer: false)
+            let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: width, height: height), styleMask: [.borderless], backing: .buffered, defer: false)
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
             window.contentView = hosting
-            hosting.frame = CGRect(x: 0, y: 0, width: 1280, height: 840)
+            hosting.frame = CGRect(x: 0, y: 0, width: width, height: height)
             hosting.layoutSubtreeIfNeeded()
             RunLoop.current.run(until: Date().addingTimeInterval(0.3))
             hosting.layoutSubtreeIfNeeded()

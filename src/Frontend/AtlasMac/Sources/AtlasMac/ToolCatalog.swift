@@ -62,7 +62,7 @@ let toolCatalog: [AtlasTool] = [
     .init(id: "tech.ports", name: "Listening Ports", category: "Technical", icon: "externaldrive.connected.to.line.below", summary: "See TCP listeners and processes visible to your macOS account.", noText: true)
 ]
 
-struct EngineRequest: Codable, Sendable {
+struct EngineRequest: Codable, Sendable, Equatable {
     var tool: String
     var input = ""
     var secondary = ""
