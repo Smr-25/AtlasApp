@@ -101,3 +101,14 @@ struct HTMLPreview: NSViewRepresentable {
         }
     }
 }
+
+struct IconButton: View {
+    let title: String
+    let icon: String
+    let action: () -> Void
+    init(_ title: String, icon: String, action: @escaping () -> Void) { self.title = title; self.icon = icon; self.action = action }
+    var body: some View {
+        Button(action: action) { Image(systemName: icon).frame(width: 36, height: 36).contentShape(Rectangle()) }
+            .buttonStyle(.plain).help(title).accessibilityLabel(title)
+    }
+}

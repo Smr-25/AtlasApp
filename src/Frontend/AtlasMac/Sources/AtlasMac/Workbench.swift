@@ -26,7 +26,6 @@ final class Workbench: ObservableObject {
     @Published var recipeName = ""
     @Published var showQueue = false
     @Published var viewedJobID: UUID?
-    let containers = ContainerModel()
     private var drafts: [String: EngineRequest] = [:]
     private var activeTask: Task<Void, Never>?
     private var activeID: UUID?

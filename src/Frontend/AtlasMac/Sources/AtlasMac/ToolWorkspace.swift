@@ -9,8 +9,13 @@ struct ToolWorkspace: View {
     @State private var confirmScript = false
     @State private var showRecipe = false
     @State private var showHTML = true
+    @State private var copied = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        GeometryReader { geometry in
+        VStack(spacing: 0) {
+        ScrollView {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: 14) {
                 ToolBadge(tool: tool, size: 52)
@@ -20,30 +25,25 @@ struct ToolWorkspace: View {
                     Text(tool.summary).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Button { model.favorite(tool.id) } label: { Image(systemName: model.settings.favorites.contains(tool.id) ? "star.fill" : "star") }.buttonStyle(.plain).help("Favorite this tool")
+                IconButton("Favorite this tool", icon: model.settings.favorites.contains(tool.id) ? "star.fill" : "star") { model.favorite(tool.id) }
                 if !tool.options.isEmpty || tool.id == "scripts.run" {
-                    Button { showRecipe = true } label: { Image(systemName: "slider.horizontal.3") }.buttonStyle(.plain).help("Save these settings as a recipe")
+                    IconButton("Save recipe", icon: "slider.horizontal.3") { showRecipe = true }
                 }
             }
-            HSplitView {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 19) {
-                        if tool.acceptsFiles { fileInput }
-                        if !tool.noText { textInput }
-                        if !tool.options.isEmpty { options }
-                        if tool.needsOutput {
-                            VStack(alignment: .leading, spacing: 9) {
-                                Eyebrow(text: tool.id == "files.rename" ? "Folder for undo record" : tool.id == "scripts.run" ? "Working folder" : "Output folder")
-                                Button { model.chooseOutput() } label: {
-                                    HStack { Image(systemName: "folder"); Text(model.request.outputDirectory.isEmpty ? "Choose folder…" : model.request.outputDirectory).lineLimit(2).truncationMode(.middle); Spacer(); Image(systemName: "chevron.down") }.font(.system(size: 11)).padding(12).atlasPanel(10).contentShape(Rectangle())
-                                }.buttonStyle(.plain)
-                            }
-                        }
-                        if tool.id == "text.workflow" { Text("Steps: trim, empty, unique, sort, number, upper, lower, replace. Steps run from left to right.").font(.caption).foregroundStyle(.secondary) }
-                    }.padding(2)
-                }.frame(minWidth: 285, idealWidth: 340, maxWidth: 480).padding(.trailing, 14)
-                resultPanel.frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity).padding(.leading, 14)
+            if geometry.size.width >= 800 {
+                HStack(alignment: .top, spacing: 24) {
+                    inputPanel.frame(maxWidth: .infinity)
+                    resultPanel.frame(maxWidth: .infinity).frame(height: 520)
+                }
+            } else {
+                VStack(spacing: 20) {
+                    inputPanel
+                    resultPanel.frame(height: 400)
+                }
             }
+        }.padding(22)
+        }
+            Divider()
             HStack(spacing: 12) {
                 PrimaryButton(title: tool.id == "files.rename" ? "Preview names" : tool.id == "scripts.run" ? "Preview command" : "Run tool") { model.enqueue() }.keyboardShortcut(.return, modifiers: .command)
                 if tool.id == "scripts.run" { Button("Execute command…") { confirmScript = true }.disabled(!model.canRunScript) }
@@ -51,15 +51,15 @@ struct ToolWorkspace: View {
                     Button("Apply rename…") { confirmRename = true }.disabled(!model.canApplyRename)
                 }
                 if let job = model.currentJob, !job.isFinished {
-                    ProgressView(value: job.progress).frame(width: 90)
-                    Text(job.state).font(.caption).foregroundStyle(.secondary)
                     Button("Stop") { model.cancel(job.id) }
                 }
                 Spacer()
-                Label(["tech.dns", "tech.tls", "tech.http", "scripts.run"].contains(tool.id) ? "Uses your network" : "Processed on your Mac", systemImage: "lock.shield")
-                    .font(.system(size: 10)).foregroundStyle(.secondary)
-            }
-        }.padding(26)
+            }.padding(.horizontal, 22).padding(.vertical, 12)
+        }
+        }
+        .task(id: copied) {
+            if copied { try? await Task.sleep(for: .seconds(2)); copied = false }
+        }
         .confirmationDialog("Apply the previewed filenames?", isPresented: $confirmRename) {
             Button("Rename files") { model.enqueue(applyRename: true) }
         } message: { Text("Atlas will rename the selected files in place and save an undo record. Existing names are checked again before any change.") }
@@ -76,6 +76,23 @@ struct ToolWorkspace: View {
         }
     }
 
+    private var inputPanel: some View {
+        VStack(alignment: .leading, spacing: 19) {
+            if tool.acceptsFiles { fileInput }
+            if !tool.noText { textInput }
+            if !tool.options.isEmpty { options }
+            if tool.needsOutput {
+                VStack(alignment: .leading, spacing: 9) {
+                    Eyebrow(text: tool.id == "files.rename" ? "Folder for undo record" : tool.id == "scripts.run" ? "Working folder" : "Output folder")
+                    Button { model.chooseOutput() } label: {
+                        HStack { Image(systemName: "folder"); Text(model.request.outputDirectory.isEmpty ? "Choose folder…" : model.request.outputDirectory).lineLimit(2).truncationMode(.middle); Spacer(); Image(systemName: "chevron.down") }.font(.system(size: 11)).padding(12).atlasPanel(10).contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                }
+            }
+            if tool.id == "text.workflow" { Text("Steps: trim, empty, unique, sort, number, upper, lower, replace. Steps run from left to right.").font(.caption).foregroundStyle(.secondary) }
+        }.padding(2)
+    }
+
     private var fileInput: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack { Eyebrow(text: "Input files · \(model.request.paths.count)"); Spacer(); Button("Add…") { model.chooseFiles() }.buttonStyle(.plain).font(.caption) }
@@ -90,8 +107,8 @@ struct ToolWorkspace: View {
                             Image(systemName: "doc").foregroundStyle(.secondary)
                             Text(URL(fileURLWithPath: path).lastPathComponent).font(.system(size: 11)).lineLimit(1).help(path)
                             Spacer()
-                            if index > 0 { Button { model.request.paths.swapAt(index, index - 1) } label: { Image(systemName: "arrow.up") }.buttonStyle(.plain).help("Move up") }
-                            Button { model.request.paths.remove(at: index) } label: { Image(systemName: "xmark") }.buttonStyle(.plain).help("Remove from selection")
+                            if index > 0 { IconButton("Move up", icon: "arrow.up") { model.request.paths.swapAt(index, index - 1) } }
+                            IconButton("Remove from selection", icon: "xmark") { model.request.paths.remove(at: index) }
                         }.padding(8)
                     }
                     Button("Clear selection") { model.request.paths = [] }.font(.caption).buttonStyle(.plain).foregroundStyle(.secondary).padding(.bottom, 8)
@@ -148,8 +165,12 @@ struct ToolWorkspace: View {
                 Spacer()
                 if let job = model.currentJob {
                     if tool.id == "text.markdown" { Button(showHTML ? "Source" : "Preview") { showHTML.toggle() }.buttonStyle(.plain).font(.caption) }
-                    Button { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(exportText(job), forType: .string) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.plain).help("Copy result")
-                    Button { model.saveText(exportText(job), extension: tool.id == "text.csv" ? "csv" : tool.id == "text.markdown" ? "html" : "txt") } label: { Image(systemName: "square.and.arrow.up") }.buttonStyle(.plain).help("Save result")
+                    if copied { Text("Copied ✓").font(.caption).foregroundStyle(AtlasStyle.accent).accessibilityLabel("Result copied") }
+                    IconButton("Copy result", icon: copied ? "checkmark" : "doc.on.doc") {
+                        NSPasteboard.general.clearContents()
+                        copied = NSPasteboard.general.setString(exportText(job), forType: .string)
+                    }
+                    IconButton("Save result to file", icon: "square.and.arrow.down") { model.saveText(exportText(job), extension: tool.id == "text.csv" ? "csv" : tool.id == "text.markdown" ? "html" : "txt") }
                 }
             }
             if let job = model.currentJob {
@@ -190,6 +211,7 @@ struct ToolWorkspace: View {
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }.padding(18).atlasPanel(18)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: model.currentJob?.state)
     }
     private func exportText(_ job: ToolJob) -> String {
         if tool.id == "text.csv" || job.rows.isEmpty { return job.text }

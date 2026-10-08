@@ -5,32 +5,50 @@ struct AtlasView: View {
     @ObservedObject var model: Workbench
     @FocusState private var searchFocused: Bool
     @State private var showRecipes = false
+    @State private var showSidebar = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dropped: [URL] = []
 
     var body: some View {
-        HStack(spacing: 0) {
-            sidebar
-            Divider()
-            VStack(spacing: 0) {
-                toolbar
-                Divider().opacity(0.5)
-                if let tool = model.selectedTool { ToolWorkspace(model: model, tool: tool) }
-                else if model.section == "Applications" { ContainerView(model: model.containers) }
-                else if model.section == "Snippets" { SnippetView(model: model) }
-                else if model.section == "Settings" { AppearanceSettings(model: model) }
-                else { library }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).background(AtlasStyle.background)
+        GeometryReader { geometry in
+            let compact = geometry.size.width < 1000
+            HStack(spacing: 0) {
+                if !compact { sidebar; Divider() }
+                VStack(spacing: 0) {
+                    toolbar(compact: compact)
+                    Divider().opacity(0.5)
+                    Group {
+                        if let tool = model.selectedTool { ToolWorkspace(model: model, tool: tool).id(tool.id) }
+                        else if model.section == "Settings" { AppearanceSettings(model: model) }
+                        else { library }
+                    }
+                    .id(model.selectedID ?? model.section)
+                    .transition(.opacity)
+                }.frame(maxWidth: .infinity, maxHeight: .infinity).background(AtlasStyle.background)
+            }
+            .overlay(alignment: .leading) {
+                if compact && showSidebar {
+                    ZStack(alignment: .leading) {
+                        Color.black.opacity(0.2).onTapGesture { showSidebar = false }
+                        sidebar.shadow(radius: 12)
+                    }.transition(reduceMotion ? .opacity : .move(edge: .leading).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: model.selectedID)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: model.section)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: showSidebar)
         }
         .tint(AtlasStyle.accent)
-        .frame(minWidth: 1040, minHeight: 700)
-        .sheet(isPresented: $model.showQueue) { JobQueueView(model: model).frame(width: 640, height: 470) }
-        .sheet(isPresented: $showRecipes) { recipes.frame(width: 530, height: 460) }
+        .frame(minWidth: 640, minHeight: 440)
+        .sheet(isPresented: $model.showQueue) { JobQueueView(model: model).frame(width: 580, height: 380) }
+        .sheet(isPresented: $showRecipes) { recipes.frame(width: 530, height: 380) }
         .alert("Atlas", isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) {
             Button("OK") { model.notice = nil }
         } message: { Text(model.notice ?? "") }
     }
 
     private var sidebar: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 6) {
             AtlasWordmark().padding(.horizontal, 12).padding(.top, 30).padding(.bottom, 23)
             nav("All tools", icon: "square.grid.2x2")
@@ -39,11 +57,11 @@ struct AtlasView: View {
             Eyebrow(text: "Collections").padding(.leading, 13).padding(.top, 25).padding(.bottom, 8)
             ForEach(["Files", "Images", "PDF", "Text", "Technical"], id: \.self) { category in nav(category, icon: AtlasStyle.icon(category)) }
             Divider().padding(.vertical, 12)
-            nav("Applications", icon: "shippingbox")
-            nav("Snippets", icon: "text.bubble")
+            comingSoon("Applications", icon: "shippingbox")
+            comingSoon("Snippets", icon: "text.bubble")
             Spacer(minLength: 12)
             nav("Settings", icon: "gearshape")
-            Button { showRecipes = true } label: {
+            Button { showSidebar = false; showRecipes = true } label: {
                 Label("Saved recipes", systemImage: "slider.horizontal.3").font(.system(size: 12, weight: .medium)).padding(12).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             }.buttonStyle(.plain)
             HStack(spacing: 9) {
@@ -53,12 +71,14 @@ struct AtlasView: View {
                     Text("Atlas 1.0").font(.system(size: 10)).foregroundStyle(.secondary)
                 }
             }.padding(14).frame(maxWidth: .infinity, alignment: .leading).atlasPanel().padding(.bottom, 18)
-        }.padding(.horizontal, 14).frame(width: 202).background(AtlasStyle.background)
+        }.padding(.horizontal, 14)
+        }.frame(width: 202).frame(maxHeight: .infinity).background(AtlasStyle.background)
     }
 
     private func nav(_ title: String, icon: String) -> some View {
         let active = model.selectedID == nil && model.section == title
-        return Button { model.library(title); dropped = [] } label: {
+        let color = ["Files", "Images", "PDF", "Text", "Technical"].contains(title) ? AtlasStyle.color(title) : AtlasStyle.accent
+        return Button { model.library(title); dropped = []; showSidebar = false } label: {
             HStack(spacing: 11) {
                 Image(systemName: icon).font(.system(size: 14)).frame(width: 19)
                 Text(title).font(.system(size: 12, weight: active ? .semibold : .medium))
@@ -67,16 +87,29 @@ struct AtlasView: View {
                     Text("\(toolCatalog.filter { $0.category == title }.count)").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
                 }
             }.padding(.horizontal, 12).frame(height: 36).contentShape(Rectangle())
-                .foregroundStyle(active ? AtlasStyle.accent : Color.primary.opacity(0.78))
-                .background(active ? AtlasStyle.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 10))
+                .foregroundStyle(active ? color : Color.primary.opacity(0.78))
+                .background(active ? color.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 10))
         }.buttonStyle(.plain)
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 12) {
+    private func comingSoon(_ title: String, icon: String) -> some View {
+        Button {} label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon).frame(width: 19)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 12))
+                    Text("Coming soon").font(.system(size: 9))
+                }
+                Spacer()
+            }.padding(.horizontal, 12).frame(height: 42).contentShape(Rectangle())
+        }.buttonStyle(.plain).disabled(true).foregroundStyle(.secondary).opacity(0.65)
+    }
+    private func toolbar(compact: Bool) -> some View {
+        HStack(spacing: 8) {
+            if compact { IconButton("Show sidebar", icon: "sidebar.left") { showSidebar.toggle() } }
             if model.selectedTool != nil {
-                Button { model.library() } label: { Image(systemName: "chevron.left") }.buttonStyle(.plain).help("Back to tools")
-                Text("Workbench").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
+                IconButton("Back to category", icon: "chevron.left") { model.backToCategory() }
+                Text(model.selectedTool?.category ?? "Workbench").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
             } else { Text(model.section).font(.system(size: 12, weight: .semibold)) }
             Spacer()
             HStack(spacing: 7) {
@@ -84,18 +117,17 @@ struct AtlasView: View {
                 TextField("Find a tool…", text: $model.search).textFieldStyle(.plain).focused($searchFocused)
                     .onChange(of: model.search) { _, value in if !value.isEmpty { model.enterSearch() } }
                 Text("⌘ K").font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary)
-            }.font(.system(size: 12)).padding(.horizontal, 12).frame(width: 240, height: 32).atlasGlass(10)
+            }.font(.system(size: 12)).padding(.horizontal, 12).frame(minWidth: 110, maxWidth: 240).frame(height: 32).atlasGlass(10)
             Button { model.library(); searchFocused = true } label: { EmptyView() }.buttonStyle(.plain).keyboardShortcut("k").frame(width: 0, height: 0).accessibilityHidden(true)
-            Button { model.showQueue = true } label: {
-                HStack(spacing: 5) { Image(systemName: "tray.2"); if model.busyCount > 0 { Text("\(model.busyCount)") } }
-            }.buttonStyle(.plain).help("Job queue").accessibilityLabel("Open job queue")
-        }.padding(.horizontal, 28).frame(height: 65)
+            IconButton("Open job queue", icon: "tray.2") { model.showQueue = true }.overlay(alignment: .topTrailing) { if model.busyCount > 0 { Text("\(model.busyCount)").font(.caption2).foregroundStyle(AtlasStyle.accent) } }
+        }.padding(.horizontal, 16).frame(height: 58)
     }
 
     private var library: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
                 if model.section == "All tools" && model.search.isEmpty {
+                    ViewThatFits(in: .horizontal) {
                     HStack(alignment: .center, spacing: 24) {
                         VStack(alignment: .leading, spacing: 13) {
                             Eyebrow(text: "A little less friction")
@@ -110,7 +142,13 @@ struct AtlasView: View {
                         }.frame(width: 220, height: 135).atlasGlass(20)
                             .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(AtlasStyle.accent.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5])))
                             .dropDestination(for: URL.self) { urls, _ in dropped = urls; return !urls.isEmpty }
-                    }.padding(30).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Eyebrow(text: "A little less friction")
+                        Text("Make room for better work.").font(.system(size: 30, weight: .bold))
+                        Text("Useful tools. Thoughtfully together.").foregroundStyle(.secondary)
+                    }
+                    }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
                         .background(LinearGradient(colors: [AtlasStyle.accent.opacity(0.13), .orange.opacity(0.045), .clear], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 24))
                     if !dropped.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
@@ -166,7 +204,7 @@ struct AtlasView: View {
             List {
                 ForEach(model.settings.recipes) { recipe in
                     HStack {
-                        Button { model.loadRecipe(recipe); showRecipes = false } label: { VStack(alignment: .leading) { Text(recipe.name); Text(toolCatalog.first { $0.id == recipe.tool }?.name ?? "").font(.caption).foregroundStyle(.secondary) } }.buttonStyle(.plain)
+                        Button { model.loadRecipe(recipe); showRecipes = false } label: { VStack(alignment: .leading) { Text(recipe.name); Text(toolCatalog.first { $0.id == recipe.tool }?.name ?? "").font(.caption).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8).contentShape(Rectangle()) }.buttonStyle(.plain)
                         Spacer()
                         Button { model.settings.recipes.removeAll { $0.id == recipe.id }; model.persist() } label: { Image(systemName: "trash") }.buttonStyle(.plain).help("Delete recipe")
                     }
