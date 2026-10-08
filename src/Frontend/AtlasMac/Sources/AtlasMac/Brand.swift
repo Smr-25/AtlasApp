@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import CoreImage
 
 struct AtlasMark: Shape {
     func path(in rect: CGRect) -> Path {
@@ -27,11 +28,21 @@ struct AtlasMark: Shape {
 }
 
 struct AtlasWordmark: View {
+    static let image: NSImage = {
+        // Use the approved bitmap's luminance as transparency, preserving its letterforms.
+        let source = CIImage(contentsOf: Bundle.module.url(forResource: "AtlasWordmark", withExtension: "png")!)!
+        let mask = source.applyingFilter("CIColorControls", parameters: [kCIInputContrastKey: 3])
+            .applyingFilter("CIMaskToAlpha")
+        let crop = CGRect(x: 275, y: 270, width: 1240, height: 345)
+        let image = NSImage(cgImage: CIContext().createCGImage(mask, from: crop)!, size: crop.size)
+        image.isTemplate = true
+        return image
+    }()
+
     var body: some View {
-        HStack(alignment: .bottom, spacing: 0) {
-            AtlasMark().frame(width: 36, height: 29).padding(.bottom, 7)
-            Text("tlas").font(.system(size: 38, weight: .black, design: .rounded)).tracking(-2)
-        }.foregroundStyle(AtlasStyle.accent).accessibilityElement(children: .ignore).accessibilityLabel("Atlas")
+        Image(nsImage: Self.image).resizable().scaledToFit()
+            .foregroundStyle(AtlasStyle.accent).frame(width: 155, height: 47)
+            .accessibilityLabel("Atlas")
     }
 }
 

@@ -20,6 +20,7 @@ swift_bin="$(xcrun swift build --package-path "$frontend" -c release --show-bin-
 app="$output/Atlas.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/Engine"
 cp "$swift_bin/AtlasMac" "$app/Contents/MacOS/AtlasMac"
+cp -R "$swift_bin/AtlasMac_AtlasMac.bundle" "$app/Contents/Resources/"
 cp -R "$output/Engine/." "$app/Contents/Resources/Engine/"
 dotnet_dir="$(dirname "$(realpath "$(command -v dotnet)")")"
 if [ ! -d "$dotnet_dir/shared" ]; then dotnet_dir="$(dirname "$dotnet_dir")/libexec"; fi
