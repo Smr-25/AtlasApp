@@ -1,0 +1,13 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "IDE və build artefaktları (secret deyil)"
+paths = [
+  '''(^|/)\.vs/''',
+  '''(^|/)obj/''',
+  '''(^|/)bin/''',
+  '''Services/DevUtilityService\.cs$''',
+]
