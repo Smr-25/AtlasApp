@@ -61,6 +61,15 @@ internal static class SelfTest
             var malicious = Path.Combine(root, "bad.zip");
             using (var zip = ZipFile.Open(malicious, ZipArchiveMode.Create)) zip.CreateEntry("../escape.txt");
             await Reject(new("files.unzip", Paths: [malicious], OutputDirectory: root));
+            Check(!File.Exists(Path.Combine(root, "escape.txt")), "Traversal cannot write outside extraction root");
+            var sibling = Path.Combine(root, "sibling.zip");
+            using (var zip = ZipFile.Open(sibling, ZipArchiveMode.Create)) zip.CreateEntry("../sibling-extracted-other/escape.txt");
+            await Reject(new("files.unzip", Paths: [sibling], OutputDirectory: root));
+            Check(!Directory.Exists(Path.Combine(root, "sibling-extracted-other")), "Sibling prefix is not an extraction child");
+            var absolute = Path.Combine(root, "absolute.zip");
+            using (var zip = ZipFile.Open(absolute, ZipArchiveMode.Create)) zip.CreateEntry(Path.Combine(root, "absolute-escape.txt"));
+            await Reject(new("files.unzip", Paths: [absolute], OutputDirectory: root));
+            Check(!File.Exists(Path.Combine(root, "absolute-escape.txt")), "Absolute archive paths cannot write files");
             var symbolic = Path.Combine(root, "symlink.zip");
             using (var zip = ZipFile.Open(symbolic, ZipArchiveMode.Create)) zip.CreateEntry("link").ExternalAttributes = 0xA000 << 16;
             await Reject(new("files.unzip", Paths: [symbolic], OutputDirectory: root));

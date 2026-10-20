@@ -211,6 +211,8 @@ public sealed class FileTools
                 ct.ThrowIfCancellationRequested();
                 var entry = archive.Entries[i];
                 var target = Path.GetFullPath(Path.Combine(destination, entry.FullName));
+                if (!target.StartsWith(destination + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    throw new IOException("ZIP entry escapes the extraction directory.");
                 if (entry.FullName.EndsWith('/')) Directory.CreateDirectory(target);
                 else
                 {
