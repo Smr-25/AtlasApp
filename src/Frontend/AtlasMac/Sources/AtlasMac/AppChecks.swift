@@ -39,6 +39,12 @@ enum AppChecks {
         try await EngineClient().run(.init(tool: "json", input: "{\"bridge\":true}")) { await engineEvents.append($0) }
         let engineResult = await engineEvents.result()
         try check(engineResult?.text?.contains("bridge") == true, "Swift to C# bridge")
+        for _ in 0..<12 {
+            let client = EngineClient()
+            try await client.run(.init(tool: "json", input: "{}")) { _ in
+                try? await Task.sleep(for: .milliseconds(2))
+            }
+        }
         let cancelledClient = EngineClient()
         cancelledClient.cancel()
         do { try await cancelledClient.run(.init(tool: "json", input: "{}")) { _ in }; throw AtlasError("Cancelled engine launched") }
@@ -48,6 +54,15 @@ enum AppChecks {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let model = Workbench(defaults: defaults)
+        func waitForJob(_ id: UUID) async throws {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+            while true {
+                guard let job = model.jobs.first(where: { $0.id == id }) else { throw AtlasError("Expected queue job disappeared") }
+                if job.isFinished { return }
+                guard ContinuousClock.now < deadline else { throw AtlasError("Timed out waiting for \(job.request.tool): \(job.state)") }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+        }
         let json = toolCatalog.first { $0.id == "json" }!
         model.select(json)
         model.request.input = "{\"queue\":true}"
@@ -61,19 +76,20 @@ enum AppChecks {
         model.enqueue()
         model.enqueue()
         model.cancel(model.jobs[1].id)
-        for _ in 0..<100 where !model.jobs[0].isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs[0].id)
         try check(model.jobs[0].state == "Completed" && model.jobs[1].state == "Stopped", "Sequential queue and queued cancellation")
         try check(model.request.input.isEmpty && model.currentJob != nil, "Success clears inputs and retains results")
         model.backToCategory(); try check(model.section == "Text", "Back opens the tool category")
         model.select(json); model.request.input = "{bad}"
         model.enqueue()
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs.last!.id)
         try check(model.jobs.last?.state == "Failed" && model.request.input == "{bad}", "Failure preserves input")
         model.request.input = "{}"; model.enqueue(); model.request.input = "new draft"
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs.last!.id)
         try check(model.request.input == "new draft", "Completion preserves newer edits")
         model.request.input = "{}"; model.enqueue(); model.library()
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs.last!.id)
+        try check(model.jobs.last?.state == "Completed", "Background job failed or timed out: \(model.jobs.last?.state ?? "missing") · \(model.jobs.last?.text ?? "")")
         model.select(json); try check(model.request.input.isEmpty, "Completed background tool clears matching draft")
         model.settings.theme = "dark"
         model.settings.snippets = [.init(name: "Greeting", text: "Salam")]; model.persist()
@@ -86,19 +102,19 @@ enum AppChecks {
         model.loadRecipe(model.settings.recipes.last!)
         try check(model.request.input == "/bin/sh" && model.request.options["confirmed"] == nil && model.jobs.isEmpty, "Saved command never inherits execution approval")
         model.enqueue()
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
-        try check(model.canRunScript && model.request.input == "/bin/sh", "Command preview preserves executable for confirmation")
+        try await waitForJob(model.jobs.last!.id)
+        try check(model.canRunScript && model.request.input == "/bin/sh", "Command preview preserves executable for confirmation: \(model.jobs.last?.state ?? "missing") · \(model.jobs.last?.text ?? "")")
         model.enqueue(confirmedScript: true)
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs.last!.id)
         try check(model.request.input.isEmpty && model.request.secondary.isEmpty && model.request.outputDirectory == root.path, "Command completion clears input but retains working directory")
         let renamed = root.appendingPathComponent("rename.txt"); try "test".write(to: renamed, atomically: true, encoding: .utf8)
         model.select(toolCatalog.first { $0.id == "files.rename" }!)
         model.request.paths = [renamed.path]; model.request.outputDirectory = root.path; model.request.options["prefix"] = "done-"
         model.enqueue()
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs.last!.id)
         try check(model.canApplyRename && model.request.paths == [renamed.path], "Rename preview preserves selection")
         model.enqueue(applyRename: true)
-        for _ in 0..<100 where !model.jobs.last!.isFinished { try await Task.sleep(for: .milliseconds(50)) }
+        try await waitForJob(model.jobs.last!.id)
         try check(model.request.paths.isEmpty && model.request.options["prefix"] == "done-", "Rename apply clears selection, keeps options")
         let reopened = Workbench(defaults: defaults)
         try check(reopened.settings.favorites == ["json"] && reopened.settings.recent.contains("json"), "Favorites and recent persistence")

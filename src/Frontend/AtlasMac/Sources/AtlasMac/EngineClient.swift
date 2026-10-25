@@ -18,6 +18,12 @@ final class EngineClient: @unchecked Sendable {
                 throw AtlasError("Atlas Engine is missing. Rebuild the app with src/Scripts/build.sh.")
             }
             let child = Process()
+            // Install before launch: the exit may arrive while the result callback is suspended.
+            let termination = AsyncStream<Int32>.makeStream(bufferingPolicy: .bufferingNewest(1))
+            child.terminationHandler = { process in
+                termination.continuation.yield(process.terminationStatus)
+                termination.continuation.finish()
+            }
             child.executableURL = executable
             if let rootURL = Bundle.main.url(forResource: "dotnet-root", withExtension: "txt"),
                let root = try? String(contentsOf: rootURL, encoding: .utf8) {
@@ -49,13 +55,15 @@ final class EngineClient: @unchecked Sendable {
                         await onEvent(event)
                     }
                 }
-                child.waitUntilExit()
+                var exitCode: Int32 = 0
+                for await status in termination.stream { exitCode = status }
                 if !terminalEvent {
                     if lock.withLock({ cancelled }) { throw CancellationError() }
-                    throw AtlasError("Atlas Engine ended without a result (exit \(child.terminationStatus)).")
+                    throw AtlasError("Atlas Engine ended without a result (exit \(exitCode)).")
                 }
             } catch {
-                if child.isRunning { child.terminate(); child.waitUntilExit() }
+                if child.isRunning { child.terminate() }
+                for await _ in termination.stream { }
                 throw error
             }
         }
