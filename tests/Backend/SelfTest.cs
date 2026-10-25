@@ -128,6 +128,7 @@ internal static class SelfTest
                 catch (OperationCanceledException) { Check(!File.Exists(Path.Combine(root, "must-not-exist")), "Cancelled child cannot finish"); }
             }
             await Reject(new("tech.http", "file:///etc/passwd"));
+            await FileSafetyTests.Run(root);
             Console.WriteLine("PASS: JSON, Unicode, text workflow, CSV, diff, hash, validation, rename preview/collision/apply/undo, duplicates, ZIP safety, image resize and palette, C# PDFs, Compose isolation and command execution/cancellation.");
         }
         finally { Directory.Delete(root, true); }

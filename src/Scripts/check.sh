@@ -6,3 +6,5 @@ if [ -f "$root/src/Build/Atlas.app/Contents/Resources/dotnet-root.txt" ]; then
 fi
 "$root/src/Build/Atlas.app/Contents/Resources/Engine/Atlas.Desktop" --self-test
 "$root/src/Build/Atlas.app/Contents/MacOS/AtlasMac" --self-test
+
+python3 "$root/tests/test_engine_protocol.py" "$root/src/Build/Atlas.app/Contents/Resources/Engine/Atlas.Desktop.dll"
